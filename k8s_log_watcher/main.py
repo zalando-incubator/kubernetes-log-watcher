@@ -53,7 +53,7 @@ def get_containers(containers_path: str) -> list:
     :type containers_path: str
 
     :return: List of container configs.
-    :type dest_path: list
+    :rtype: list
 
     Example:
     {
