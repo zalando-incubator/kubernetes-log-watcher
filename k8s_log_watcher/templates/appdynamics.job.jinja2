@@ -93,7 +93,7 @@ fields:
 #
 grok:
   patterns:
-    - "%{SYSLOGBASE2:syslogbase}"
+    - "\"log\":\"%{DATA:logMessage}\",\"stream\":\"%{DATA:stream}\",\"time\":\"%{TIMESTAMP_ISO8601:logTimestamp}\""
 
 # Optional property.
 #
@@ -115,7 +115,7 @@ grok:
 # http://www.joda.org/joda-time/key_format.html
 #
 eventTimestamp:
-   pattern: "M d HH:mm:ss"
+   pattern: "yyyy-MM-ddTHH:mm:ss.SSSZ"
 
 
 # ####################################
