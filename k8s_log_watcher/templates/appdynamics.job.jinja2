@@ -1,0 +1,151 @@
+#
+# Refer to the end of this file to have a look at a sample format of the
+# log file that this job is meant to process.
+#
+
+# The version of this job configuration file. This should not be changed by the user.
+version: 2
+
+# Optional property. Defaults to "false"
+#
+enabled: true
+startAtEnd: false
+
+# Mandatory property.
+#
+# On Windows, path should be provided as if on Unix environments.
+#   Ex: demo/logs
+#   Ex: C:/app/logs
+#
+file:
+    path: /containers/{{ container_id }}
+    nameGlob: {{ log_file_name }}
+
+# Optional property.
+#
+# If provided, then it means the file being tailed has records that span
+# multiple lines.
+#
+# If not provided then it means that each line read from the file is to
+# be treated as a separate record.
+#
+# To identify the beginning of a record, there are 2 options:
+#   1) "startsWith" followed by the first few characters of a line that
+#      indicate the beginning of a record.
+#   2) "regex" followed by the regular expression that indicates the
+#      beginning of a record.
+#
+#multiline:
+#   : "[a-z]"
+
+# Optional property (Except "sourceType").
+#
+# These fields are in addition to the data that is already present in the
+# files being tailed. Each record read from the file will be enriched with
+# these fields.
+#
+fields:
+    sourceType: application-{{ app_id }}
+    nodeName: {{ node_name }}
+    LogFile: {{ log_file_name }}
+
+    application_id: {{ app_id }}
+    application_version: {{ app_version }}
+    application_pod: {{ pod_name }}
+
+    {%if app_tier is defined and app_tier is not none %}
+    tierName: {{ app_tier }}
+    {% endif %}
+
+    {%if app_name is defined and app_name is not none %}
+    appName: {{ app_name }}
+    {% endif %}
+
+# Optional property.
+#
+# Grok is a way to define and use complex, nested regular expressions in an
+# easy to read and use format.
+#
+# A Grok pattern ultimately resolves and compiles into a regular expression.
+# The advantage of using Grok is its ability to compose complex patterns from
+# simpler pattern definitions, like a "formal grammar".
+#
+# See https://grokdebug.herokuapp.com/patterns for examples.
+#
+# The application comes pre-loaded with some well known Grok patterns in
+# the form of ".grok" files. They are available under the "conf/grok" directory.
+# Custom Grok files can be added to this directory and they will be
+# available for use here when the application is restarted.
+#
+# The Grok patterns here are meant to match a part of the log "message" string.
+# If multiple Grok patterns are provided, each one will be applied to the
+# "message" string individually.
+#
+# A Grok pattern is really a regular expression with the option of referencing
+# other known Grok patterns by name. Like this "%{JAVACLASS:myClassName}".
+# This means that we are looking for a sub-string that looks like a Java Class
+# name. Once the pattern is found, the matching sub-string will be extracted
+# and stored separately as a first class field, with "myClassName" as the key.
+#
+# By default, these patterns do not match multiline strings. To look for
+# the pattern sub-string across a multiline string, please refer to:
+# http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html#DOTALL
+#
+grok:
+  patterns:
+    - "\"log\":\"%{DATA:logMessage}\",\"stream\":\"%{DATA:stream}\",\"time\":\"%{TIMESTAMP_ISO8601:logTimestamp}\""
+
+# Optional property.
+#
+# If records have a timestamp that should be used as "the" eventTimestamp then
+# the format can be provided here to ensure that the string gets parsed and
+# transformed correctly to UTC time zone.
+#
+# An attempt will be made to extract the timestamp automatically, failing which
+# one will be added at the time the record is read from the file.
+#
+# UTC time zone is used throughout the system to ensure consistency of
+# timestamps across sources from different time zones. This means that all
+# timestamps should be converted to UTC time zone.
+#
+# If the format ends with a "z" or "Z" then the time zone offset is used to
+# convert to UTC time. No time zone means local time zone.
+#
+# A reference list of available patterns can be found here:
+# http://www.joda.org/joda-time/key_format.html
+#
+eventTimestamp:
+   pattern: "yyyy-MM-ddTHH:mm:ss.SSSZ"
+
+
+# ####################################
+# ###   Start sample file format   ###
+# ####################################
+#
+# [2015-05-06T11:23:51,464-07:00]  [INFO ]  [elasticsearch[Stinger][clusterService#updateTask][T#1]]  [org.elasticsearch.cluster.metadata]  [Stinger] [appdynamics_accounts] creating index, cause [api], templates [], shards [2]/[0], mappings [_default_]
+# [2015-05-06T11:23:51,550-07:00]  [INFO ]  [elasticsearch[Stinger][clusterService#updateTask][T#1]]  [org.elasticsearch.cluster.metadata]  [Stinger] [event_type_metadata] creating index, cause [api], templates [], shards [2]/[0], mappings [event_type_metadata]
+# [2015-05-06T11:23:51,638-07:00]  [INFO ]  [elasticsearch[Stinger][clusterService#updateTask][T#1]]  [org.elasticsearch.cluster.metadata]  [Stinger] [appdynamics_meters_v2] creating index, cause [api], templates [], shards [2]/[0], mappings [bytes]
+# [2015-05-06T11:23:51,736-07:00]  [INFO ]  [elasticsearch[Stinger][clusterService#updateTask][T#1]]  [org.elasticsearch.cluster.metadata]  [Stinger] [event_type_extracted_fields] creating index, cause [api], templates [], shards [2]/[0], mappings [_default_, event_type_extracted_fields]
+# [2015-05-06T11:23:51,803-07:00]  [INFO ]  [main]  [c.a.a.p.e.i.purge.PurgeDataLeader]  Scheduling purge data routine to happen at [2:30], every day. First run will be at [2015-05-07T02:30:00.000Z], which is in [29168.198] seconds
+# [2015-05-06T11:23:51,804-07:00]  [INFO ]  [rolling-index-leader]  [c.a.a.p.e.i.r.RollingIndexLeader]  Elected leader for rolling index management.
+# [2015-05-06T11:23:51,894-07:00]  [INFO ]  [main]  [o.e.jetty.setuid.SetUIDListener]  Opened application@5441f006{HTTP/1.1}{0.0.0.0:9080}
+# [2015-05-06T11:23:51,895-07:00]  [INFO ]  [main]  [o.e.jetty.setuid.SetUIDListener]  Opened admin@34f54521{HTTP/1.1}{0.0.0.0:9081}
+# [2015-05-06T11:23:51,897-07:00]  [INFO ]  [main]  [org.eclipse.jetty.server.Server]  jetty-9.0.7.v20131107
+# [2015-05-06T11:23:51,991-07:00]  [INFO ]  [main]  [c.s.j.s.i.a.WebApplicationImpl]  Initiating Jersey application, version 'Jersey: 1.18.1 02/19/2014 03:28 AM'
+# [2015-05-06T11:23:52,092-07:00]  [INFO ]  [main]  [i.d.jersey.DropwizardResourceConfig]  The following paths were found for the configured resources:
+#
+#     DELETE  /v{version: [1|2]}/events/{eventType} (com.appdynamics.analytics.processor.event.resource.EventServiceResource)
+#     GET     /v{version: [1|2]}/events/ping (com.appdynamics.analytics.processor.event.resource.EventServiceResource)
+#     GET     /v1/events/{eventType}/extracted-fields/{extractedFieldName} (com.appdynamics.analytics.processor.event.resource.ExtractedFieldsResource)
+#     POST    /v1/events/{eventType}/extracted-fields/{extractedFieldName} (com.appdynamics.analytics.processor.event.resource.ExtractedFieldsResource)
+#
+# [2015-05-06T11:23:52,383-07:00]  [INFO ]  [main]  [o.e.j.server.handler.ContextHandler]  Started i.d.j.MutableServletContextHandler@3b815a1b{/,null,AVAILABLE}
+# [2015-05-06T11:23:52,386-07:00]  [INFO ]  [main]  [io.dropwizard.setup.AdminEnvironment]  tasks =
+#
+#     POST    /tasks/gc (io.dropwizard.servlets.tasks.GarbageCollectionTask)
+#
+# [2015-05-06T11:23:52,390-07:00]  [INFO ]  [main]  [o.e.j.server.handler.ContextHandler]  Started i.d.j.MutableServletContextHandler@2e5c4859{/,null,AVAILABLE}
+#
+# ##################################
+# ###   End sample file format   ###
+# ##################################

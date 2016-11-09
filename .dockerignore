@@ -1,0 +1,17 @@
+*.pyc
+__pycache__/
+.idea
+.target
+.git
+.cache
+build/
+.coverage
+coverage.xml
+*.egg-info/
+*.egg*
+.tox/
+dist/
+eggs/
+sdist/
+
+tests/
