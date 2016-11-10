@@ -3,3 +3,4 @@ include README.rst
 include CHANGES.txt
 include MANIFEST.in
 include requirements.txt
+include */**/*.jinja2

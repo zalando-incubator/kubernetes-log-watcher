@@ -42,6 +42,7 @@ setup(
     entry_points={
         'console_scripts': CONSOLE_SCRIPTS
     },
+    include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
