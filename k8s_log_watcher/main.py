@@ -99,7 +99,7 @@ def get_containers(containers_path: str) -> list:
     return containers
 
 
-def sync_containers_job_files(containers, dest_path) -> list:
+def sync_containers_job_files(containers, dest_path, kube_url=None) -> list:
     """
     Create containers log job/config files for log proccessing agent.
 
@@ -112,7 +112,7 @@ def sync_containers_job_files(containers, dest_path) -> list:
     :return: List of existing container IDs.
     :rtype: list
     """
-    pods = kube.get_pods()
+    pods = kube.get_pods(kube_url=kube_url)
 
     existing_containers = []
 
@@ -181,7 +181,7 @@ def remove_containers_job_files(containers, dest_path):
             logger.exception('Failed to remove job file: {}'.format(job_file))
 
 
-def watch(containers_path, dest_path, interval=60):
+def watch(containers_path, dest_path, interval=60, kube_url=None):
     """Watch new containers and sync their corresponding log job/config files."""
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
@@ -217,6 +217,10 @@ def main():
     argp.add_argument('-d', '--dest', dest='dest_path', default=DEST_PATH,
                       help='Destination path for log agent job/config files.')
 
+    argp.add_argument('-u', '--kube-url', dest='kube_url',
+                      help='Use a Kube proxy URL instead of direct K8S cluster. '
+                      'This option will not use the serviceaccount config.')
+
     # TODO: Load required agent dynamically? break hard dependency on appdynamics!
     # argp.add_argument('-a', '--agent-module', dest='agent_module_path', default=None,
     #                   help='Import path of agent module providing job/config Jinja2 template path and required extra '
@@ -234,9 +238,17 @@ def main():
     containers_path = os.environ.get('WTACHER_CONTAINERS_PATH', args.containers_path)
     dest_path = os.environ.get('WTACHER_DEST_PATH', args.dest_path)
 
+    kube_url = os.environ.get('WTACHER_KUBE_URL', args.kube_url)
+
     interval = os.environ.get('WTACHER_INTERVAL', args.interval)
 
-    watch(containers_path, dest_path, interval=interval)
+    logger.info('Loaded configuration:')
+    logger.info('\tContainers path: {}'.format(containers_path))
+    logger.info('\tDest path: {}'.format(dest_path))
+    logger.info('\tKube url: {}'.format(kube_url))
+    logger.info('\tInterval: {}'.format(interval))
+
+    watch(containers_path, dest_path, interval=interval, kube_url=kube_url)
 
 
 if __name__ == '__main__':
