@@ -191,7 +191,7 @@ def watch(containers_path, dest_path, interval=60, kube_url=None):
             containers = get_containers(containers_path)
 
             # Write new job files!
-            existing_containers = sync_containers_job_files(containers, dest_path)
+            existing_containers = sync_containers_job_files(containers, dest_path, kube_url=kube_url)
 
             removed_containers = watched_containers - set(existing_containers)
             remove_containers_job_files(removed_containers, dest_path)
