@@ -122,6 +122,7 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
 
             if kube.is_pause_container(config['Config']):
                 # We have no interest in Pause containers.
+                logger.debug('Skipping pause container({})'.format(container['id']))
                 continue
 
             pod_name = get_label_value(config, 'pod.name')
