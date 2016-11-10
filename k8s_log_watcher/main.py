@@ -223,8 +223,8 @@ def main():
                       help='Destination path for log agent job/config files.')
 
     argp.add_argument('-u', '--kube-url', dest='kube_url',
-                      help='Use a Kube proxy URL instead of direct K8S cluster. '
-                      'This option will not use the serviceaccount config.')
+                      help='URL to API proxy service. Service is expected to handle authentication to the K8S cluster.'
+                      'If set, then log-watcher will not use serviceaccount config.')
 
     # TODO: Load required agent dynamically? break hard dependency on appdynamics!
     # argp.add_argument('-a', '--agent-module', dest='agent_module_path', default=None,
@@ -240,12 +240,12 @@ def main():
     if args.verbose or os.environ.get('WATCHER_DEBUG'):
         logger.setLevel(logging.DEBUG)
 
-    containers_path = os.environ.get('WTACHER_CONTAINERS_PATH', args.containers_path)
-    dest_path = os.environ.get('WTACHER_DEST_PATH', args.dest_path)
+    containers_path = os.environ.get('WATCHER_CONTAINERS_PATH', args.containers_path)
+    dest_path = os.environ.get('WATCHER_DEST_PATH', args.dest_path)
 
-    kube_url = os.environ.get('WTACHER_KUBE_URL', args.kube_url)
+    kube_url = os.environ.get('WATCHER_KUBE_URL', args.kube_url)
 
-    interval = os.environ.get('WTACHER_INTERVAL', args.interval)
+    interval = os.environ.get('WATCHER_INTERVAL', args.interval)
 
     logger.info('Loaded configuration:')
     logger.info('\tContainers path: {}'.format(containers_path))
