@@ -99,7 +99,7 @@ def get_containers(containers_path: str) -> list:
     return containers
 
 
-def sync_containers_job_files(containers, dest_path, kube_url=None) -> list:
+def sync_containers_job_files(containers, containers_path, dest_path, kube_url=None) -> list:
     """
     Create containers log job/config files for log proccessing agent.
 
@@ -120,12 +120,16 @@ def sync_containers_job_files(containers, dest_path, kube_url=None) -> list:
         try:
             config = container['config']
 
+            if kube.is_pause_container(config['Config']):
+                # We have no interest in Pause containers.
+                continue
+
             pod_name = get_label_value(config, 'pod.name')
             pod_labels = kube.get_pod_labels(pods, pod_name)
 
             kwargs = {}
 
-            kwargs['container_id'] = container['id']
+            kwargs['containers_path'] = containers_path
             kwargs['log_file_name'] = os.path.basename(container['log_file'])
 
             kwargs['app_id'] = pod_labels.get('app_id')
@@ -134,8 +138,8 @@ def sync_containers_job_files(containers, dest_path, kube_url=None) -> list:
             kwargs['node_name'] = CLUSTER_NODE_NAME
 
             if not all([kwargs['app_id'], kwargs['app_version']]):
-                logger.info(
-                    ('Labels "application_id" and "app_version" are required for container({}) in pod({})'
+                logger.warning(
+                    ('Labels "app_id" and "app_version" are required for container({}) in pod({})'
                      ' ... Skipping!').format(container['id'], pod_name))
                 continue
 
@@ -191,7 +195,7 @@ def watch(containers_path, dest_path, interval=60, kube_url=None):
             containers = get_containers(containers_path)
 
             # Write new job files!
-            existing_containers = sync_containers_job_files(containers, dest_path, kube_url=kube_url)
+            existing_containers = sync_containers_job_files(containers, containers_path, dest_path, kube_url=kube_url)
 
             removed_containers = watched_containers - set(existing_containers)
             remove_containers_job_files(removed_containers, dest_path)

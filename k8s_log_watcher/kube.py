@@ -9,6 +9,8 @@ DEFAULT_NAMESPACE = 'default'
 
 PODS_URL = 'api/v1/namespaces/default/pods'
 
+PAUSE_CONTAINER_PREFIX = 'gcr.io/google_containers/pause-'
+
 
 def get_client():
     config = pykube.KubeConfig.from_service_account(DEFAULT_SERVICE_ACC)
@@ -44,3 +46,16 @@ def get_pod_labels(pods: list, pod_name: str) -> dict:
             return metadata['labels']
 
     return {}
+
+
+def is_pause_container(config: dict) -> bool:
+    """
+    Return True if the config belongs to K8S *Pause* containers.
+
+    :param config: Container "Config" from ``config.v2.json``.
+    :type config: dict
+
+    :return: True if "Pause" container, False otherwise.
+    :rtype: bool
+    """
+    return config.get('Image', '').startswith(PAUSE_CONTAINER_PREFIX)
