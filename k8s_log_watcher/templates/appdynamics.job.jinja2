@@ -9,17 +9,41 @@ version: 2
 # Optional property. Defaults to "false"
 #
 enabled: true
-startAtEnd: false
 
 # Mandatory property.
 #
-# On Windows, path should be provided as if on Unix environments.
-#   Ex: demo/logs
-#   Ex: C:/app/logs
+# Source can be of two types:
+#   1) file: This allows tailing a log file. It consists of three parameters:
+#       - path: Path to the directory where files need to be tailed.
+#       - nameGlob: The name/expression to tail the matching files.
+#       - startAtEnd: If set to true allows tailing the file from the end.
+#         Example:
+#         1) path: /var/log
+#            nameGlob: */*.log searches for .log files one level deep in the /var/log
+#            directory (matches '/var/log/cassandra/system.log' but not
+#            '/var/log/apache2/logs/error.log').
+#         2) path: /var/log
+#            nameGlob: **/*.log searches for .log files even in the sub-directories in
+#            /var/log directory (matches both '/var/log/apache2/logs/error.log' and
+#            '/var/log/cassandra/system.log').
+#       On Windows, path should be provided as if on Unix environments.
+#       Ex: demo/logs
+#       Ex: C:/app/logs
+#   2) syslog: Listens to Syslog messages on a network port. It consists of two parameters:
+#       - protocol: The transport layer protocol that will be used. Currently
+#         we support only tcp.
+#       - port: The port at which the server will be listening to receive the
+#         syslog messages. Currently, we support one port per job file, and any
+#         enabled job file should be configured to receive messages at different
+#         ports. The user must make sure it does not conflict with anything else
+#         active in network. If no port number is provided, default port 514
+#         will be used.
 #
-file:
+source:
+    type: file
     path: {{ containers_path }}
     nameGlob: {{ log_file_name }}
+    startAtEnd: false
 
 # Optional property.
 #
@@ -91,9 +115,52 @@ fields:
 # the pattern sub-string across a multiline string, please refer to:
 # http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html#DOTALL
 #
-grok:
-  patterns:
-    - "\"log\":\"%{DATA:logMessage}\",\"stream\":\"%{DATA:stream}\",\"time\":\"%{TIMESTAMP_ISO8601:logTimestamp}\""
+# grok:
+#   patterns:
+#     - "\"log\":\"%{DATA:logMessage}\",\"stream\":\"%{DATA:stream}\",\"time\":\"%{TIMESTAMP_ISO8601:logTimestamp}\""
+
+
+# Optional property.
+#
+# The KeyValue Stage is a way to support parsing of logs to identify
+# key-value pairs with a user defined delimiter.
+# The KeyValue Stage is defined after the Grok Stage (if defined), and can leverage
+# parsing done in the GrokStage to identify the key-value pairs in the logs.
+# This stage captures the key-value pairs from fields specified by
+# the "source" parameter. The values listed under the "source" parameter must
+# refer to fields that were captured in stages that occurred before the invocation
+# of the KeyValue stage. For example, if you had a Grok Stage which defined the
+# following pattern "%{DATA:keyValuePairs}" then you could list the
+# field "keyValuePairs" under the "source" parameter to capture any key-value pairs
+# listed in the "keyValuePairs" string. If the "source" parameter is not specified
+# then the KeyValue Stage will attempt to extract key-value pairs from the entire message.
+#
+# The KeyValue Stage contains the following fields:
+#
+#   1) "source": A list of strings on which KeyValue filter should be applied.
+#      It is an optional field. If it is not provided the key-value pairs
+#      are parsed from the original log "message" string.
+#   2) "split": The delimiter defined by the user to separate out the
+#      key from value. For example, key=value, "split: '=' ".
+#   3) "separator": The delimiter defined by the user to separate out  two key-value pairs.
+#      For example, key1=value1;key2=value2, "separator: ';' " and "split: '=' ".
+#   4) "include": A list of key names that the user wants to capture from
+#      the "source". If nothing is provided in "include" we
+#      capture all the key-value pairs.
+#   5) "trim": A list of characters the user wants to remove from the start and end of the key/value
+#      before storing them.
+
+# keyValue:
+#    source:
+#     - "keyValuePairs"
+#    split: "="
+#    separator: ";"
+#    include:
+#     - "ThreadID"
+#     - "ThreadName"
+#    trim:
+#     - "_"
+
 
 # Optional property.
 #
@@ -115,7 +182,32 @@ grok:
 # http://www.joda.org/joda-time/key_format.html
 #
 eventTimestamp:
-   pattern: "yyyy-MM-ddTHH:mm:ss.SSSZ"
+   pattern: "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+
+# Optional property.
+#
+# This stage is applied after all fields have been captured from the log message.
+# The user can specify a list of field names, for which they want to cast
+# the value to a specific type or rename the field with an "alias".
+#
+# The Transform Stage contains the following fields:
+#
+#   1) "field": This cannot be empty or null. It specifies the name of the
+#      field to transform. If "field" is defined, either "type" or "alias"
+#      must be specified. If neither is specified, an error will be thrown.
+#   2) "alias": The new name which the "field" will be referred by.
+#   3) "type": The value type the field will be cast to.
+#      "type" can be "NUMBER", "BOOLEAN" or "STRING". By default it is "STRING".
+
+# transform:
+#    fields:
+#        - field: "ThreadID"
+#          type: "NUMBER"
+#        - field: "ThreadName"
+#          alias: "NewThreadName"
+#        - field: "ThreadID"
+#          type: "NUMBER"
+#          alias: "NewThreadID"
 
 
 # ####################################
