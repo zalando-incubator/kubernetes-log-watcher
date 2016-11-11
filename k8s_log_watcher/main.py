@@ -99,7 +99,7 @@ def get_containers(containers_path: str) -> list:
     return containers
 
 
-def sync_containers_job_files(containers, dest_path) -> list:
+def sync_containers_job_files(containers, containers_path, dest_path, kube_url=None) -> list:
     """
     Create containers log job/config files for log proccessing agent.
 
@@ -112,7 +112,7 @@ def sync_containers_job_files(containers, dest_path) -> list:
     :return: List of existing container IDs.
     :rtype: list
     """
-    pods = kube.get_pods()
+    pods = kube.get_pods(kube_url=kube_url)
 
     existing_containers = []
 
@@ -120,12 +120,17 @@ def sync_containers_job_files(containers, dest_path) -> list:
         try:
             config = container['config']
 
+            if kube.is_pause_container(config['Config']):
+                # We have no interest in Pause containers.
+                logger.debug('Skipping pause container({})'.format(container['id']))
+                continue
+
             pod_name = get_label_value(config, 'pod.name')
             pod_labels = kube.get_pod_labels(pods, pod_name)
 
             kwargs = {}
 
-            kwargs['container_id'] = container['id']
+            kwargs['containers_path'] = containers_path
             kwargs['log_file_name'] = os.path.basename(container['log_file'])
 
             kwargs['app_id'] = pod_labels.get('app_id')
@@ -134,8 +139,8 @@ def sync_containers_job_files(containers, dest_path) -> list:
             kwargs['node_name'] = CLUSTER_NODE_NAME
 
             if not all([kwargs['app_id'], kwargs['app_version']]):
-                logger.info(
-                    ('Labels "application_id" and "app_version" are required for container({}) in pod({})'
+                logger.warning(
+                    ('Labels "app_id" and "app_version" are required for container({}) in pod({})'
                      ' ... Skipping!').format(container['id'], pod_name))
                 continue
 
@@ -181,7 +186,7 @@ def remove_containers_job_files(containers, dest_path):
             logger.exception('Failed to remove job file: {}'.format(job_file))
 
 
-def watch(containers_path, dest_path, interval=60):
+def watch(containers_path, dest_path, interval=60, kube_url=None):
     """Watch new containers and sync their corresponding log job/config files."""
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
@@ -191,7 +196,7 @@ def watch(containers_path, dest_path, interval=60):
             containers = get_containers(containers_path)
 
             # Write new job files!
-            existing_containers = sync_containers_job_files(containers, dest_path)
+            existing_containers = sync_containers_job_files(containers, containers_path, dest_path, kube_url=kube_url)
 
             removed_containers = watched_containers - set(existing_containers)
             remove_containers_job_files(removed_containers, dest_path)
@@ -217,6 +222,10 @@ def main():
     argp.add_argument('-d', '--dest', dest='dest_path', default=DEST_PATH,
                       help='Destination path for log agent job/config files.')
 
+    argp.add_argument('-u', '--kube-url', dest='kube_url',
+                      help='URL to API proxy service. Service is expected to handle authentication to the K8S cluster.'
+                      'If set, then log-watcher will not use serviceaccount config.')
+
     # TODO: Load required agent dynamically? break hard dependency on appdynamics!
     # argp.add_argument('-a', '--agent-module', dest='agent_module_path', default=None,
     #                   help='Import path of agent module providing job/config Jinja2 template path and required extra '
@@ -231,12 +240,20 @@ def main():
     if args.verbose or os.environ.get('WATCHER_DEBUG'):
         logger.setLevel(logging.DEBUG)
 
-    containers_path = os.environ.get('WTACHER_CONTAINERS_PATH', args.containers_path)
-    dest_path = os.environ.get('WTACHER_DEST_PATH', args.dest_path)
+    containers_path = os.environ.get('WATCHER_CONTAINERS_PATH', args.containers_path)
+    dest_path = os.environ.get('WATCHER_DEST_PATH', args.dest_path)
 
-    interval = os.environ.get('WTACHER_INTERVAL', args.interval)
+    kube_url = os.environ.get('WATCHER_KUBE_URL', args.kube_url)
 
-    watch(containers_path, dest_path, interval=interval)
+    interval = os.environ.get('WATCHER_INTERVAL', args.interval)
+
+    logger.info('Loaded configuration:')
+    logger.info('\tContainers path: {}'.format(containers_path))
+    logger.info('\tDest path: {}'.format(dest_path))
+    logger.info('\tKube url: {}'.format(kube_url))
+    logger.info('\tInterval: {}'.format(interval))
+
+    watch(containers_path, dest_path, interval=interval, kube_url=kube_url)
 
 
 if __name__ == '__main__':
