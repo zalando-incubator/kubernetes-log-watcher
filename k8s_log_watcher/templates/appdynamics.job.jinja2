@@ -40,10 +40,10 @@ enabled: true
 #         will be used.
 #
 source:
-    type: file
-    path: {{ containers_path }}
-    nameGlob: {{ log_file_name }}
-    startAtEnd: false
+  type: file
+  path: {{ container_path }}
+  nameGlob: {{ log_file_name }}
+  startAtEnd: false
 
 # Optional property.
 #
@@ -69,21 +69,21 @@ source:
 # these fields.
 #
 fields:
-    sourceType: application-{{ app_id }}
-    nodeName: {{ node_name }}
-    LogFile: {{ log_file_name }}
+  sourceType: application-{{ app_id }}
+  nodeName: {{ node_name }}
+  LogFile: {{ log_file_name }}
 
-    application_id: {{ app_id }}
-    application_version: {{ app_version }}
-    application_pod: {{ pod_name }}
+  application_id: {{ app_id }}
+  application_version: {{ app_version }}
+  application_pod: {{ pod_name }}
 
-    {%if app_tier is defined and app_tier is not none %}
-    tierName: {{ app_tier }}
-    {% endif %}
+  {%if app_tier is defined and app_tier is not none %}
+  tierName: {{ app_tier }}
+  {% endif %}
 
-    {%if app_name is defined and app_name is not none %}
-    appName: {{ app_name }}
-    {% endif %}
+  {%if app_name is defined and app_name is not none %}
+  appName: {{ app_name }}
+  {% endif %}
 
 # Optional property.
 #
@@ -115,10 +115,11 @@ fields:
 # the pattern sub-string across a multiline string, please refer to:
 # http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html#DOTALL
 #
-# grok:
-#   patterns:
-#     - "\"log\":\"%{DATA:logMessage}\",\"stream\":\"%{DATA:stream}\",\"time\":\"%{TIMESTAMP_ISO8601:logTimestamp}\""
-
+{% raw %}
+grok:
+  patterns:
+    - "\{%{DATA:JsonLog}\}"
+{% endraw %}
 
 # Optional property.
 #
@@ -150,16 +151,17 @@ fields:
 #   5) "trim": A list of characters the user wants to remove from the start and end of the key/value
 #      before storing them.
 
-# keyValue:
-#    source:
-#     - "keyValuePairs"
-#    split: "="
-#    separator: ";"
-#    include:
-#     - "ThreadID"
-#     - "ThreadName"
-#    trim:
-#     - "_"
+keyValue:
+  source:
+    - JsonLog
+  split: :
+  separator: ,
+  include:
+    - log
+    - stream
+    - time
+  trim:
+    - "
 
 
 # Optional property.
@@ -182,7 +184,7 @@ fields:
 # http://www.joda.org/joda-time/key_format.html
 #
 eventTimestamp:
-   pattern: "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+   pattern: "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
 
 # Optional property.
 #
@@ -199,45 +201,25 @@ eventTimestamp:
 #   3) "type": The value type the field will be cast to.
 #      "type" can be "NUMBER", "BOOLEAN" or "STRING". By default it is "STRING".
 
-# transform:
-#    fields:
-#        - field: "ThreadID"
-#          type: "NUMBER"
-#        - field: "ThreadName"
-#          alias: "NewThreadName"
-#        - field: "ThreadID"
-#          type: "NUMBER"
-#          alias: "NewThreadID"
+transform:
+   fields:
+    - field: log
+      alias: logMessage
+    - field: time
+      alias: logTimestamp
+    - field: stream
+      alias: logStream
 
 
 # ####################################
 # ###   Start sample file format   ###
 # ####################################
-#
-# [2015-05-06T11:23:51,464-07:00]  [INFO ]  [elasticsearch[Stinger][clusterService#updateTask][T#1]]  [org.elasticsearch.cluster.metadata]  [Stinger] [appdynamics_accounts] creating index, cause [api], templates [], shards [2]/[0], mappings [_default_]
-# [2015-05-06T11:23:51,550-07:00]  [INFO ]  [elasticsearch[Stinger][clusterService#updateTask][T#1]]  [org.elasticsearch.cluster.metadata]  [Stinger] [event_type_metadata] creating index, cause [api], templates [], shards [2]/[0], mappings [event_type_metadata]
-# [2015-05-06T11:23:51,638-07:00]  [INFO ]  [elasticsearch[Stinger][clusterService#updateTask][T#1]]  [org.elasticsearch.cluster.metadata]  [Stinger] [appdynamics_meters_v2] creating index, cause [api], templates [], shards [2]/[0], mappings [bytes]
-# [2015-05-06T11:23:51,736-07:00]  [INFO ]  [elasticsearch[Stinger][clusterService#updateTask][T#1]]  [org.elasticsearch.cluster.metadata]  [Stinger] [event_type_extracted_fields] creating index, cause [api], templates [], shards [2]/[0], mappings [_default_, event_type_extracted_fields]
-# [2015-05-06T11:23:51,803-07:00]  [INFO ]  [main]  [c.a.a.p.e.i.purge.PurgeDataLeader]  Scheduling purge data routine to happen at [2:30], every day. First run will be at [2015-05-07T02:30:00.000Z], which is in [29168.198] seconds
-# [2015-05-06T11:23:51,804-07:00]  [INFO ]  [rolling-index-leader]  [c.a.a.p.e.i.r.RollingIndexLeader]  Elected leader for rolling index management.
-# [2015-05-06T11:23:51,894-07:00]  [INFO ]  [main]  [o.e.jetty.setuid.SetUIDListener]  Opened application@5441f006{HTTP/1.1}{0.0.0.0:9080}
-# [2015-05-06T11:23:51,895-07:00]  [INFO ]  [main]  [o.e.jetty.setuid.SetUIDListener]  Opened admin@34f54521{HTTP/1.1}{0.0.0.0:9081}
-# [2015-05-06T11:23:51,897-07:00]  [INFO ]  [main]  [org.eclipse.jetty.server.Server]  jetty-9.0.7.v20131107
-# [2015-05-06T11:23:51,991-07:00]  [INFO ]  [main]  [c.s.j.s.i.a.WebApplicationImpl]  Initiating Jersey application, version 'Jersey: 1.18.1 02/19/2014 03:28 AM'
-# [2015-05-06T11:23:52,092-07:00]  [INFO ]  [main]  [i.d.jersey.DropwizardResourceConfig]  The following paths were found for the configured resources:
-#
-#     DELETE  /v{version: [1|2]}/events/{eventType} (com.appdynamics.analytics.processor.event.resource.EventServiceResource)
-#     GET     /v{version: [1|2]}/events/ping (com.appdynamics.analytics.processor.event.resource.EventServiceResource)
-#     GET     /v1/events/{eventType}/extracted-fields/{extractedFieldName} (com.appdynamics.analytics.processor.event.resource.ExtractedFieldsResource)
-#     POST    /v1/events/{eventType}/extracted-fields/{extractedFieldName} (com.appdynamics.analytics.processor.event.resource.ExtractedFieldsResource)
-#
-# [2015-05-06T11:23:52,383-07:00]  [INFO ]  [main]  [o.e.j.server.handler.ContextHandler]  Started i.d.j.MutableServletContextHandler@3b815a1b{/,null,AVAILABLE}
-# [2015-05-06T11:23:52,386-07:00]  [INFO ]  [main]  [io.dropwizard.setup.AdminEnvironment]  tasks =
-#
-#     POST    /tasks/gc (io.dropwizard.servlets.tasks.GarbageCollectionTask)
-#
-# [2015-05-06T11:23:52,390-07:00]  [INFO ]  [main]  [o.e.j.server.handler.ContextHandler]  Started i.d.j.MutableServletContextHandler@2e5c4859{/,null,AVAILABLE}
-#
+# {"log":"logging-app: 790 \n","stream":"stdout","time":"2016-11-14T10:06:53.681223265Z"}
+# {"log":"logging-app: 791 \n","stream":"stdout","time":"2016-11-14T10:06:53.681223265Z"}
+# {"log":"logging-app: 792 \n","stream":"stdout","time":"2016-11-14T10:06:53.681223265Z"}
+# {"log":"logging-app: 793 \n","stream":"stdout","time":"2016-11-14T10:06:53.681223265Z"}
+# {"log":"logging-app: 794 \n","stream":"stdout","time":"2016-11-14T10:06:53.681223265Z"}
+# {"log":"logging-app: 795 \n","stream":"stdout","time":"2016-11-14T10:06:53.681223265Z"}
 # ##################################
 # ###   End sample file format   ###
 # ##################################
