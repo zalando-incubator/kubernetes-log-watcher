@@ -118,7 +118,7 @@ fields:
 {% raw %}
 grok:
   patterns:
-    - "\{%{DATA:JsonLog}\}"
+    - "\\{"log":"%{DATA:logMessage}","stream":"%{DATA:logStream}","time":"%{TIMESTAMP_ISO8601:logTimestamp}"\\}"
 {% endraw %}
 
 # Optional property.
@@ -150,18 +150,6 @@ grok:
 #      capture all the key-value pairs.
 #   5) "trim": A list of characters the user wants to remove from the start and end of the key/value
 #      before storing them.
-
-keyValue:
-  source:
-    - JsonLog
-  split: :
-  separator: ,
-  include:
-    - log
-    - stream
-    - time
-  trim:
-    - "
 
 
 # Optional property.
@@ -200,15 +188,6 @@ eventTimestamp:
 #   2) "alias": The new name which the "field" will be referred by.
 #   3) "type": The value type the field will be cast to.
 #      "type" can be "NUMBER", "BOOLEAN" or "STRING". By default it is "STRING".
-
-transform:
-   fields:
-    - field: log
-      alias: logMessage
-    - field: time
-      alias: logTimestamp
-    - field: stream
-      alias: logStream
 
 
 # ####################################
