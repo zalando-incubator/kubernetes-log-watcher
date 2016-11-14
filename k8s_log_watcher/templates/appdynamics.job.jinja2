@@ -118,7 +118,7 @@ fields:
 {% raw %}
 grok:
   patterns:
-    - "\\{"log":"%{DATA:logMessage}","stream":"%{DATA:logStream}","time":"%{TIMESTAMP_ISO8601:logTimestamp}"\\}"
+    - "\\{\"log\":\"%{DATA:logMessage}\",\"stream\":\"%{DATA:logStream}\",\"time\":\"%{TIMESTAMP_ISO8601:logTimestamp}\"\\}"
 {% endraw %}
 
 # Optional property.
