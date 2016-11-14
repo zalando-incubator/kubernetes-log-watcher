@@ -130,7 +130,7 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
 
             kwargs = {}
 
-            kwargs['containers_path'] = containers_path
+            kwargs['container_path'] = os.path.join(containers_path, container['id'])
             kwargs['log_file_name'] = os.path.basename(container['log_file'])
 
             kwargs['app_id'] = pod_labels.get('app_id')
