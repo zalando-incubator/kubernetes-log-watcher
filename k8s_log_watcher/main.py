@@ -156,7 +156,7 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
 
             if not all([kwargs['app_id'], kwargs['app_version']]):
                 logger.warning(
-                    ('Labels "app_id" and "app_version" are required for container({}: {}) in pod({})'
+                    ('Labels "app" and "version" are required for container({}: {}) in pod({})'
                      ' ... Skipping!').format(container_name, container['id'], pod_name))
                 continue
 
