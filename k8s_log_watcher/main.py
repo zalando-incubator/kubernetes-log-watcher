@@ -36,6 +36,11 @@ def get_job_file_path(dest_path, container_id) -> str:
 
 
 def get_label_value(config, label) -> str:
+    """
+    Get label value from container config. Usually those labels are namespaced in the form:
+        io.kubernetes.container.name
+        io.kubernetes.pod.name
+    """
     labels = config['Config']['Labels']
     for l, val in labels.items():
         if l.endswith(label):
@@ -99,15 +104,24 @@ def get_containers(containers_path: str) -> list:
     return containers
 
 
-def sync_containers_job_files(containers, containers_path, dest_path, kube_url=None) -> list:
+def sync_containers_job_files(containers, containers_path, dest_path, kube_url=None, first_run=False) -> list:
     """
     Create containers log job/config files for log proccessing agent.
 
     :param containers: List of container configs dicts.
     :type containers: list
 
-    :param dest_path: Log job/config files directory.
+    :param containers_path: Path to mounted containers directory.
+    :type containers_path: str
+
+    :param dest_path: Log job/config files directory path.
     :type dest_path: str
+
+    :param kube_url: URL to Kube API proxy.
+    :type kube_url: str
+
+    :param first_run: If ``True``, then all existing job/config files will be overridden.
+    :type first_run: bool
 
     :return: List of existing container IDs.
     :rtype: list
@@ -126,6 +140,7 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
                 continue
 
             pod_name = get_label_value(config, 'pod.name')
+            container_name = get_label_value(config, 'container.name')
             pod_labels = kube.get_pod_labels(pods, pod_name)
 
             kwargs = {}
@@ -133,15 +148,16 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
             kwargs['container_path'] = os.path.join(containers_path, container['id'])
             kwargs['log_file_name'] = os.path.basename(container['log_file'])
 
-            kwargs['app_id'] = pod_labels.get('app_id')
-            kwargs['app_version'] = pod_labels.get('app_version')
+            kwargs['app_id'] = pod_labels.get('app')
+            kwargs['app_version'] = pod_labels.get('version')
             kwargs['pod_name'] = pod_name
+            kwargs['container_name'] = container_name
             kwargs['node_name'] = CLUSTER_NODE_NAME
 
             if not all([kwargs['app_id'], kwargs['app_version']]):
                 logger.warning(
-                    ('Labels "app_id" and "app_version" are required for container({}) in pod({})'
-                     ' ... Skipping!').format(container['id'], pod_name))
+                    ('Labels "app" and "version" are required for container({}: {}) in pod({})'
+                     ' ... Skipping!').format(container_name, container['id'], pod_name))
                 continue
 
             # Get extra vars specific to log proccessing agent.
@@ -153,9 +169,9 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
 
             job_file = get_job_file_path(dest_path, container['id'])
 
-            # TODO: Check if job-file already exists or should we always override?
-            # This could happen if watcher has restarted while agent job files were already there from previous run!
-            if not os.path.exists(job_file):
+            # Override file if watcher is restarted.
+            # This could happen if the watcher is updated (i.e. new job template/fixes) while old job files exist.
+            if not os.path.exists(job_file) or first_run:
                 with open(job_file, 'w') as fp:
                     fp.write(job)
 
@@ -190,13 +206,15 @@ def watch(containers_path, dest_path, interval=60, kube_url=None):
     """Watch new containers and sync their corresponding log job/config files."""
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
+    first_run = True
 
     while True:
         try:
             containers = get_containers(containers_path)
 
             # Write new job files!
-            existing_containers = sync_containers_job_files(containers, containers_path, dest_path, kube_url=kube_url)
+            existing_containers = sync_containers_job_files(containers, containers_path, dest_path, kube_url=kube_url,
+                                                            first_run=first_run)
 
             removed_containers = watched_containers - set(existing_containers)
             remove_containers_job_files(removed_containers, dest_path)
@@ -207,6 +225,7 @@ def watch(containers_path, dest_path, interval=60, kube_url=None):
             logger.info('Watching {} containers'.format(len(watched_containers)))
 
             time.sleep(interval)
+            first_run = False
         except KeyboardInterrupt:
             return
         except:
