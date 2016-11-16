@@ -126,7 +126,9 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
     :return: List of existing container IDs.
     :rtype: list
     """
-    pods = kube.get_pods(kube_url=kube_url)
+    pod_map = {}
+
+    pod_map[kube.DEFAULT_NAMESPACE] = kube.get_pods(kube_url=kube_url)
 
     existing_containers = []
 
@@ -141,6 +143,15 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
 
             pod_name = get_label_value(config, 'pod.name')
             container_name = get_label_value(config, 'container.name')
+            pod_namespace = get_label_value(config, 'pod.namespace')
+
+            pods = pod_map.get(pod_namespace)
+            if not pods:
+                # We need to get pods in different namespace
+                logger.debug('Retrieving pods in namespace: {}'.format(pod_namespace))
+                pods = kube.get_pods(kube_url=kube_url, namespace=pod_namespace)
+                pod_map[pod_namespace] = pods
+
             pod_labels = kube.get_pod_labels(pods, pod_name)
 
             kwargs = {}
