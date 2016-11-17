@@ -44,7 +44,7 @@ def get_pods(kube_url=None, namespace=DEFAULT_NAMESPACE) -> list:
 
 def get_pod_labels(pods: list, pod_name: str) -> dict:
     for pod in pods:
-        metadata = pod.obj['metadata'] if hasattr(pod, 'obj') else pod['metadata']
+        metadata = pod.obj['metadata'] if hasattr(pod, 'obj') else pod.get('metadata', {})
         if metadata['name'] == pod_name:
             return metadata['labels']
 
