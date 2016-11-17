@@ -16,6 +16,9 @@ DEST_PATH = '/mnt/jobs/'
 APPLICATION_ID_KEY = 'APPLICATION_ID'
 APPLICATION_VERSION_KEY = 'APPLICATION_VERSION'
 
+APP_LABEL = 'application_id'
+VERSION_LABEL = 'application_version'
+
 
 logger = logging.getLogger(__name__)
 logger.handlers = [logging.StreamHandler()]
@@ -159,8 +162,8 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
             kwargs['container_path'] = os.path.join(containers_path, container['id'])
             kwargs['log_file_name'] = os.path.basename(container['log_file'])
 
-            kwargs['app_id'] = pod_labels.get('app')
-            kwargs['app_version'] = pod_labels.get('version')
+            kwargs['app_id'] = pod_labels.get(APP_LABEL)
+            kwargs['app_version'] = pod_labels.get(VERSION_LABEL)
             kwargs['pod_name'] = pod_name
             kwargs['namespace'] = pod_namespace
             kwargs['container_name'] = container_name
@@ -168,8 +171,8 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
 
             if not all([kwargs['app_id'], kwargs['app_version']]):
                 logger.warning(
-                    ('Labels "app" and "version" are required for container({}: {}) in pod({})'
-                     ' ... Skipping!').format(container_name, container['id'], pod_name))
+                    ('Labels "{}" and "{}" are required for container({}: {}) in pod({})'
+                     ' ... Skipping!').format(APP_LABEL, VERSION_LABEL, container_name, container['id'], pod_name))
                 continue
 
             # Get extra vars specific to log proccessing agent.
