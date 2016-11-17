@@ -2,6 +2,9 @@
 K8S Log Watcher
 ===============
 
+.. image:: https://api.travis-ci.org/zalando-incubator/k8s-log-watcher.svg?branch=master
+  :target: https://travis-ci.org/zalando-incubator/k8s-log-watcher
+
 .. image:: https://codecov.io/gh/zalando-incubator/k8s-log-watcher/branch/master/graph/badge.svg
   :target: https://codecov.io/gh/zalando-incubator/k8s-log-watcher
 
