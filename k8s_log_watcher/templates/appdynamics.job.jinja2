@@ -80,7 +80,7 @@ fields:
   application_namespace: {{ namespace }}
 
   {%if release is defined and release is not none %}
-  release: {{ release }}
+  application_release: {{ release }}
   {% endif %}
 
   {%if app_tier is defined and app_tier is not none %}
