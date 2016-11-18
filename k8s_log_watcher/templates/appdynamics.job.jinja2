@@ -79,6 +79,10 @@ fields:
   application_pod: {{ pod_name }}
   application_namespace: {{ namespace }}
 
+  {%if release is defined and release is not none %}
+  application_release: {{ release }}
+  {% endif %}
+
   {%if app_tier is defined and app_tier is not none %}
   tierName: {{ app_tier }}
   {% endif %}

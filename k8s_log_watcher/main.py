@@ -16,8 +16,8 @@ DEST_PATH = '/mnt/jobs/'
 APPLICATION_ID_KEY = 'APPLICATION_ID'
 APPLICATION_VERSION_KEY = 'APPLICATION_VERSION'
 
-APP_LABEL = 'application_id'
-VERSION_LABEL = 'application_version'
+APP_LABEL = 'application'
+VERSION_LABEL = 'version'
 
 
 logger = logging.getLogger(__name__)
@@ -164,6 +164,7 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
 
             kwargs['app_id'] = pod_labels.get(APP_LABEL)
             kwargs['app_version'] = pod_labels.get(VERSION_LABEL)
+            kwargs['release'] = pod_labels.get('release')
             kwargs['pod_name'] = pod_name
             kwargs['namespace'] = pod_namespace
             kwargs['container_name'] = container_name
