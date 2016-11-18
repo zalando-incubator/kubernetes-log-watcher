@@ -16,8 +16,8 @@ DEST_PATH = '/mnt/jobs/'
 APPLICATION_ID_KEY = 'APPLICATION_ID'
 APPLICATION_VERSION_KEY = 'APPLICATION_VERSION'
 
-APP_LABEL = 'application_id'
-VERSION_LABEL = 'application_version'
+APP_LABEL = 'application'
+VERSION_LABEL = 'version'
 
 
 logger = logging.getLogger(__name__)

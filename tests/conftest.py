@@ -49,25 +49,25 @@ import pytest
             {
                 'metadata': {
                     'name': 'pod-1',
-                    'labels': {'application_id': 'app-1', 'application_version': 'v1'}
+                    'labels': {'application': 'app-1', 'version': 'v1'}
                 }
             },
             {
                 'metadata': {
                     'name': 'pod-2',
-                    'labels': {'application_id': 'app-1'}  # missing 'version' label
+                    'labels': {'application': 'app-1'}  # missing 'version' label
                 }
             },
             {
                 'metadata': {
                     'name': 'pod-3',
-                    'labels': {'application_version': 'v1'}  # missing 'app' label
+                    'labels': {'version': 'v1'}  # missing 'app' label
                 }
             },
             {
                 'metadata': {
                     'name': 'pod-4',
-                    'labels': {'application_id': 'app-2', 'application_version': 'v1'}
+                    'labels': {'application': 'app-2', 'version': 'v1'}
                 }
             },
         ],
