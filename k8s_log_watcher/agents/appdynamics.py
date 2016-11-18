@@ -7,7 +7,7 @@ def get_template_path():
     return ''
 
 
-def get_template_vars(pod_name, pod_labels):
+def get_template_vars(pod_labels):
     return {
         'app_name': pod_labels.get('appdynamics_app'),
         'app_tier': pod_labels.get('appdynamics_tier'),

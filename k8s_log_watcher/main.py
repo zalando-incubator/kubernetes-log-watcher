@@ -16,6 +16,9 @@ DEST_PATH = '/mnt/jobs/'
 APPLICATION_ID_KEY = 'APPLICATION_ID'
 APPLICATION_VERSION_KEY = 'APPLICATION_VERSION'
 
+APP_LABEL = 'application_id'
+VERSION_LABEL = 'application_version'
+
 
 logger = logging.getLogger(__name__)
 logger.handlers = [logging.StreamHandler()]
@@ -44,7 +47,7 @@ def get_label_value(config, label) -> str:
     labels = config['Config']['Labels']
     for l, val in labels.items():
         if l.endswith(label):
-            return labels[l]
+            return val
 
     return None
 
@@ -159,20 +162,21 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
             kwargs['container_path'] = os.path.join(containers_path, container['id'])
             kwargs['log_file_name'] = os.path.basename(container['log_file'])
 
-            kwargs['app_id'] = pod_labels.get('app')
-            kwargs['app_version'] = pod_labels.get('version')
+            kwargs['app_id'] = pod_labels.get(APP_LABEL)
+            kwargs['app_version'] = pod_labels.get(VERSION_LABEL)
             kwargs['pod_name'] = pod_name
+            kwargs['namespace'] = pod_namespace
             kwargs['container_name'] = container_name
             kwargs['node_name'] = CLUSTER_NODE_NAME
 
             if not all([kwargs['app_id'], kwargs['app_version']]):
                 logger.warning(
-                    ('Labels "app" and "version" are required for container({}: {}) in pod({})'
-                     ' ... Skipping!').format(container_name, container['id'], pod_name))
+                    ('Labels "{}" and "{}" are required for container({}: {}) in pod({})'
+                     ' ... Skipping!').format(APP_LABEL, VERSION_LABEL, container_name, container['id'], pod_name))
                 continue
 
             # Get extra vars specific to log proccessing agent.
-            extras = appdynamics.get_template_vars(pod_name, pod_labels)
+            extras = appdynamics.get_template_vars(pod_labels)
 
             kwargs.update(extras)
 
@@ -193,7 +197,7 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
     return existing_containers
 
 
-def remove_containers_job_files(containers, dest_path):
+def remove_containers_job_files(containers, dest_path) -> int:
     """
     Remove containers job/log files for all terminated containers.
 
@@ -202,15 +206,22 @@ def remove_containers_job_files(containers, dest_path):
 
     :param dest_path: Log job/config files directory.
     :type dest_path: str
+
+    :return: Number of deleted job files.
+    :rtype: int
     """
+    count = 0
     for container in containers:
         job_file = get_job_file_path(dest_path, container)
 
         try:
             os.remove(job_file)
+            count += 1
             logger.debug('Removed container({}) job file'.format(container))
         except:
             logger.exception('Failed to remove job file: {}'.format(job_file))
+
+    return count
 
 
 def watch(containers_path, dest_path, interval=60, kube_url=None):
@@ -228,7 +239,10 @@ def watch(containers_path, dest_path, interval=60, kube_url=None):
                                                             first_run=first_run)
 
             removed_containers = watched_containers - set(existing_containers)
-            remove_containers_job_files(removed_containers, dest_path)
+            removed = remove_containers_job_files(removed_containers, dest_path)
+
+            if removed != len(removed_containers):
+                logger.info('Failed to remove {} job files'.format(len(removed_containers) - removed))
 
             watched_containers.update(existing_containers)
             watched_containers.intersection_update(existing_containers)  # remove old containers!
