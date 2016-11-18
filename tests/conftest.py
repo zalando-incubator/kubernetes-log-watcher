@@ -49,7 +49,7 @@ import pytest
             {
                 'metadata': {
                     'name': 'pod-1',
-                    'labels': {'application': 'app-1', 'version': 'v1'}
+                    'labels': {'application': 'app-1', 'version': 'v1', 'release': '123'}
                 }
             },
             {
@@ -76,7 +76,7 @@ import pytest
             {
                 'app_id': 'app-1', 'app_version': 'v1', 'conatiner_id': 'cont-1', 'pod_name': 'pod-1',
                 'namespace': 'default', 'container_name': 'cont-1', 'log_file_name': 'cont-1-json.log',
-                'container_path': '/mnt/containers/cont-1', 'node_name': 'node-1',
+                'container_path': '/mnt/containers/cont-1', 'node_name': 'node-1', 'release': '123',
             },
             {
                 'app_id': 'app-2', 'app_version': 'v1', 'conatiner_id': 'cont-5', 'pod_name': 'pod-4',
