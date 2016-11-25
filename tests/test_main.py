@@ -139,7 +139,7 @@ def test_sync_containers_job_files(monkeypatch, fx_containers_sync, job_exists, 
 
     monkeypatch.setattr('k8s_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
-    existing = sync_containers_job_files(containers, CONTAINERS_PATH, DEST_PATH, first_run=first_run)
+    existing = sync_containers_job_files(containers, CONTAINERS_PATH, DEST_PATH, first_run=first_run, cluster_id='CL1')
 
     assert existing == res
 
