@@ -79,15 +79,19 @@ fields:
   application_pod: {{ pod_name }}
   application_namespace: {{ namespace }}
 
-  {%if release is defined and release is not none %}
+  {% if cluster_id is defined and cluster_id is not none %}
+  kubernetes_cluster: {{ cluster_id }}
+  {% endif %}
+
+  {% if release is defined and release is not none %}
   application_release: {{ release }}
   {% endif %}
 
-  {%if app_tier is defined and app_tier is not none %}
+  {% if app_tier is defined and app_tier is not none %}
   tierName: {{ app_tier }}
   {% endif %}
 
-  {%if app_name is defined and app_name is not none %}
+  {% if app_name is defined and app_name is not none %}
   appName: {{ app_name }}
   {% endif %}
 

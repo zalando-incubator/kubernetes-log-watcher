@@ -13,9 +13,6 @@ import k8s_log_watcher.agents.appdynamics as appdynamics
 CONTAINERS_PATH = '/mnt/containers/'
 DEST_PATH = '/mnt/jobs/'
 
-APPLICATION_ID_KEY = 'APPLICATION_ID'
-APPLICATION_VERSION_KEY = 'APPLICATION_VERSION'
-
 APP_LABEL = 'application'
 VERSION_LABEL = 'version'
 
@@ -107,7 +104,8 @@ def get_containers(containers_path: str) -> list:
     return containers
 
 
-def sync_containers_job_files(containers, containers_path, dest_path, kube_url=None, first_run=False) -> list:
+def sync_containers_job_files(
+        containers, containers_path, dest_path, kube_url=None, first_run=False, cluster_id=None) -> list:
     """
     Create containers log job/config files for log proccessing agent.
 
@@ -125,6 +123,9 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
 
     :param first_run: If ``True``, then all existing job/config files will be overridden.
     :type first_run: bool
+
+    :param cluster_id: K8S cluster ID. If not set, then it will not be added to job/config files.
+    :type cluster_id: str
 
     :return: List of existing container IDs.
     :rtype: list
@@ -165,6 +166,7 @@ def sync_containers_job_files(containers, containers_path, dest_path, kube_url=N
             kwargs['app_id'] = pod_labels.get(APP_LABEL)
             kwargs['app_version'] = pod_labels.get(VERSION_LABEL)
             kwargs['release'] = pod_labels.get('release')
+            kwargs['cluster_id'] = cluster_id
             kwargs['pod_name'] = pod_name
             kwargs['namespace'] = pod_namespace
             kwargs['container_name'] = container_name
@@ -225,7 +227,7 @@ def remove_containers_job_files(containers, dest_path) -> int:
     return count
 
 
-def watch(containers_path, dest_path, interval=60, kube_url=None):
+def watch(containers_path, dest_path, interval=60, kube_url=None, cluster_id=None):
     """Watch new containers and sync their corresponding log job/config files."""
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
@@ -237,7 +239,7 @@ def watch(containers_path, dest_path, interval=60, kube_url=None):
 
             # Write new job files!
             existing_containers = sync_containers_job_files(containers, containers_path, dest_path, kube_url=kube_url,
-                                                            first_run=first_run)
+                                                            first_run=first_run, cluster_id=cluster_id)
 
             removed_containers = watched_containers - set(existing_containers)
             removed = remove_containers_job_files(removed_containers, dest_path)
@@ -262,14 +264,20 @@ def watch(containers_path, dest_path, interval=60, kube_url=None):
 def main():
     argp = argparse.ArgumentParser(description='K8S containers log watcher.')
     argp.add_argument('-c', '--containers-path', dest='containers_path', default=CONTAINERS_PATH,
-                      help='Containers directory path mounted from the host.')
+                      help='Containers directory path mounted from the host. Can be set via WATCHER_CONTAINERS_PATH '
+                      'env variable.')
 
     argp.add_argument('-d', '--dest', dest='dest_path', default=DEST_PATH,
-                      help='Destination path for log agent job/config files.')
+                      help='Destination path for log agent job/config files. Can be set via WATCHER_DEST_PATH '
+                      'env variable.')
+
+    argp.add_argument('-i', '--cluster-id', dest='cluster_id',
+                      help='Cluster ID. Can be set via WATCHER_CLUSTER_ID env variable.')
 
     argp.add_argument('-u', '--kube-url', dest='kube_url',
-                      help='URL to API proxy service. Service is expected to handle authentication to the K8S cluster.'
-                      'If set, then log-watcher will not use serviceaccount config.')
+                      help='URL to API proxy service. Service is expected to handle authentication to the Kubernetes '
+                      'cluster. If set, then log-watcher will not use serviceaccount config. Can be set via '
+                      'WATCHER_KUBE_URL env variable.')
 
     # TODO: Load required agent dynamically? break hard dependency on appdynamics!
     # argp.add_argument('-a', '--agent-module', dest='agent_module_path', default=None,
@@ -287,6 +295,7 @@ def main():
 
     containers_path = os.environ.get('WATCHER_CONTAINERS_PATH', args.containers_path)
     dest_path = os.environ.get('WATCHER_DEST_PATH', args.dest_path)
+    cluster_id = os.environ.get('WATCHER_CLUSTER_ID', args.cluster_id)
 
     kube_url = os.environ.get('WATCHER_KUBE_URL', args.kube_url)
 
@@ -298,7 +307,7 @@ def main():
     logger.info('\tKube url: {}'.format(kube_url))
     logger.info('\tInterval: {}'.format(interval))
 
-    watch(containers_path, dest_path, interval=interval, kube_url=kube_url)
+    watch(containers_path, dest_path, interval=interval, kube_url=kube_url, cluster_id=cluster_id)
 
 
 if __name__ == '__main__':
