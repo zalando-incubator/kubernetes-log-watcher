@@ -1,0 +1,25 @@
+{
+    "api_key": "{{ scalyr_key }}",
+
+    "implicit_metric_monitor": false,
+    "implicit_agent_process_metrics_monitor": false,
+
+    "server_attributes": {
+        "serverHost": "{{ cluster_id }}"
+    },
+
+    "logs": [
+        {% for log in logs %}
+            {
+                "path": "{{ log.path }}",
+
+                "attributes": {
+                    "parser": "json"{% if log.attributes %},{% endif %}
+                    {% for k, v in log.attributes.items() %}
+                    "{{ k }}": "{{ v }}"{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                }
+            }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+}

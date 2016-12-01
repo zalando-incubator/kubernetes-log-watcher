@@ -1,13 +1,14 @@
 import argparse
 import time
 import os
+import sys
 import logging
 import json
 
-from jinja2 import Environment, FileSystemLoader
-
 import k8s_log_watcher.kube as kube
-import k8s_log_watcher.agents.appdynamics as appdynamics
+from k8s_log_watcher.template_loader import load_template
+
+from k8s_log_watcher.agents import ScalyrAgent, AppDynamicsAgent
 
 
 CONTAINERS_PATH = '/mnt/containers/'
@@ -16,23 +17,18 @@ DEST_PATH = '/mnt/jobs/'
 APP_LABEL = 'application'
 VERSION_LABEL = 'version'
 
+BUILTIN_AGENTS = (
+    'appdynamics',
+    'scalyr',
+)
 
-logger = logging.getLogger(__name__)
-logger.handlers = [logging.StreamHandler()]
+logger = logging.getLogger('k8s_log_watcher')
+logger.addHandler(logging.StreamHandler(stream=sys.stdout))
+logger.setLevel(logging.INFO)
 
-# Job file template.
-# TODO: Adjust to be dynamically set from agent-plugin!
-template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
-env = Environment(loader=FileSystemLoader(template_path))
-
-TPL_JOBFILE = env.get_template('appdynamics.job.jinja2')
 
 # Set via K8S downward API.
 CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
-
-
-def get_job_file_path(dest_path, container_id) -> str:
-    return os.path.join(dest_path, 'container-{}-jobfile.job'.format(container_id))
 
 
 def get_label_value(config, label) -> str:
@@ -105,9 +101,16 @@ def get_containers(containers_path: str) -> list:
 
 
 def sync_containers_job_files(
-        containers, containers_path, dest_path, kube_url=None, first_run=False, cluster_id=None) -> list:
+        agents: list, watched_containers: list, containers: list, containers_path: str, cluster_id: str,
+        kube_url=None) -> list:
     """
-    Create containers log job/config files for log proccessing agent.
+    Sync containers log configs using supplied agents.
+
+    :param agents: List of agents context managers.
+    :type agents: list
+
+    :param watched_containers: List of currently watched containers.
+    :type watched_containers: list
 
     :param containers: List of container configs dicts.
     :type containers: list
@@ -115,26 +118,64 @@ def sync_containers_job_files(
     :param containers_path: Path to mounted containers directory.
     :type containers_path: str
 
-    :param dest_path: Log job/config files directory path.
-    :type dest_path: str
+    :param cluster_id: Kubernetes cluster ID. If not set, then it will not be added to job/config files.
+    :type cluster_id: str
 
     :param kube_url: URL to Kube API proxy.
     :type kube_url: str
 
-    :param first_run: If ``True``, then all existing job/config files will be overridden.
-    :type first_run: bool
+    :return: Existing container IDs and stale container IDs.
+    :rtype: tuple
+    """
+    containers_log_targets = get_new_containers_log_targets(containers, containers_path, cluster_id, kube_url=kube_url)
+
+    existing_container_ids = {c['id'] for c in containers_log_targets}
+    stale_container_ids = get_stale_containers(watched_containers, existing_container_ids)
+
+    for agent in agents:
+        try:
+            with agent:
+                for target in containers_log_targets:
+                    agent.add_log_target(target)
+
+                for container_id in stale_container_ids:
+                    agent.remove_log_target(container_id)
+        except:
+            logger.exception('Failed to sync log config with agent {}'.format(agent.name))
+
+    # 4. return new containers, stale containers
+    return existing_container_ids, stale_container_ids
+
+
+def get_new_containers_log_targets(containers: list, containers_path: str, cluster_id: str, kube_url=None) -> list:
+    """
+    Return list of container log targets. A ``target`` includes:
+        {
+            "id": <container_id>,
+            "kwargs": <template_kwargs>,
+            "pod_labels": <container's pod labels>
+        }
+
+    :param containers: List of container configs dicts.
+    :type containers: list
+
+    :param containers_path: Path to mounted containers directory.
+    :type containers_path: str
 
     :param cluster_id: K8S cluster ID. If not set, then it will not be added to job/config files.
     :type cluster_id: str
 
-    :return: List of existing container IDs.
+    :param kube_url: URL to Kube API proxy.
+    :type kube_url: str
+
+    :return: List of existing container log targets.
     :rtype: list
     """
     pod_map = {}
 
     pod_map[kube.DEFAULT_NAMESPACE] = kube.get_pods(kube_url=kube_url)
 
-    existing_containers = []
+    containers_log_targets = []
 
     for container in containers:
         try:
@@ -160,100 +201,68 @@ def sync_containers_job_files(
 
             kwargs = {}
 
+            kwargs['container_id'] = container['id']
             kwargs['container_path'] = os.path.join(containers_path, container['id'])
             kwargs['log_file_name'] = os.path.basename(container['log_file'])
+            kwargs['log_file_path'] = container['log_file']
 
-            kwargs['app_id'] = pod_labels.get(APP_LABEL)
-            kwargs['app_version'] = pod_labels.get(VERSION_LABEL)
-            kwargs['release'] = pod_labels.get('release')
+            kwargs['application_id'] = pod_labels.get(APP_LABEL)
+            kwargs['application_version'] = pod_labels.get(VERSION_LABEL)
+            kwargs['release'] = pod_labels.get('release', '')
             kwargs['cluster_id'] = cluster_id
             kwargs['pod_name'] = pod_name
             kwargs['namespace'] = pod_namespace
             kwargs['container_name'] = container_name
             kwargs['node_name'] = CLUSTER_NODE_NAME
 
-            if not all([kwargs['app_id'], kwargs['app_version']]):
+            if not all([kwargs['application_id'], kwargs['application_version']]):
                 logger.warning(
-                    ('Labels "{}" and "{}" are required for container({}: {}) in pod({})'
-                     ' ... Skipping!').format(APP_LABEL, VERSION_LABEL, container_name, container['id'], pod_name))
+                    ('Labels "{}" and "{}" are required for container({}: {}) in pod({}) '
+                     '... Skipping!').format(APP_LABEL, VERSION_LABEL, container_name, container['id'], pod_name))
                 continue
 
-            # Get extra vars specific to log proccessing agent.
-            extras = appdynamics.get_template_vars(pod_labels)
-
-            kwargs.update(extras)
-
-            job = TPL_JOBFILE.render(**kwargs)
-
-            job_file = get_job_file_path(dest_path, container['id'])
-
-            # Override file if watcher is restarted.
-            # This could happen if the watcher is updated (i.e. new job template/fixes) while old job files exist.
-            if not os.path.exists(job_file) or first_run:
-                with open(job_file, 'w') as fp:
-                    fp.write(job)
-
-            existing_containers.append(container['id'])
+            containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except:
             logger.exception('Failed to create job/config file for container({})'.format(container['id']))
 
-    return existing_containers
+    return containers_log_targets
 
 
-def remove_containers_job_files(containers, dest_path) -> int:
-    """
-    Remove containers job/log files for all terminated containers.
-
-    :param containers: List of container IDs.
-    :type containers: list
-
-    :param dest_path: Log job/config files directory.
-    :type dest_path: str
-
-    :return: Number of deleted job files.
-    :rtype: int
-    """
-    count = 0
-    for container in containers:
-        job_file = get_job_file_path(dest_path, container)
-
-        try:
-            os.remove(job_file)
-            count += 1
-            logger.debug('Removed container({}) job file'.format(container))
-        except:
-            logger.exception('Failed to remove job file: {}'.format(job_file))
-
-    return count
+def get_stale_containers(watched_containers: list, existing_container_ids: list) -> int:
+    return watched_containers - set(existing_container_ids)
 
 
-def watch(containers_path, dest_path, interval=60, kube_url=None, cluster_id=None):
+def load_agents(agents, cluster_id):
+    agents_map = {
+        'appdynamics': AppDynamicsAgent,
+        'scalyr': ScalyrAgent,
+    }
+
+    return [agents_map[agent.strip(' ')](cluster_id, load_template) for agent in agents]
+
+
+def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None):
     """Watch new containers and sync their corresponding log job/config files."""
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
-    first_run = True
+
+    agents = load_agents(agents_list, cluster_id)
 
     while True:
         try:
             containers = get_containers(containers_path)
 
             # Write new job files!
-            existing_containers = sync_containers_job_files(containers, containers_path, dest_path, kube_url=kube_url,
-                                                            first_run=first_run, cluster_id=cluster_id)
+            existing_container_ids, stale_container_ids = sync_containers_job_files(
+                agents, watched_containers.copy(), containers, containers_path, cluster_id, kube_url=kube_url)
 
-            removed_containers = watched_containers - set(existing_containers)
-            removed = remove_containers_job_files(removed_containers, dest_path)
+            watched_containers.update(existing_container_ids)
+            watched_containers.intersection_update(existing_container_ids)  # remove old containers!
 
-            if removed != len(removed_containers):
-                logger.info('Failed to remove {} job files'.format(len(removed_containers) - removed))
-
-            watched_containers.update(existing_containers)
-            watched_containers.intersection_update(existing_containers)  # remove old containers!
-
+            logger.info('Removed {} stale containers'.format(len(stale_container_ids)))
             logger.info('Watching {} containers'.format(len(watched_containers)))
 
             time.sleep(interval)
-            first_run = False
         except KeyboardInterrupt:
             return
         except:
@@ -267,9 +276,10 @@ def main():
                       help='Containers directory path mounted from the host. Can be set via WATCHER_CONTAINERS_PATH '
                       'env variable.')
 
-    argp.add_argument('-d', '--dest', dest='dest_path', default=DEST_PATH,
-                      help='Destination path for log agent job/config files. Can be set via WATCHER_DEST_PATH '
-                      'env variable.')
+    argp.add_argument('-a', '--agents', dest='agents',
+                      help=('Comma separated string of required log processor agents. '
+                            'Current supported agents are {}. Can be set via WATCHER_AGENTS env '
+                            'variable.').format(BUILTIN_AGENTS))
 
     argp.add_argument('-i', '--cluster-id', dest='cluster_id',
                       help='Cluster ID. Can be set via WATCHER_CLUSTER_ID env variable.')
@@ -279,12 +289,12 @@ def main():
                       'cluster. If set, then log-watcher will not use serviceaccount config. Can be set via '
                       'WATCHER_KUBE_URL env variable.')
 
-    # TODO: Load required agent dynamically? break hard dependency on appdynamics!
-    # argp.add_argument('-a', '--agent-module', dest='agent_module_path', default=None,
+    # TODO: Load required agent dynamically? break hard dependency on builtins!
+    # argp.add_argument('-e', '--extra-agent', dest='extra_agent_path', default=None,
     #                   help='Import path of agent module providing job/config Jinja2 template path and required extra '
     #                        'vars from pod labels.')
 
-    argp.add_argument('-i', '--interval', dest='interval', default=60, type=int, help='Sleep interval for the watcher.')
+    argp.add_argument('--interval', dest='interval', default=60, type=int, help='Sleep interval for the watcher.')
 
     argp.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Verbose output.')
 
@@ -294,8 +304,22 @@ def main():
         logger.setLevel(logging.DEBUG)
 
     containers_path = os.environ.get('WATCHER_CONTAINERS_PATH', args.containers_path)
-    dest_path = os.environ.get('WATCHER_DEST_PATH', args.dest_path)
     cluster_id = os.environ.get('WATCHER_CLUSTER_ID', args.cluster_id)
+    agents_str = os.environ.get('WATCHER_AGENTS', args.agents)
+
+    if not agents_str:
+        logger.error(('No log proccesing agents specified, please specify at least one log processing agent from {}. '
+                      'Terminating watcher!').format(BUILTIN_AGENTS))
+        sys.exit(1)
+
+    agents = set(agents_str.lower().strip(' ').strip(',').split(','))
+
+    diff = agents - set(BUILTIN_AGENTS)
+    if diff:
+        logger.error(('Unsupported agent supplied: {}. '
+                      'Current supported log processing agents are {}. '
+                      'Terminating watcher!').format(diff, BUILTIN_AGENTS))
+        sys.exit(1)
 
     kube_url = os.environ.get('WATCHER_KUBE_URL', args.kube_url)
 
@@ -303,11 +327,11 @@ def main():
 
     logger.info('Loaded configuration:')
     logger.info('\tContainers path: {}'.format(containers_path))
-    logger.info('\tDest path: {}'.format(dest_path))
+    logger.info('\tAgents: {}'.format(agents))
     logger.info('\tKube url: {}'.format(kube_url))
     logger.info('\tInterval: {}'.format(interval))
 
-    watch(containers_path, dest_path, interval=interval, kube_url=kube_url, cluster_id=cluster_id)
+    watch(containers_path, agents, cluster_id, interval=interval, kube_url=kube_url)
 
 
 if __name__ == '__main__':
