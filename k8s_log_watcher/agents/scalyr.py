@@ -59,14 +59,14 @@ class ScalyrAgent:
         log = {
             'path': log_path,
             'attributes': {
-                'application_id': target['kwargs']['application_id'],
-                'application_version': target['kwargs']['application_version'],
-                'cluster_id': target['kwargs']['cluster_id'],
+                'application': target['kwargs']['application_id'],
+                'version': target['kwargs']['application_version'],
+                'cluster': target['kwargs']['cluster_id'],
                 'release': target['kwargs']['release'],
-                'application_pod': target['kwargs']['pod_name'],
-                'application_namespace': target['kwargs']['namespace'],
-                'container_name': target['kwargs']['container_name'],
-                'node_name': target['kwargs']['node_name'],
+                'pod': target['kwargs']['pod_name'],
+                'namespace': target['kwargs']['namespace'],
+                'container': target['kwargs']['container_name'],
+                'node': target['kwargs']['node_name'],
             }
         }
 

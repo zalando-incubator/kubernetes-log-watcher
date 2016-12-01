@@ -1,3 +1,8 @@
+import os
+import shutil
+import subprocess
+import logging
+
 from urllib.parse import urljoin
 
 import pykube
@@ -10,6 +15,17 @@ DEFAULT_NAMESPACE = 'default'
 PODS_URL = 'api/v1/namespaces/{}/pods'
 
 PAUSE_CONTAINER_PREFIX = 'gcr.io/google_containers/pause-'
+
+logger = logging.getLogger('k8s_log_watcher')
+
+
+def update_ca_certificate():
+    try:
+        shutil.copyfile(os.path.join(DEFAULT_SERVICE_ACC, 'ca.crt'), '/usr/local/share/ca-certificates/ca-kube.crt')
+        subprocess.check_call(['update-ca-certificates'])
+    except:
+        logger.exception('Watcher failed to update CA certificates')
+        raise
 
 
 def get_client():

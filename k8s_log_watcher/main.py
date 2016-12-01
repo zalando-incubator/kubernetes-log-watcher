@@ -289,6 +289,10 @@ def main():
                       'cluster. If set, then log-watcher will not use serviceaccount config. Can be set via '
                       'WATCHER_KUBE_URL env variable.')
 
+    argp.add_argument('--updated-certificates', dest='update_certificates', action='store_true', default=False,
+                      help='Call update-ca-certificates for Kubernetes service account ca.crt. Can be set via '
+                           'WATCHER_KUBERNETES_UPDATE_CERTIFICATES env variable.')
+
     # TODO: Load required agent dynamically? break hard dependency on builtins!
     # argp.add_argument('-e', '--extra-agent', dest='extra_agent_path', default=None,
     #                   help='Import path of agent module providing job/config Jinja2 template path and required extra '
@@ -306,6 +310,10 @@ def main():
     containers_path = os.environ.get('WATCHER_CONTAINERS_PATH', args.containers_path)
     cluster_id = os.environ.get('WATCHER_CLUSTER_ID', args.cluster_id)
     agents_str = os.environ.get('WATCHER_AGENTS', args.agents)
+
+    update_certificates = os.environ.get('WATCHER_KUBERNETES_UPDATE_CERTIFICATES', args.update_certificates)
+    if update_certificates:
+        kube.update_ca_certificate()
 
     if not agents_str:
         logger.error(('No log proccesing agents specified, please specify at least one log processing agent from {}. '
