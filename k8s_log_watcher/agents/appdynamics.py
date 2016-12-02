@@ -16,7 +16,7 @@ class AppDynamicsAgent(BaseWatcher):
     def __init__(self, cluster_id: str, load_template):
         self.dest_path = os.environ.get('WATCHER_APPDYNAMICS_DEST_PATH')
 
-        if not all([self.dest_path]):
+        if not self.dest_path:
             raise RuntimeError('AppDyanmics watcher agent initialization failed. Env variable '
                                'WATCHER_APPDYNAMICS_DEST_PATH must be set.')
 
@@ -30,17 +30,21 @@ class AppDynamicsAgent(BaseWatcher):
     def name(self):
         return 'AppDynamics'
 
+    @property
+    def first_run(self):
+        return self._first_run
+
     def add_log_target(self, target: dict):
         """
-        Create our log targets, and pick relevant log fields from ``target['kwargs']``
+        Update our log targets, and pick relevant log fields from ``target['kwargs']``
         """
         log = {}
-        log['template_kwargs'] = target['kwargs']
+        log['kwargs'] = target['kwargs']
         pod_labels = target['pod_labels']
         container_id = target['id']
 
-        log['template_kwargs']['app_name'] = pod_labels.get('appdynamics_app')
-        log['template_kwargs']['app_tier'] = pod_labels.get('appdynamics_tier')
+        log['kwargs']['app_name'] = pod_labels.get('appdynamics_app')
+        log['kwargs']['app_tier'] = pod_labels.get('appdynamics_tier')
 
         log['job_file_path'] = self._get_job_file_path(container_id)
 
@@ -60,7 +64,7 @@ class AppDynamicsAgent(BaseWatcher):
             job_file = log['job_file_path']
             if not os.path.exists(job_file) or self._first_run:
                 try:
-                    job = self.tpl.render(**log['template_kwargs'])
+                    job = self.tpl.render(**log['kwargs'])
 
                     with open(job_file, 'w') as fp:
                         fp.write(job)

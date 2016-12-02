@@ -15,6 +15,10 @@ class BaseWatcher:
     def name(self):
         raise NotImplementedError()
 
+    @property
+    def first_run(self):
+        return True
+
     def __enter__(self):
         self.reset()
 

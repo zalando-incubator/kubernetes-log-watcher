@@ -17,10 +17,10 @@ DEST_PATH = '/mnt/jobs/'
 APP_LABEL = 'application'
 VERSION_LABEL = 'version'
 
-BUILTIN_AGENTS = (
-    'appdynamics',
-    'scalyr',
-)
+BUILTIN_AGENTS = {
+    'appdynamics': AppDynamicsAgent,
+    'scalyr': ScalyrAgent,
+}
 
 logger = logging.getLogger('k8s_log_watcher')
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -100,7 +100,7 @@ def get_containers(containers_path: str) -> list:
     return containers
 
 
-def sync_containers_job_files(
+def sync_containers_log_agents(
         agents: list, watched_containers: list, containers: list, containers_path: str, cluster_id: str,
         kube_url=None) -> list:
     """
@@ -233,12 +233,7 @@ def get_stale_containers(watched_containers: list, existing_container_ids: list)
 
 
 def load_agents(agents, cluster_id):
-    agents_map = {
-        'appdynamics': AppDynamicsAgent,
-        'scalyr': ScalyrAgent,
-    }
-
-    return [agents_map[agent.strip(' ')](cluster_id, load_template) for agent in agents]
+    return [BUILTIN_AGENTS[agent.strip(' ')](cluster_id, load_template) for agent in agents]
 
 
 def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None):
@@ -253,7 +248,7 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None):
             containers = get_containers(containers_path)
 
             # Write new job files!
-            existing_container_ids, stale_container_ids = sync_containers_job_files(
+            existing_container_ids, stale_container_ids = sync_containers_log_agents(
                 agents, watched_containers.copy(), containers, containers_path, cluster_id, kube_url=kube_url)
 
             watched_containers.update(existing_container_ids)
@@ -279,7 +274,7 @@ def main():
     argp.add_argument('-a', '--agents', dest='agents',
                       help=('Comma separated string of required log processor agents. '
                             'Current supported agents are {}. Can be set via WATCHER_AGENTS env '
-                            'variable.').format(BUILTIN_AGENTS))
+                            'variable.').format(list(BUILTIN_AGENTS)))
 
     argp.add_argument('-i', '--cluster-id', dest='cluster_id',
                       help='Cluster ID. Can be set via WATCHER_CLUSTER_ID env variable.')
@@ -317,7 +312,7 @@ def main():
 
     if not agents_str:
         logger.error(('No log proccesing agents specified, please specify at least one log processing agent from {}. '
-                      'Terminating watcher!').format(BUILTIN_AGENTS))
+                      'Terminating watcher!').format(list(BUILTIN_AGENTS)))
         sys.exit(1)
 
     agents = set(agents_str.lower().strip(' ').strip(',').split(','))

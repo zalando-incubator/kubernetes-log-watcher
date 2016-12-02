@@ -25,11 +25,11 @@ class ScalyrAgent(BaseWatcher):
             raise RuntimeError('Scalyr watcher agent initialization failed. Env variables WATCHER_SCALYR_API_KEY and '
                                'WATCHER_SCALYR_DEST_PATH must be set.')
 
-        self.scalyr_config_path = os.environ.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
-        if not os.path.exists(os.path.dirname(self.scalyr_config_path)):
+        self.config_path = os.environ.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
+        if not os.path.exists(os.path.dirname(self.config_path)):
             raise RuntimeError(
                 'Scalyr watcher agent initialization failed. {} config path does not exist.'.format(
-                    self.scalyr_config_path))
+                    self.config_path))
 
         self.cluster_id = cluster_id
         self.tpl = load_template(TPL_NAME)
@@ -40,6 +40,10 @@ class ScalyrAgent(BaseWatcher):
     @property
     def name(self):
         return 'Scalyr'
+
+    @property
+    def first_run(self):
+        return self._first_run
 
     def add_log_target(self, target: dict):
         """
@@ -89,24 +93,24 @@ class ScalyrAgent(BaseWatcher):
             try:
                 config = self.tpl.render(**kwargs)
 
-                with open(self.scalyr_config_path, 'w') as fp:
+                with open(self.config_path, 'w') as fp:
                     fp.write(config)
             except:
                 logger.exception('Scalyr watcher agent failed to write config file.')
             else:
                 self._first_run = False
-                logger.info('Scalyr watcher agent updated config file {}'.format(self.scalyr_config_path))
+                logger.info('Scalyr watcher agent updated config file {}'.format(self.config_path))
 
     def reset(self):
         self.logs = []
         self.kwargs = {}
 
-    def _adjust_target_log_path(self, container_info):
+    def _adjust_target_log_path(self, target):
         try:
-            src_log_path = container_info['kwargs'].get('log_file_path')
-            application = container_info['kwargs'].get('application_id')
-            version = container_info['kwargs'].get('application_version')
-            container_id = container_info['id']
+            src_log_path = target['kwargs'].get('log_file_path')
+            application = target['kwargs'].get('application_id')
+            version = target['kwargs'].get('application_version')
+            container_id = target['id']
 
             if not os.path.exists(src_log_path):
                 return None
@@ -131,7 +135,7 @@ class ScalyrAgent(BaseWatcher):
         targets = set()
 
         try:
-            with open(self.scalyr_config_path) as fp:
+            with open(self.config_path) as fp:
                 config = json.load(fp)
                 targets = {log.get('path') for log in config.get('logs', [])}
         except:
