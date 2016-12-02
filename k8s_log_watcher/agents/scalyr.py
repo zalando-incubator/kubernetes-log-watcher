@@ -6,6 +6,8 @@ import shutil
 import logging
 import json
 
+from k8s_log_watcher.agents.base import BaseWatcher
+
 
 TPL_NAME = 'scalyr.json.jinja2'
 
@@ -14,7 +16,7 @@ SCALYR_CONFIG_PATH = '/etc/scalyr-agent-2/agent.json'
 logger = logging.getLogger('k8s_log_watcher')
 
 
-class ScalyrAgent:
+class ScalyrAgent(BaseWatcher):
     def __init__(self, cluster_id: str, load_template):
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
@@ -38,13 +40,6 @@ class ScalyrAgent:
     @property
     def name(self):
         return 'Scalyr'
-
-    def __enter__(self):
-        self._reset()
-
-    def __exit__(self, *exc):
-        self.flush()
-        self._reset()
 
     def add_log_target(self, target: dict):
         """
@@ -102,6 +97,10 @@ class ScalyrAgent:
                 self._first_run = False
                 logger.info('Scalyr watcher agent updated config file {}'.format(self.scalyr_config_path))
 
+    def reset(self):
+        self.logs = []
+        self.kwargs = {}
+
     def _adjust_target_log_path(self, container_info):
         try:
             src_log_path = container_info['kwargs'].get('log_file_path')
@@ -127,10 +126,6 @@ class ScalyrAgent:
         except:
             logger.exception('Scalyr watcher agent Failed to adjust log path.')
             return None
-
-    def _reset(self):
-        self.logs = []
-        self.kwargs = {}
 
     def _get_current_log_paths(self) -> list:
         targets = set()

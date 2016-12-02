@@ -5,12 +5,14 @@ appdynamics controller.
 import os
 import logging
 
+from k8s_log_watcher.agents.base import BaseWatcher
+
 TPL_NAME = 'appdynamics.job.jinja2'
 
 logger = logging.getLogger('k8s_log_watcher')
 
 
-class AppDynamicsAgent:
+class AppDynamicsAgent(BaseWatcher):
     def __init__(self, cluster_id: str, load_template):
         self.dest_path = os.environ.get('WATCHER_APPDYNAMICS_DEST_PATH')
 
@@ -27,13 +29,6 @@ class AppDynamicsAgent:
     @property
     def name(self):
         return 'AppDynamics'
-
-    def __enter__(self):
-        self._reset()
-
-    def __exit__(self, *exc):
-        self.flush()
-        self._reset()
 
     def add_log_target(self, target: dict):
         """
@@ -77,8 +72,8 @@ class AppDynamicsAgent:
 
         self._first_run = False
 
+    def reset(self):
+        self.logs = []
+
     def _get_job_file_path(self, container_id):
         return os.path.join(self.dest_path, 'container-{}-jobfile.job'.format(container_id))
-
-    def _reset(self):
-        self.logs = []
