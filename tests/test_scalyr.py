@@ -36,7 +36,7 @@ def patch_env(monkeypatch, env):
         monkeypatch.setenv(k, v)
 
     if 'WATCHER_SCALYR_CONFIG_PATH' not in env:
-        monkeypatch.delenv('WATCHER_SCALYR_CONFIG_PATH')
+        monkeypatch.delenv('WATCHER_SCALYR_CONFIG_PATH', raising=False)
 
 
 def patch_os(monkeypatch):

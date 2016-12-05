@@ -223,13 +223,13 @@ def get_new_containers_log_targets(containers: list, containers_path: str, clust
 
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except:
-            logger.exception('Failed to create job/config file for container({})'.format(container['id']))
+            logger.exception('Failed to create log target for container({})'.format(container['id']))
 
     return containers_log_targets
 
 
-def get_stale_containers(watched_containers: list, existing_container_ids: list) -> int:
-    return watched_containers - set(existing_container_ids)
+def get_stale_containers(watched_containers: set, existing_container_ids: list) -> int:
+    return set(watched_containers) - set(existing_container_ids)
 
 
 def load_agents(agents, cluster_id):

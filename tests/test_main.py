@@ -4,7 +4,10 @@ import pytest
 
 from mock import MagicMock, call
 
-from k8s_log_watcher.main import (get_label_value, get_containers, sync_containers_log_agents)
+from k8s_log_watcher.template_loader import load_template
+from k8s_log_watcher.main import (
+    get_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
+    get_new_containers_log_targets)
 
 from .conftest import CLUSTER_ID
 
@@ -138,3 +141,44 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
         remove_calls = [call(c) for c in stale_containers]
         agent1.remove_log_target.assert_has_calls(remove_calls, any_order=True)
         agent2.remove_log_target.assert_has_calls(remove_calls, any_order=True)
+
+
+def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
+    containers, pods, result, _ = fx_containers_sync
+
+    get_pods = MagicMock()
+    get_pods.return_value = pods
+
+    monkeypatch.setattr('k8s_log_watcher.kube.get_pods', get_pods)
+    monkeypatch.setattr('k8s_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
+
+    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID)
+
+    assert targets == result
+
+
+@pytest.mark.parametrize(
+    'watched,existing,result',
+    (
+        ([1, 2, 3], [1, 2, 3], set()),
+        ([1], [1, 2, 3], set()),
+        ([4], [1, 2, 3], {4}),
+    )
+)
+def test_get_stale_containers(watched, existing, result):
+    assert get_stale_containers(watched, existing) == result
+
+
+def test_load_agents(monkeypatch):
+    agent1 = MagicMock()
+    agent2 = MagicMock()
+
+    builtins = {
+        'agent1': agent1,
+        'agent2': agent2,
+    }
+    monkeypatch.setattr('k8s_log_watcher.main.BUILTIN_AGENTS', builtins)
+
+    load_agents(['agent1', 'agent2'], CLUSTER_ID)
+
+    agent1.assert_called_with(CLUSTER_ID, load_template)
