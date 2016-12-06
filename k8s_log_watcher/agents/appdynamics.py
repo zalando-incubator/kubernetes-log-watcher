@@ -26,6 +26,8 @@ class AppDynamicsAgent(BaseWatcher):
         self.logs = []
         self._first_run = True
 
+        logger.info('AppDynamics watcher agent initialization complete!')
+
     @property
     def name(self):
         return 'AppDynamics'

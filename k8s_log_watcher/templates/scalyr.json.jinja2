@@ -21,5 +21,14 @@
                 }
             }{% if not loop.last %},{% endif %}
         {% endfor %}
+    ],
+    "monitors": [
+        {% if monitor_syslog %}
+        {
+            "module": "scalyr_agent.builtin_monitors.syslog_monitor",
+            "protocols": "tcp:{{ monitor_syslog }}",
+            "accept_remote_connections": true
+        }
+        {% endif %}
     ]
 }

@@ -31,11 +31,15 @@ class ScalyrAgent(BaseWatcher):
                 'Scalyr watcher agent initialization failed. {} config path does not exist.'.format(
                     self.config_path))
 
+        self.monitor_syslog = os.environ.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
+
         self.cluster_id = cluster_id
         self.tpl = load_template(TPL_NAME)
         self.logs = []
         self.kwargs = {}
         self._first_run = True
+
+        logger.info('Scalyr watcher agent initialization complete!')
 
     @property
     def name(self):
@@ -84,6 +88,7 @@ class ScalyrAgent(BaseWatcher):
             'scalyr_key': self.api_key,
             'cluster_id': self.cluster_id,
             'logs': self.logs,
+            'monitor_syslog': self.monitor_syslog,
         }
 
         current_paths = self._get_current_log_paths()

@@ -138,6 +138,7 @@ def fx_containers_sync(request):
         'kwargs': {
             'scalyr_key': SCALYR_KEY,
             'cluster_id': CLUSTER_ID,
+            'monitor_syslog': 0,
             'logs': [
                 {
                     'path': os.path.join(SCALYR_DEST_PATH, 'container-1', 'app-1-v1.log'),

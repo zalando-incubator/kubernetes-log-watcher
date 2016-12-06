@@ -1,11 +1,12 @@
 import os
+import json
 
 import pytest
 
 from mock import MagicMock
 
 from k8s_log_watcher.template_loader import load_template
-from k8s_log_watcher.agents.scalyr import ScalyrAgent, SCALYR_CONFIG_PATH
+from k8s_log_watcher.agents.scalyr import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME
 
 from .conftest import CLUSTER_ID
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH
@@ -19,7 +20,17 @@ ENVS = (
     {
         'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
     },
+    {
+        'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
+        'WATCHER_SCALYR_SYSLOG_TCP_PORT': '7070',
+    },
 )
+
+KWARGS_KEYS = ('scalyr_key', 'cluster_id', 'logs', 'monitor_syslog')
+
+
+def assert_fx_sanity(kwargs):
+    assert set(KWARGS_KEYS) == set(kwargs.keys())
 
 
 def assert_agent(agent, env):
@@ -28,6 +39,7 @@ def assert_agent(agent, env):
     assert agent.api_key == env.get('WATCHER_SCALYR_API_KEY')
     assert agent.dest_path == env.get('WATCHER_SCALYR_DEST_PATH')
     assert agent.config_path == env.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
+    assert agent.monitor_syslog == env.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
     assert agent.cluster_id == CLUSTER_ID
 
 
@@ -68,6 +80,11 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
 
     target = fx_scalyr['target']
     kwargs = fx_scalyr['kwargs']
+
+    assert_fx_sanity(kwargs)
+
+    # adjust kwargs
+    kwargs['monitor_syslog'] = env.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
 
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
@@ -126,6 +143,11 @@ def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
     target = fx_scalyr['target']
     kwargs = fx_scalyr['kwargs']
 
+    assert_fx_sanity(kwargs)
+
+    # adjust kwargs
+    kwargs['monitor_syslog'] = env.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
+
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
     monkeypatch.setattr('os.path.exists', exists)
@@ -165,6 +187,11 @@ def test_flush_failure(monkeypatch, env, fx_scalyr):
 
     target = fx_scalyr['target']
     kwargs = fx_scalyr['kwargs']
+
+    assert_fx_sanity(kwargs)
+
+    # adjust kwargs
+    kwargs['monitor_syslog'] = env.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
 
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
@@ -266,3 +293,56 @@ def test_remove_log_target(monkeypatch, env, exc):
     agent.remove_log_target(container_id)
 
     rmtree.assert_called_with(os.path.join(agent.dest_path, container_id))
+
+
+@pytest.mark.parametrize(
+    'kwargs,expected',
+    (
+        (
+            {'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_syslog': 0, 'logs': []},
+            {
+                'api_key': 'scalyr-key-123',
+                'implicit_metric_monitor': False,
+                'implicit_agent_process_metrics_monitor': False,
+                'server_attributes': {'serverHost': 'kube-cluster'},
+                'logs': [], 'monitors': []
+            },
+        ),
+        (
+            {'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_syslog': 7070, 'logs': []},
+            {
+                'api_key': 'scalyr-key-123',
+                'implicit_metric_monitor': False,
+                'implicit_agent_process_metrics_monitor': False,
+                'server_attributes': {'serverHost': 'kube-cluster'},
+                'logs': [],
+                'monitors': [
+                    {
+                        'accept_remote_connections': True,
+                        'module': 'scalyr_agent.builtin_monitors.syslog_monitor',
+                        'protocols': 'tcp:7070'
+                    }
+                ]
+            },
+        ),
+        (
+            {
+                'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_syslog': 0,
+                'logs': [{'path': '/p1', 'attributes': {'a1': 'v1'}}]
+            },
+            {
+                'api_key': 'scalyr-key-123',
+                'implicit_metric_monitor': False,
+                'implicit_agent_process_metrics_monitor': False,
+                'server_attributes': {'serverHost': 'kube-cluster'},
+                'logs': [{'attributes': {'a1': 'v1', 'parser': 'json'}, 'path': '/p1'}], 'monitors': []
+            },
+        ),
+    )
+)
+def test_tpl_render(monkeypatch, kwargs, expected):
+    tpl = load_template(TPL_NAME)
+
+    config = tpl.render(**kwargs)
+
+    assert json.loads(config) == expected
