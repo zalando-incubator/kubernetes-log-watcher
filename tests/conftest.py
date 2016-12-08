@@ -8,7 +8,7 @@ APPDYNAMICS_DEST_PATH = '/var/log/watcher/'
 
 SCALYR_DEST_PATH = '/var/log/watcher/'
 SCALYR_KEY = 'scalyr-key-123'
-
+SCALYR_JOURNALD_DEFAULTS = {'journal_path': None, 'attributes': {}, 'extra_fields': {}}
 
 TARGET = {
     'id': 'container-1',
@@ -138,7 +138,7 @@ def fx_containers_sync(request):
         'kwargs': {
             'scalyr_key': SCALYR_KEY,
             'cluster_id': CLUSTER_ID,
-            'monitor_syslog': 0,
+            'monitor_journald': None,
             'logs': [
                 {
                     'path': os.path.join(SCALYR_DEST_PATH, 'container-1', 'app-1-v1.log'),

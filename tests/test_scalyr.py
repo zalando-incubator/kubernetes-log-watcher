@@ -9,7 +9,7 @@ from k8s_log_watcher.template_loader import load_template
 from k8s_log_watcher.agents.scalyr import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME
 
 from .conftest import CLUSTER_ID
-from .conftest import SCALYR_KEY, SCALYR_DEST_PATH
+from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS
 
 
 ENVS = (
@@ -22,11 +22,11 @@ ENVS = (
     },
     {
         'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
-        'WATCHER_SCALYR_SYSLOG_TCP_PORT': '7070',
+        'WATCHER_SCALYR_JOURNALD': 'true',
     },
 )
 
-KWARGS_KEYS = ('scalyr_key', 'cluster_id', 'logs', 'monitor_syslog')
+KWARGS_KEYS = ('scalyr_key', 'cluster_id', 'logs', 'monitor_journald')
 
 
 def assert_fx_sanity(kwargs):
@@ -39,7 +39,10 @@ def assert_agent(agent, env):
     assert agent.api_key == env.get('WATCHER_SCALYR_API_KEY')
     assert agent.dest_path == env.get('WATCHER_SCALYR_DEST_PATH')
     assert agent.config_path == env.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
-    assert agent.monitor_syslog == env.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
+
+    journald = env.get('WATCHER_SCALYR_JOURNALD')
+    assert agent.journald == (SCALYR_JOURNALD_DEFAULTS if journald else None)
+
     assert agent.cluster_id == CLUSTER_ID
 
 
@@ -84,7 +87,7 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_syslog'] = env.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
+    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_JOURNALD_DEFAULTS
 
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
@@ -146,7 +149,7 @@ def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_syslog'] = env.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
+    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_JOURNALD_DEFAULTS
 
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
@@ -191,7 +194,7 @@ def test_flush_failure(monkeypatch, env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_syslog'] = env.get('WATCHER_SCALYR_SYSLOG_TCP_PORT', 0)
+    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_JOURNALD_DEFAULTS
 
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
@@ -299,7 +302,7 @@ def test_remove_log_target(monkeypatch, env, exc):
     'kwargs,expected',
     (
         (
-            {'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_syslog': 0, 'logs': []},
+            {'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_journald': 0, 'logs': []},
             {
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
@@ -309,7 +312,10 @@ def test_remove_log_target(monkeypatch, env, exc):
             },
         ),
         (
-            {'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_syslog': 7070, 'logs': []},
+            {
+                'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'logs': [],
+                'monitor_journald': {'journal_path': None, 'attributes': {}, 'extra_fields': {}},
+            },
             {
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
@@ -318,24 +324,35 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'logs': [],
                 'monitors': [
                     {
-                        'accept_remote_connections': True,
-                        'module': 'scalyr_agent.builtin_monitors.syslog_monitor',
-                        'protocols': 'tcp:7070'
+                        'module': 'scalyr_agent.builtin_monitors.journald_monitor',
                     }
                 ]
             },
         ),
         (
             {
-                'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_syslog': 0,
-                'logs': [{'path': '/p1', 'attributes': {'a1': 'v1'}}]
+                'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID,
+                'logs': [{'path': '/p1', 'attributes': {'a1': 'v1'}}],
+                'monitor_journald': {
+                    'journal_path': '/var/log/journal',
+                    'attributes': {'cluster': CLUSTER_ID},
+                    'extra_fields': {'_COMM': 'command'}
+                },
             },
             {
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {'serverHost': 'kube-cluster'},
-                'logs': [{'attributes': {'a1': 'v1', 'parser': 'json'}, 'path': '/p1'}], 'monitors': []
+                'logs': [{'attributes': {'a1': 'v1', 'parser': 'json'}, 'path': '/p1'}],
+                'monitors': [
+                    {
+                        'module': 'scalyr_agent.builtin_monitors.journald_monitor',
+                        'journal_path': '/var/log/journal',
+                        'attributes': {'cluster': CLUSTER_ID},
+                        'extra_fields': {'_COMM': 'command'}
+                    }
+                ]
             },
         ),
     )

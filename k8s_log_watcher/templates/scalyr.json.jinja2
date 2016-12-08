@@ -23,11 +23,29 @@
         {% endfor %}
     ],
     "monitors": [
-        {% if monitor_syslog %}
+        {% if monitor_journald %}
         {
-            "module": "scalyr_agent.builtin_monitors.syslog_monitor",
-            "protocols": "tcp:{{ monitor_syslog }}",
-            "accept_remote_connections": true
+            {% if monitor_journald.journal_path %}
+            "journal_path": "{{ monitor_journald.journal_path }}",
+            {% endif %}
+
+            {% if monitor_journald.attributes %}
+            "attributes": {
+                {% for k, v in monitor_journald.attributes.items() %}
+                "{{ k }}": "{{ v }}"{% if not loop.last %},{% endif %}
+                {% endfor %}
+            },
+            {% endif %}
+
+            {% if monitor_journald.extra_fields %}
+            "extra_fields": {
+                {% for k, v in monitor_journald.extra_fields.items() %}
+                "{{ k }}": "{{ v }}"{% if not loop.last %},{% endif %}
+                {% endfor %}
+            },
+            {% endif %}
+
+            "module": "scalyr_agent.builtin_monitors.journald_monitor"
         }
         {% endif %}
     ]
