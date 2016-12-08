@@ -4,9 +4,12 @@ import pytest
 
 from mock import MagicMock, call
 
-from k8s_log_watcher.main import (get_job_file_path, get_label_value, get_containers, remove_containers_job_files,
-                                  sync_containers_job_files)
-from k8s_log_watcher.main import TPL_JOBFILE
+from k8s_log_watcher.template_loader import load_template
+from k8s_log_watcher.main import (
+    get_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
+    get_new_containers_log_targets)
+
+from .conftest import CLUSTER_ID
 
 
 CONFIG = {
@@ -21,15 +24,6 @@ CONFIG = {
 
 CONTAINERS_PATH = '/mnt/containers/'
 DEST_PATH = '/mnt/jobs/'
-
-
-def test_get_jobfile_path(monkeypatch):
-    dest_path = '/tmp/jobs'
-    container_id = '123'
-
-    job_file = get_job_file_path(dest_path, container_id)
-
-    assert '/tmp/jobs/container-123-jobfile.job' == job_file
 
 
 @pytest.mark.parametrize(
@@ -100,55 +94,91 @@ def test_get_containers(monkeypatch, walk, config, res, exc):
         mock_load.assert_called()
 
 
-@pytest.mark.parametrize('exc', (False, True))
-def test_remove_containers_job_files(monkeypatch, exc):
-    containers = [1, 2, 3]
-    res = 3
-
-    remove = MagicMock()
-    if exc:
-        remove.side_effect = [None, None, Exception]
-        res = 2
-    monkeypatch.setattr('os.remove', remove)
-
-    count = remove_containers_job_files(containers, DEST_PATH)
-
-    assert count == res
-
-    calls = [call(get_job_file_path(DEST_PATH, c)) for c in containers]
-    remove.assert_has_calls(calls, any_order=True)
-
-
-@pytest.mark.parametrize('job_exists,first_run', ((True, True), (True, False), (False, True), (False, False)))
-def test_sync_containers_job_files(monkeypatch, fx_containers_sync, job_exists, first_run):
-    containers, pods, kwargs, res = fx_containers_sync
+@pytest.mark.parametrize(
+    'watched_containers',
+    (
+        set(),
+        {'cont-5'},
+        {'cont-4'},  # stale
+    )
+)
+def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containers_sync):
+    containers, pods, targets, result = fx_containers_sync
 
     get_pods = MagicMock()
     get_pods.return_value = pods
 
-    mock_open = MagicMock()
-    mock_fp = MagicMock()
-    mock_open.return_value.__enter__.return_value = mock_fp
-
-    exists = MagicMock()
-    exists.return_value = job_exists
-
     monkeypatch.setattr('k8s_log_watcher.kube.get_pods', get_pods)
-    monkeypatch.setattr('builtins.open', mock_open)
-    monkeypatch.setattr('os.path.exists', exists)
-
     monkeypatch.setattr('k8s_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
-    existing = sync_containers_job_files(containers, CONTAINERS_PATH, DEST_PATH, first_run=first_run, cluster_id='CL1')
+    stale_containers = watched_containers - result
+    if watched_containers:
+        result = result - watched_containers
+        targets = [t for t in targets if t['id'] not in watched_containers]
 
-    assert existing == res
+    get_targets = MagicMock()
+    get_targets.return_value = targets
+    get_stale = MagicMock()
+    get_stale.return_value = stale_containers
+    monkeypatch.setattr('k8s_log_watcher.main.get_new_containers_log_targets', get_targets)
+    monkeypatch.setattr('k8s_log_watcher.main.get_stale_containers', get_stale)
 
-    exists_calls = [call(get_job_file_path(DEST_PATH, c)) for c in res]
-    exists.assert_has_calls(exists_calls, any_order=True)
+    agent1 = MagicMock()
+    agent2 = MagicMock()
+    agents = [agent1, agent2]
 
-    if first_run or not job_exists:
-        open_calls = [call(get_job_file_path(DEST_PATH, c), 'w') for c in res]
-        mock_open.assert_has_calls(open_calls, any_order=True)
+    existing, stale = sync_containers_log_agents(agents, watched_containers, containers, CONTAINERS_PATH, CLUSTER_ID)
 
-        write_calls = [call(TPL_JOBFILE.render(k)) for k in kwargs]
-        mock_fp.write.assert_has_calls(write_calls, any_order=True)
+    assert existing == result
+    assert stale == stale_containers
+
+    add_calls = [call(target) for target in targets]
+
+    agent1.add_log_target.assert_has_calls(add_calls, any_order=True)
+    agent2.add_log_target.assert_has_calls(add_calls, any_order=True)
+
+    if stale_containers:
+        remove_calls = [call(c) for c in stale_containers]
+        agent1.remove_log_target.assert_has_calls(remove_calls, any_order=True)
+        agent2.remove_log_target.assert_has_calls(remove_calls, any_order=True)
+
+
+def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
+    containers, pods, result, _ = fx_containers_sync
+
+    get_pods = MagicMock()
+    get_pods.return_value = pods
+
+    monkeypatch.setattr('k8s_log_watcher.kube.get_pods', get_pods)
+    monkeypatch.setattr('k8s_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
+
+    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID)
+
+    assert targets == result
+
+
+@pytest.mark.parametrize(
+    'watched,existing,result',
+    (
+        ([1, 2, 3], [1, 2, 3], set()),
+        ([1], [1, 2, 3], set()),
+        ([4], [1, 2, 3], {4}),
+    )
+)
+def test_get_stale_containers(watched, existing, result):
+    assert get_stale_containers(watched, existing) == result
+
+
+def test_load_agents(monkeypatch):
+    agent1 = MagicMock()
+    agent2 = MagicMock()
+
+    builtins = {
+        'agent1': agent1,
+        'agent2': agent2,
+    }
+    monkeypatch.setattr('k8s_log_watcher.main.BUILTIN_AGENTS', builtins)
+
+    load_agents(['agent1', 'agent2'], CLUSTER_ID)
+
+    agent1.assert_called_with(CLUSTER_ID, load_template)
