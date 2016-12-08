@@ -42,6 +42,7 @@ class ScalyrAgent(BaseWatcher):
                 'attributes': json.loads(attributes_str),
                 'extra_fields': json.loads(extra_fields_str),
             }
+            self.journald['attributes']['cluster'] = cluster_id
 
         self.cluster_id = cluster_id
         self.tpl = load_template(TPL_NAME)

@@ -8,7 +8,7 @@ APPDYNAMICS_DEST_PATH = '/var/log/watcher/'
 
 SCALYR_DEST_PATH = '/var/log/watcher/'
 SCALYR_KEY = 'scalyr-key-123'
-SCALYR_JOURNALD_DEFAULTS = {'journal_path': None, 'attributes': {}, 'extra_fields': {}}
+SCALYR_JOURNALD_DEFAULTS = {'journal_path': None, 'attributes': {'cluster': CLUSTER_ID}, 'extra_fields': {}}
 
 TARGET = {
     'id': 'container-1',
