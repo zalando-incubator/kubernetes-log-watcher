@@ -4,8 +4,8 @@ import pytest
 
 from mock import MagicMock
 
-from k8s_log_watcher.template_loader import load_template
-from k8s_log_watcher.agents.appdynamics import AppDynamicsAgent
+from kube_log_watcher.template_loader import load_template
+from kube_log_watcher.agents.appdynamics import AppDynamicsAgent
 
 from .conftest import CLUSTER_ID, APPDYNAMICS_DEST_PATH
 

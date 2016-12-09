@@ -5,11 +5,11 @@ appdynamics controller.
 import os
 import logging
 
-from k8s_log_watcher.agents.base import BaseWatcher
+from kube_log_watcher.agents.base import BaseWatcher
 
 TPL_NAME = 'appdynamics.job.jinja2'
 
-logger = logging.getLogger('k8s_log_watcher')
+logger = logging.getLogger('kube_log_watcher')
 
 
 class AppDynamicsAgent(BaseWatcher):

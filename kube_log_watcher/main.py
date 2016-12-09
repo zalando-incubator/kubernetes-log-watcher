@@ -5,10 +5,10 @@ import sys
 import logging
 import json
 
-import k8s_log_watcher.kube as kube
-from k8s_log_watcher.template_loader import load_template
+import kube_log_watcher.kube as kube
+from kube_log_watcher.template_loader import load_template
 
-from k8s_log_watcher.agents import ScalyrAgent, AppDynamicsAgent
+from kube_log_watcher.agents import ScalyrAgent, AppDynamicsAgent
 
 
 CONTAINERS_PATH = '/mnt/containers/'
@@ -22,12 +22,12 @@ BUILTIN_AGENTS = {
     'scalyr': ScalyrAgent,
 }
 
-logger = logging.getLogger('k8s_log_watcher')
+logger = logging.getLogger('kube_log_watcher')
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 logger.setLevel(logging.INFO)
 
 
-# Set via K8S downward API.
+# Set via kubernetes downward API.
 CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
 
 
@@ -162,7 +162,7 @@ def get_new_containers_log_targets(containers: list, containers_path: str, clust
     :param containers_path: Path to mounted containers directory.
     :type containers_path: str
 
-    :param cluster_id: K8S cluster ID. If not set, then it will not be added to job/config files.
+    :param cluster_id: kubernetes cluster ID. If not set, then it will not be added to job/config files.
     :type cluster_id: str
 
     :param kube_url: URL to Kube API proxy.
@@ -266,7 +266,7 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None):
 
 
 def main():
-    argp = argparse.ArgumentParser(description='K8S containers log watcher.')
+    argp = argparse.ArgumentParser(description='kubernetes containers log watcher.')
     argp.add_argument('-c', '--containers-path', dest='containers_path', default=CONTAINERS_PATH,
                       help='Containers directory path mounted from the host. Can be set via WATCHER_CONTAINERS_PATH '
                       'env variable.')

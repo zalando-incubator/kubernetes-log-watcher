@@ -3,6 +3,7 @@ import os
 import pytest
 
 CLUSTER_ID = 'kube-cluster'
+NODE = 'node-1'
 
 APPDYNAMICS_DEST_PATH = '/var/log/watcher/'
 
@@ -20,7 +21,7 @@ TARGET = {
         'pod_name': 'pod-1',
         'namespace': 'default',
         'container_name': 'app-1-container-1',
-        'node_name': 'node-1',
+        'node_name': NODE,
         'log_file_path': '/mn/containers/container-1/container-1-json.log',
         'container_id': 'container-1',
         'container_path': '/mnt/containers/container-1',
@@ -107,7 +108,7 @@ TARGET = {
                 'pod_labels': {'application': 'app-1', 'version': 'v1', 'release': '123'},
                 'id': 'cont-1',
                 'kwargs': {
-                    'pod_name': 'pod-1', 'release': '123', 'namespace': 'default', 'node_name': 'node-1',
+                    'pod_name': 'pod-1', 'release': '123', 'namespace': 'default', 'node_name': NODE,
                     'container_id': 'cont-1', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-1-json.log',
                     'application_id': 'app-1', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-1',
                     'log_file_path': '/mnt/containers/cont-1/cont-1-json.log', 'container_name': 'cont-1'
@@ -117,7 +118,7 @@ TARGET = {
                 'pod_labels': {'application': 'app-2', 'version': 'v1'},
                 'id': 'cont-5',
                 'kwargs': {
-                    'pod_name': 'pod-4', 'release': '', 'namespace': 'kube', 'node_name': 'node-1',
+                    'pod_name': 'pod-4', 'release': '', 'namespace': 'kube', 'node_name': NODE,
                     'container_id': 'cont-5', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-5-json.log',
                     'application_id': 'app-2', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-5',
                     'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5'
@@ -150,7 +151,7 @@ def fx_containers_sync(request):
                         'pod': 'pod-1',
                         'namespace': 'default',
                         'container': 'app-1-container-1',
-                        'node': 'node-1',
+                        'node': NODE,
                     }
                 }
             ]
@@ -172,7 +173,7 @@ def fx_scalyr(request):
             'pod_name': 'pod-1',
             'namespace': 'default',
             'container_name': 'app-1-container-1',
-            'node_name': 'node-1',
+            'node_name': NODE,
             'log_file_path': '/mn/containers/container-1/container-1-json.log',
             'container_id': 'container-1',
             'container_path': '/mnt/containers/container-1',

@@ -6,14 +6,14 @@ import shutil
 import logging
 import json
 
-from k8s_log_watcher.agents.base import BaseWatcher
+from kube_log_watcher.agents.base import BaseWatcher
 
 
 TPL_NAME = 'scalyr.json.jinja2'
 
 SCALYR_CONFIG_PATH = '/etc/scalyr-agent-2/agent.json'
 
-logger = logging.getLogger('k8s_log_watcher')
+logger = logging.getLogger('kube_log_watcher')
 
 
 class ScalyrAgent(BaseWatcher):
@@ -85,6 +85,10 @@ class ScalyrAgent(BaseWatcher):
         }
 
         self.logs.append(log)
+
+        # Set journald node attribute
+        if self.journald and 'node' not in self.journald['attributes']:
+            self.journald['attributes']['node'] = target['kwargs']['node_name']
 
     def remove_log_target(self, container_id: str):
         container_dir = os.path.join(self.dest_path, container_id)

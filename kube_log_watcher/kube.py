@@ -16,7 +16,7 @@ PODS_URL = 'api/v1/namespaces/{}/pods'
 
 PAUSE_CONTAINER_PREFIX = 'gcr.io/google_containers/pause-'
 
-logger = logging.getLogger('k8s_log_watcher')
+logger = logging.getLogger('kube_log_watcher')
 
 
 def update_ca_certificate():
@@ -35,9 +35,10 @@ def get_client():
 
 def get_pods(kube_url=None, namespace=DEFAULT_NAMESPACE) -> list:
     """
-    Return list of pods in cluster. If ``kube_url`` is not ``None`` then K8S service account config won't be used.
+    Return list of pods in cluster.
+    If ``kube_url`` is not ``None`` then kubernetes service account config won't be used.
 
-    :param kube_url: URL of a proxy to K8S cluster api. This is useful to offload authentication/authorization
+    :param kube_url: URL of a proxy to kubernetes cluster api. This is useful to offload authentication/authorization
                      to proxy service instead of depending on serviceaccount config. Default is ``None``.
     :type kube_url: str
 
@@ -69,7 +70,7 @@ def get_pod_labels(pods: list, pod_name: str) -> dict:
 
 def is_pause_container(config: dict) -> bool:
     """
-    Return True if the config belongs to K8S *Pause* containers.
+    Return True if the config belongs to kubernetes *Pause* containers.
 
     :param config: Container "Config" from ``config.v2.json``.
     :type config: dict

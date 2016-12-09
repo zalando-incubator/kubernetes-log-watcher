@@ -10,4 +10,4 @@ RUN python setup.py install
 
 ADD scm-source.json /scm-source.json
 
-CMD ["k8s-log-watcher"]
+CMD ["kube-log-watcher"]
