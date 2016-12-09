@@ -2,8 +2,8 @@ import pytest
 
 from mock import MagicMock
 
-from k8s_log_watcher.kube import get_pods, is_pause_container, get_pod_labels
-from k8s_log_watcher.kube import PAUSE_CONTAINER_PREFIX
+from kube_log_watcher.kube import get_pods, is_pause_container, get_pod_labels
+from kube_log_watcher.kube import PAUSE_CONTAINER_PREFIX
 
 
 KUBE_URL = 'https://my-kube-api'

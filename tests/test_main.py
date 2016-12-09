@@ -4,8 +4,8 @@ import pytest
 
 from mock import MagicMock, call
 
-from k8s_log_watcher.template_loader import load_template
-from k8s_log_watcher.main import (
+from kube_log_watcher.template_loader import load_template
+from kube_log_watcher.main import (
     get_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
     get_new_containers_log_targets)
 
@@ -108,8 +108,8 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
     get_pods = MagicMock()
     get_pods.return_value = pods
 
-    monkeypatch.setattr('k8s_log_watcher.kube.get_pods', get_pods)
-    monkeypatch.setattr('k8s_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
+    monkeypatch.setattr('kube_log_watcher.kube.get_pods', get_pods)
+    monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
     stale_containers = watched_containers - result
     if watched_containers:
@@ -120,8 +120,8 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
     get_targets.return_value = targets
     get_stale = MagicMock()
     get_stale.return_value = stale_containers
-    monkeypatch.setattr('k8s_log_watcher.main.get_new_containers_log_targets', get_targets)
-    monkeypatch.setattr('k8s_log_watcher.main.get_stale_containers', get_stale)
+    monkeypatch.setattr('kube_log_watcher.main.get_new_containers_log_targets', get_targets)
+    monkeypatch.setattr('kube_log_watcher.main.get_stale_containers', get_stale)
 
     agent1 = MagicMock()
     agent2 = MagicMock()
@@ -149,8 +149,8 @@ def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
     get_pods = MagicMock()
     get_pods.return_value = pods
 
-    monkeypatch.setattr('k8s_log_watcher.kube.get_pods', get_pods)
-    monkeypatch.setattr('k8s_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
+    monkeypatch.setattr('kube_log_watcher.kube.get_pods', get_pods)
+    monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
     targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID)
 
@@ -177,7 +177,7 @@ def test_load_agents(monkeypatch):
         'agent1': agent1,
         'agent2': agent2,
     }
-    monkeypatch.setattr('k8s_log_watcher.main.BUILTIN_AGENTS', builtins)
+    monkeypatch.setattr('kube_log_watcher.main.BUILTIN_AGENTS', builtins)
 
     load_agents(['agent1', 'agent2'], CLUSTER_ID)
 

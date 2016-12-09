@@ -1,16 +1,16 @@
 import os
 import json
+import copy
 
 import pytest
 
 from mock import MagicMock
 
-from k8s_log_watcher.template_loader import load_template
-from k8s_log_watcher.agents.scalyr import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME
+from kube_log_watcher.template_loader import load_template
+from kube_log_watcher.agents.scalyr import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME
 
-from .conftest import CLUSTER_ID
+from .conftest import CLUSTER_ID, NODE
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS
-
 
 ENVS = (
     {
@@ -27,6 +27,10 @@ ENVS = (
 )
 
 KWARGS_KEYS = ('scalyr_key', 'cluster_id', 'logs', 'monitor_journald')
+
+
+SCALYR_MONITOR_JOURNALD = copy.deepcopy(SCALYR_JOURNALD_DEFAULTS)
+SCALYR_MONITOR_JOURNALD['attributes']['node'] = NODE
 
 
 def assert_fx_sanity(kwargs):
@@ -87,7 +91,7 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_JOURNALD_DEFAULTS
+    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
@@ -100,7 +104,6 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent(CLUSTER_ID, load_template)
-
     assert_agent(agent, env)
 
     mock_open, mock_fp = patch_open(monkeypatch)
@@ -149,7 +152,7 @@ def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_JOURNALD_DEFAULTS
+    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
@@ -194,7 +197,7 @@ def test_flush_failure(monkeypatch, env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_JOURNALD_DEFAULTS
+    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
     exists.side_effect = (True, True, False, False)
@@ -302,7 +305,7 @@ def test_remove_log_target(monkeypatch, env, exc):
     'kwargs,expected',
     (
         (
-            {'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_journald': 0, 'logs': []},
+            {'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_journald': None, 'logs': []},
             {
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
@@ -335,7 +338,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'logs': [{'path': '/p1', 'attributes': {'a1': 'v1'}}],
                 'monitor_journald': {
                     'journal_path': '/var/log/journal',
-                    'attributes': {'cluster': CLUSTER_ID},
+                    'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
                     'extra_fields': {'_COMM': 'command'}
                 },
             },
@@ -349,7 +352,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                     {
                         'module': 'scalyr_agent.builtin_monitors.journald_monitor',
                         'journal_path': '/var/log/journal',
-                        'attributes': {'cluster': CLUSTER_ID},
+                        'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
                         'extra_fields': {'_COMM': 'command'}
                     }
                 ]

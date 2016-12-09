@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Setup file for K8S log watcher.
+Setup file for kubernetes log watcher.
 """
 import os
 
@@ -21,15 +21,15 @@ def get_requirements(path):
     return [req for req in content.split('\\n') if req != '']
 
 
-MAIN_PACKAGE = 'k8s_log_watcher'
+MAIN_PACKAGE = 'kube_log_watcher'
 VERSION = read_version(MAIN_PACKAGE)
-DESCRIPTION = 'K8S log watcher'
+DESCRIPTION = 'Kubernetes log watcher'
 
-CONSOLE_SCRIPTS = ['k8s-log-watcher=k8s_log_watcher.main:main']
+CONSOLE_SCRIPTS = ['kube-log-watcher=kube_log_watcher.main:main']
 
 
 setup(
-    name='k8s-log-watcher',
+    name='kubernetes-log-watcher',
     version=VERSION,
     description=DESCRIPTION,
     long_description=open('README.rst').read(),
