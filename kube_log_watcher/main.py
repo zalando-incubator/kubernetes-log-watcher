@@ -293,9 +293,11 @@ def main():
     #                   help='Import path of agent module providing job/config Jinja2 template path and required extra '
     #                        'vars from pod labels.')
 
-    argp.add_argument('--interval', dest='interval', default=60, type=int, help='Sleep interval for the watcher.')
+    argp.add_argument('--interval', dest='interval', default=60, type=int,
+                      help='Sleep interval for the watcher. Can be set via WATCHER_INTERVAL env variable.')
 
-    argp.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False, help='Verbose output.')
+    argp.add_argument('-v', '--verbose', dest='verbose', action='store_true', default=False,
+                      help='Verbose output. Can be set via WATCHER_DEBUG env variable.')
 
     args = argp.parse_args()
 
