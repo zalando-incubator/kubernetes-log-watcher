@@ -328,6 +328,8 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'monitors': [
                     {
                         'module': 'scalyr_agent.builtin_monitors.journald_monitor',
+                        'monitor_log_write_rate': 10000,
+                        'monitor_log_max_write_burst': 200000,
                     }
                 ]
             },
@@ -351,6 +353,8 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'monitors': [
                     {
                         'module': 'scalyr_agent.builtin_monitors.journald_monitor',
+                        'monitor_log_write_rate': 10000,
+                        'monitor_log_max_write_burst': 200000,
                         'journal_path': '/var/log/journal',
                         'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
                         'extra_fields': {'_COMM': 'command'}
