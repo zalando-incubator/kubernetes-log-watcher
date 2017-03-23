@@ -13,6 +13,8 @@
             {
                 "path": "{{ log.path }}",
 
+                "copy_from_start": true,
+
                 "attributes": {
                     "parser": "json"{% if log.attributes %},{% endif %}
                     {% for k, v in log.attributes.items() %}

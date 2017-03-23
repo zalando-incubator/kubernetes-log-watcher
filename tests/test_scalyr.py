@@ -337,7 +337,7 @@ def test_remove_log_target(monkeypatch, env, exc):
         (
             {
                 'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID,
-                'logs': [{'path': '/p1', 'attributes': {'a1': 'v1'}}],
+                'logs': [{'path': '/p1', 'attributes': {'a1': 'v1'}, 'copy_from_start': True}],
                 'monitor_journald': {
                     'journal_path': '/var/log/journal',
                     'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
@@ -349,7 +349,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {'serverHost': 'kube-cluster'},
-                'logs': [{'attributes': {'a1': 'v1', 'parser': 'json'}, 'path': '/p1'}],
+                'logs': [{'attributes': {'a1': 'v1', 'parser': 'json'}, 'path': '/p1', 'copy_from_start': True}],
                 'monitors': [
                     {
                         'module': 'scalyr_agent.builtin_monitors.journald_monitor',
