@@ -94,7 +94,7 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
     kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink = patch_os(monkeypatch)
@@ -155,7 +155,7 @@ def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
     kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink = patch_os(monkeypatch)
@@ -200,7 +200,7 @@ def test_flush_failure(monkeypatch, env, fx_scalyr):
     kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink = patch_os(monkeypatch)
@@ -250,7 +250,7 @@ def test_get_current_log_paths(monkeypatch, env, config, result):
     monkeypatch.setattr('json.load', load)
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink = patch_os(monkeypatch)
@@ -283,7 +283,7 @@ def test_remove_log_target(monkeypatch, env, exc):
     patch_env(monkeypatch, env)
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
     rmtree = MagicMock()
