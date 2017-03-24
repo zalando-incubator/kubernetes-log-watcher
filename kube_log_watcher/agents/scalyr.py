@@ -113,6 +113,7 @@ class ScalyrAgent(BaseWatcher):
 
         if self._first_run or diff_paths:
             logger.debug('Scalyr watcher agent new paths: {}'.format(diff_paths))
+            logger.debug('Scalyr watcher agent current paths: {}'.format(current_paths))
             try:
                 config = self.tpl.render(**kwargs)
 
@@ -122,7 +123,7 @@ class ScalyrAgent(BaseWatcher):
                 logger.exception('Scalyr watcher agent failed to write config file.')
             else:
                 self._first_run = False
-                logger.info('Scalyr watcher agent updated config file {} with new {} log targets.'.format(
+                logger.info('Scalyr watcher agent updated config file {} with {} log targets.'.format(
                     self.config_path, len(diff_paths)))
 
     def reset(self):
@@ -163,6 +164,8 @@ class ScalyrAgent(BaseWatcher):
                 with open(self.config_path) as fp:
                     config = json.load(fp)
                     targets = {log.get('path') for log in config.get('logs', [])}
+            else:
+                logger.warning('Scalyr watcher agent cannot find config file!')
         except:
             logger.exception('Scalyr watcher agent failed to read config!')
 
