@@ -164,7 +164,8 @@ class ScalyrAgent(BaseWatcher):
                 with open(self.config_path) as fp:
                     config = json.load(fp)
                     targets = {log.get('path') for log in config.get('logs', [])}
-                    logger.debug('Scalyr watcher agent loaded existing config {}: {}'.format(self.config_path, config))
+                    logger.debug('Scalyr watcher agent loaded existing config {}: {} log targets exist!'.format(
+                        self.config_path, len(config.get('logs', []))))
             else:
                 logger.warning('Scalyr watcher agent cannot find config file!')
         except:
