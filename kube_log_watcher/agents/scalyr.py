@@ -31,6 +31,15 @@ class ScalyrAgent(BaseWatcher):
                 'Scalyr watcher agent initialization failed. {} config path does not exist.'.format(
                     self.config_path))
 
+        if not os.path.exists(self.dest_path):
+            raise RuntimeError(
+                'Scalyr watcher agent initialization failed. {} destination path does not exist.'.format(
+                    self.dest_path))
+        else:
+            watched_containers = os.listdir(self.dest_path)
+            logger.info('Scalyr watcher agent found {} watched containers.'.format(len(watched_containers)))
+            logger.debug('Scalyr watcher agent found the following watched containers: {}'.format(watched_containers))
+
         self.journald = None
         journald_monitor = os.environ.get('WATCHER_SCALYR_JOURNALD', False)
 
