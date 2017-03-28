@@ -89,34 +89,16 @@ Operation
 Example manifest
 ----------------
 
-This is an example manifest for shipping logs to Scalyr, with additional Journald monitoring for master processes running on the node:
+This is an example manifest for shipping logs to Scalyr, with additional Journald monitoring for master processes running on the node.
+
+.. note::
+
+    - This manifest assumes running a Kubernetes cluster version > 1.5 (as it depends on `initContainer <https://kubernetes.io/docs/concepts/workloads/pods/init-containers/>`_ for initial Scalyr configuration)
+    - All shared volumes are of type ``hostPath`` in order to survive pod restarts.
+    - Initial Scalyr configuration using ``configMap`` is no longer used as it appears to be reseted to initial values by Kubernetes.
 
 .. code-block:: yaml
 
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-        name: scalyr-config-base
-        namespace: kube-system
-    data:
-        scalyr.config: |
-          {
-            "import_vars": ["WATCHER_SCALYR_API_KEY", "WATCHER_CLUSTER_ID"],
-
-            "api_key": "$WATCHER_SCALYR_API_KEY",
-
-            "server_attributes": {
-                "serverHost": "$WATCHER_CLUSTER_ID"
-            },
-
-            "implicit_metric_monitor": false,
-            "implicit_agent_process_metrics_monitor": false,
-
-            "logs": [],
-            "monitors": []
-          }
-
-    ---
     apiVersion: extensions/v1beta1
     kind: DaemonSet
     metadata:
@@ -140,18 +122,50 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
             annotations:
               scheduler.alpha.kubernetes.io/critical-pod: ''
               scheduler.alpha.kubernetes.io/tolerations: '[{"key":"CriticalAddonsOnly", "operator":"Exists"}]'
+              pod.beta.kubernetes.io/init-containers: '[
+                {
+                  "name": "init-scalyr-config",
+                  "image": "busybox",
+                  "imagePullPolicy": "IfNotPresent",
+                  "command": ["sh", "-c"],
+                  "args": [
+                    "if [ ! -f /mnt/scalyr/agent.json ]; then
+                      echo {
+                        \\\"import_vars\\\": [\\\"WATCHER_SCALYR_API_KEY\\\", \\\"WATCHER_CLUSTER_ID\\\"],
+                        \\\"server_attributes\\\": {\\\"serverHost\\\": \\\"\\$WATCHER_CLUSTER_ID\\\"},
+                        \\\"implicit_agent_process_metrics_monitor\\\": false,
+                        \\\"implicit_metric_monitor\\\": false,
+                        \\\"api_key\\\": \\\"\\$WATCHER_SCALYR_API_KEY\\\",
+                        \\\"monitors\\\": [],
+                        \\\"logs\\\": []
+                        } > /mnt/scalyr/agent.json;
+                        echo Updated agent.json to inital configuration;
+                    fi
+                    && cat /mnt/scalyr/agent.json;
+                    test -f /mnt/scalyr-checkpoint/checkpoints.json && ls -lah /mnt/scalyr-checkpoint/checkpoints.json && cat /mnt/scalyr-checkpoint/checkpoints.json"
+                  ],
+                  "volumeMounts": [
+                    {
+                      "name": "scalyr-config",
+                      "mountPath": "/mnt/scalyr"
+                    },
+                    {
+                      "name": "scalyr-checkpoint",
+                      "mountPath": "/mnt/scalyr-checkpoint"
+                    }
+                  ]
+                }
+              ]'
           spec:
             containers:
             - name: log-watcher
-              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.11
+              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.12
               env:
               - name: CLUSTER_NODE_NAME
                 valueFrom:
                   fieldRef:
                     fieldPath: spec.nodeName
 
-              - name: WATCHER_KUBERNETES_UPDATE_CERTIFICATES
-                value: "true"
               - name: WATCHER_DEBUG
                 value: "true"
               - name: WATCHER_CLUSTER_ID
@@ -177,13 +191,13 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
                 readOnly: false
               - name: scalyr-config
                 mountPath: /mnt/scalyr-config
-                readOnly: false
 
             - name: scalyr-agent
-              image: registry.opensource.zalan.do/eagleeye/scalyr-agent:0.1
+
+              image: registry.opensource.zalan.do/eagleeye/scalyr-agent:0.2
 
               env:
-              # Note: added for scalyr-config-base, but not needed by the scalyr-agent itself.
+              # Note: added for scalyr-config, but not needed by the scalyr-agent itself.
               - name: WATCHER_SCALYR_API_KEY
                 value: "<SCALYR-KEY-HERE>"
               - name: WATCHER_CLUSTER_ID
@@ -196,8 +210,10 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
               - name: scalyr-logs
                 mountPath: /mnt/scalyr-logs
                 readOnly: true
+              - name: scalyr-checkpoint
+                mountPath: /var/lib/scalyr-agent-2
               - name: scalyr-config
-                mountPath: /etc/scalyr-agent-2/
+                mountPath: /etc/scalyr-agent-2
                 readOnly: true
               - name: journal
                 mountPath: /var/log/journal
@@ -212,15 +228,17 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
               hostPath:
                 path: /var/log/journal
 
-            - name: scalyr-logs
-              emptyDir: {}
+            - name: scalyr-checkpoint
+              hostPath:
+                path: /var/lib/scalyr-agent
 
             - name: scalyr-config
-              configMap:
-                name: scalyr-config-base
-                items:
-                  - key: scalyr.config
-                    path: agent.json
+              hostPath:
+                path: /etc/scalyr-agent
+
+            - name: scalyr-logs
+              hostPath:
+                path: /var/log/scalyr-agent
 
 
 Configuration
