@@ -336,11 +336,6 @@ def main():
     logger.info('\tKube url: {}'.format(kube_url))
     logger.info('\tInterval: {}'.format(interval))
 
-    if os.path.exists('/mnt/scalyr-checkpoint/checkpoints.json'):
-        with open('/mnt/scalyr-checkpoint/checkpoints.json') as fp:
-            logger.debug('Found checkpoints file:')
-            logger.debug(json.load(fp))
-
     watch(containers_path, agents, cluster_id, interval=interval, kube_url=kube_url)
 
 
