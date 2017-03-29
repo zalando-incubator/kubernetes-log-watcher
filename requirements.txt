@@ -1,2 +1,2 @@
 Jinja2==2.8
-pykube==0.13.0
+pykube>=0.15.0

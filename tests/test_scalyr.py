@@ -61,11 +61,14 @@ def patch_env(monkeypatch, env):
 def patch_os(monkeypatch):
     makedirs = MagicMock()
     symlink = MagicMock()
+    listdir = MagicMock()
+    listdir.return_value = []
 
     monkeypatch.setattr('os.makedirs', makedirs)
     monkeypatch.setattr('os.symlink', symlink)
+    monkeypatch.setattr('os.listdir', listdir)
 
-    return makedirs, symlink
+    return makedirs, symlink, listdir
 
 
 def patch_open(monkeypatch, exc=None):
@@ -81,6 +84,54 @@ def patch_open(monkeypatch, exc=None):
     return mock_open, mock_fp
 
 
+@pytest.mark.parametrize(
+    'env,exists',
+    (
+        (
+            {
+                # No API KEY
+                'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
+                'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'
+            },
+            (True, True)
+        ),
+        (
+            {
+                # No Dest path
+                'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
+            },
+            (True, True)
+        ),
+        (
+            {
+                'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
+                'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'
+            },
+            # Config path does not exist
+            (False, True)
+        ),
+        (
+            {
+                'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
+                'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'
+            },
+            # Dest path does not exist
+            (True, False)
+        ),
+    )
+)
+def test_initialization_failure(monkeypatch, env, exists):
+    patch_env(monkeypatch, env)
+    patch_os(monkeypatch)
+
+    exists = MagicMock()
+    exists.side_effect = exists
+    monkeypatch.setattr('os.path.exists', exists)
+
+    with pytest.raises(RuntimeError):
+        ScalyrAgent(CLUSTER_ID, load_template)
+
+
 @pytest.mark.parametrize('env', ENVS)
 def test_add_log_target(monkeypatch, env, fx_scalyr):
     patch_env(monkeypatch, env)
@@ -94,10 +145,10 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
     kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
-    makedirs, symlink = patch_os(monkeypatch)
+    makedirs, symlink, listdir = patch_os(monkeypatch)
 
     current_targets = MagicMock()
     current_targets.return_value = []
@@ -125,12 +176,13 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
 
 @pytest.mark.parametrize('env', ENVS)
 def test_add_log_target_no_src(monkeypatch, env, fx_scalyr):
+    patch_os(monkeypatch)
     patch_env(monkeypatch, env)
 
     target = fx_scalyr['target']
 
     exists = MagicMock()
-    exists.side_effect = (True, False)
+    exists.side_effect = (True, True, False)
     monkeypatch.setattr('os.path.exists', exists)
 
     agent = ScalyrAgent(CLUSTER_ID, load_template)
@@ -155,10 +207,10 @@ def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
     kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
-    makedirs, symlink = patch_os(monkeypatch)
+    makedirs, symlink, listdir = patch_os(monkeypatch)
 
     log_path = kwargs['logs'][0]['path']
 
@@ -200,10 +252,10 @@ def test_flush_failure(monkeypatch, env, fx_scalyr):
     kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
-    makedirs, symlink = patch_os(monkeypatch)
+    makedirs, symlink, listdir = patch_os(monkeypatch)
 
     log_path = kwargs['logs'][0]['path']
 
@@ -250,10 +302,10 @@ def test_get_current_log_paths(monkeypatch, env, config, result):
     monkeypatch.setattr('json.load', load)
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
-    makedirs, symlink = patch_os(monkeypatch)
+    makedirs, symlink, listdir = patch_os(monkeypatch)
 
     agent = ScalyrAgent(CLUSTER_ID, load_template)
 
@@ -280,10 +332,11 @@ def test_get_current_log_paths(monkeypatch, env, config, result):
     )
 )
 def test_remove_log_target(monkeypatch, env, exc):
+    patch_os(monkeypatch)
     patch_env(monkeypatch, env)
 
     exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists.side_effect = (True, True, True, False, False, True)
     monkeypatch.setattr('os.path.exists', exists)
 
     rmtree = MagicMock()
@@ -328,6 +381,8 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'monitors': [
                     {
                         'module': 'scalyr_agent.builtin_monitors.journald_monitor',
+                        'monitor_log_write_rate': 10000,
+                        'monitor_log_max_write_burst': 200000,
                     }
                 ]
             },
@@ -335,7 +390,7 @@ def test_remove_log_target(monkeypatch, env, exc):
         (
             {
                 'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID,
-                'logs': [{'path': '/p1', 'attributes': {'a1': 'v1'}}],
+                'logs': [{'path': '/p1', 'attributes': {'a1': 'v1'}, 'copy_from_start': True}],
                 'monitor_journald': {
                     'journal_path': '/var/log/journal',
                     'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
@@ -347,10 +402,12 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {'serverHost': 'kube-cluster'},
-                'logs': [{'attributes': {'a1': 'v1', 'parser': 'json'}, 'path': '/p1'}],
+                'logs': [{'attributes': {'a1': 'v1', 'parser': 'json'}, 'path': '/p1', 'copy_from_start': True}],
                 'monitors': [
                     {
                         'module': 'scalyr_agent.builtin_monitors.journald_monitor',
+                        'monitor_log_write_rate': 10000,
+                        'monitor_log_max_write_burst': 200000,
                         'journal_path': '/var/log/journal',
                         'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
                         'extra_fields': {'_COMM': 'command'}

@@ -30,7 +30,10 @@ def update_ca_certificate():
 
 def get_client():
     config = pykube.KubeConfig.from_service_account(DEFAULT_SERVICE_ACC)
-    return pykube.HTTPClient(config)
+    client = pykube.HTTPClient(config)
+    client.session.trust_env = False
+
+    return client
 
 
 def get_pods(kube_url=None, namespace=DEFAULT_NAMESPACE) -> list:

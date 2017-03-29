@@ -31,6 +31,15 @@ class ScalyrAgent(BaseWatcher):
                 'Scalyr watcher agent initialization failed. {} config path does not exist.'.format(
                     self.config_path))
 
+        if not os.path.exists(self.dest_path):
+            raise RuntimeError(
+                'Scalyr watcher agent initialization failed. {} destination path does not exist.'.format(
+                    self.dest_path))
+        else:
+            watched_containers = os.listdir(self.dest_path)
+            logger.info('Scalyr watcher agent found {} watched containers.'.format(len(watched_containers)))
+            logger.debug('Scalyr watcher agent found the following watched containers: {}'.format(watched_containers))
+
         self.journald = None
         journald_monitor = os.environ.get('WATCHER_SCALYR_JOURNALD', False)
 
@@ -109,7 +118,11 @@ class ScalyrAgent(BaseWatcher):
         current_paths = self._get_current_log_paths()
         new_paths = {log['path'] for log in self.logs}
 
-        if self._first_run or new_paths.symmetric_difference(current_paths):
+        diff_paths = new_paths.symmetric_difference(current_paths)
+
+        if self._first_run or diff_paths:
+            logger.debug('Scalyr watcher agent new paths: {}'.format(diff_paths))
+            logger.debug('Scalyr watcher agent current paths: {}'.format(current_paths))
             try:
                 config = self.tpl.render(**kwargs)
 
@@ -119,7 +132,8 @@ class ScalyrAgent(BaseWatcher):
                 logger.exception('Scalyr watcher agent failed to write config file.')
             else:
                 self._first_run = False
-                logger.info('Scalyr watcher agent updated config file {}'.format(self.config_path))
+                logger.info('Scalyr watcher agent updated config file {} with {} log targets.'.format(
+                    self.config_path, len(diff_paths)))
 
     def reset(self):
         self.logs = []
@@ -155,10 +169,15 @@ class ScalyrAgent(BaseWatcher):
         targets = set()
 
         try:
-            with open(self.config_path) as fp:
-                config = json.load(fp)
-                targets = {log.get('path') for log in config.get('logs', [])}
+            if os.path.exists(self.config_path):
+                with open(self.config_path) as fp:
+                    config = json.load(fp)
+                    targets = {log.get('path') for log in config.get('logs', [])}
+                    logger.debug('Scalyr watcher agent loaded existing config {}: {} log targets exist!'.format(
+                        self.config_path, len(config.get('logs', []))))
+            else:
+                logger.warning('Scalyr watcher agent cannot find config file!')
         except:
-            pass
+            logger.exception('Scalyr watcher agent failed to read config!')
 
         return targets

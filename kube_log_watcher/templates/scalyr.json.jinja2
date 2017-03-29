@@ -13,6 +13,8 @@
             {
                 "path": "{{ log.path }}",
 
+                "copy_from_start": true,
+
                 "attributes": {
                     "parser": "json"{% if log.attributes %},{% endif %}
                     {% for k, v in log.attributes.items() %}
@@ -45,7 +47,9 @@
             },
             {% endif %}
 
-            "module": "scalyr_agent.builtin_monitors.journald_monitor"
+            "module": "scalyr_agent.builtin_monitors.journald_monitor",
+            "monitor_log_write_rate": 10000,
+            "monitor_log_max_write_burst": 200000
         }
         {% endif %}
     ]
