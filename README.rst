@@ -93,7 +93,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
 
 .. note::
 
-    - This manifest assumes running a Kubernetes cluster version > 1.5 (as it depends on `initContainer <https://kubernetes.io/docs/concepts/workloads/pods/init-containers/>`_ for initial Scalyr configuration)
+    - This manifest assumes running a Kubernetes cluster version >= 1.5 (as it depends on `initContainer <https://kubernetes.io/docs/concepts/workloads/pods/init-containers/>`_ for initial Scalyr configuration)
     - All shared volumes are of type ``hostPath`` in order to survive pod restarts.
     - Initial Scalyr configuration using ``configMap`` is no longer used as it appears to be reseted to initial values by Kubernetes.
 
