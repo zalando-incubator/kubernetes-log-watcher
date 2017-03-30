@@ -142,7 +142,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
                         echo Updated agent.json to inital configuration;
                     fi
                     && cat /mnt/scalyr/agent.json;
-                    test -f /mnt/scalyr-checkpoint/checkpoints.json && ls -lah /mnt/scalyr-checkpoint/checkpoints.json && cat /mnt/scalyr-checkpoint/checkpoints.json"
+                    test -f /mnt/scalyr-checkpoint/checkpoints.json && ls -lah /mnt/scalyr-checkpoint/checkpoints.json && cat /mnt/scalyr-checkpoint/checkpoints.json || true;"
                   ],
                   "volumeMounts": [
                     {
