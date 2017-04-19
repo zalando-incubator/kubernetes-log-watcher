@@ -1,4 +1,5 @@
 import os
+import copy
 
 import pytest
 
@@ -10,6 +11,7 @@ APPDYNAMICS_DEST_PATH = '/var/log/watcher/'
 SCALYR_DEST_PATH = '/var/log/watcher/'
 SCALYR_KEY = 'scalyr-key-123'
 SCALYR_JOURNALD_DEFAULTS = {'journal_path': None, 'attributes': {'cluster': CLUSTER_ID}, 'extra_fields': {}}
+SCALYR_ANNOTATION_PARSER = 'kubernetes-log-watcher/scalyr-parser'
 
 TARGET = {
     'id': 'container-1',
@@ -26,10 +28,17 @@ TARGET = {
         'container_id': 'container-1',
         'container_path': '/mnt/containers/container-1',
         'log_file_name': 'container-1-json.log',
+        'pod_annotations': {SCALYR_ANNOTATION_PARSER: '[{"container": "app-1-container-1", "parser": "custom-parser"}]'}
 
     },
     'pod_labels': {}
 }
+
+TARGET_NO_ANNOT = copy.deepcopy(TARGET)
+TARGET_NO_ANNOT['kwargs']['pod_annotations'] = {'a/1': 'a-1'}
+
+TARGET_INVALID_ANNOT = copy.deepcopy(TARGET)
+TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '{"container": "cont-1", "parser": "n"}'}
 
 
 @pytest.fixture(params=[
@@ -80,7 +89,8 @@ TARGET = {
             {
                 'metadata': {
                     'name': 'pod-1',
-                    'labels': {'application': 'app-1', 'version': 'v1', 'release': '123'}
+                    'labels': {'application': 'app-1', 'version': 'v1', 'release': '123'},
+                    'annotations': {'a/1': 'a-1', 'a/2': 'a-2'},
                 }
             },
             {
@@ -98,7 +108,8 @@ TARGET = {
             {
                 'metadata': {
                     'name': 'pod-4',
-                    'labels': {'application': 'app-2', 'version': 'v1'}
+                    'labels': {'application': 'app-2', 'version': 'v1'},
+                    'annotations': {},
                 }
             },
         ],
@@ -111,7 +122,8 @@ TARGET = {
                     'pod_name': 'pod-1', 'release': '123', 'namespace': 'default', 'node_name': NODE,
                     'container_id': 'cont-1', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-1-json.log',
                     'application_id': 'app-1', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-1',
-                    'log_file_path': '/mnt/containers/cont-1/cont-1-json.log', 'container_name': 'cont-1'
+                    'log_file_path': '/mnt/containers/cont-1/cont-1-json.log', 'container_name': 'cont-1',
+                    'pod_annotations': {'a/1': 'a-1', 'a/2': 'a-2'},
                 }
             },
             {
@@ -121,7 +133,8 @@ TARGET = {
                     'pod_name': 'pod-4', 'release': '', 'namespace': 'kube', 'node_name': NODE,
                     'container_id': 'cont-5', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-5-json.log',
                     'application_id': 'app-2', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-5',
-                    'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5'
+                    'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5',
+                    'pod_annotations': {},
                 }
             }
         ],
@@ -133,29 +146,44 @@ def fx_containers_sync(request):
     return request.param
 
 
+KWARGS = {
+    'scalyr_key': SCALYR_KEY,
+    'cluster_id': CLUSTER_ID,
+    'monitor_journald': None,
+    'logs': [
+        {
+            'path': os.path.join(SCALYR_DEST_PATH, 'container-1', 'app-1-v1.log'),
+            'attributes': {
+                'application': 'app-1',
+                'version': 'v1',
+                'cluster': 'kube-cluster',
+                'release': '2016',
+                'pod': 'pod-1',
+                'namespace': 'default',
+                'container': 'app-1-container-1',
+                'node': NODE,
+                'parser': 'custom-parser',
+            }
+        }
+    ]
+}
+
+KWARGS_JSON = copy.deepcopy(KWARGS)
+KWARGS_JSON['logs'][0]['attributes']['parser'] = 'json'
+
+
 @pytest.fixture(params=[
     {
         'target': TARGET,
-        'kwargs': {
-            'scalyr_key': SCALYR_KEY,
-            'cluster_id': CLUSTER_ID,
-            'monitor_journald': None,
-            'logs': [
-                {
-                    'path': os.path.join(SCALYR_DEST_PATH, 'container-1', 'app-1-v1.log'),
-                    'attributes': {
-                        'application': 'app-1',
-                        'version': 'v1',
-                        'cluster': 'kube-cluster',
-                        'release': '2016',
-                        'pod': 'pod-1',
-                        'namespace': 'default',
-                        'container': 'app-1-container-1',
-                        'node': NODE,
-                    }
-                }
-            ]
-        },
+        'kwargs': KWARGS,
+    },
+    {
+        'target': TARGET_NO_ANNOT,
+        'kwargs': KWARGS_JSON
+    },
+    {
+        'target': TARGET_INVALID_ANNOT,
+        'kwargs': KWARGS_JSON
     }
 ])
 def fx_scalyr(request):

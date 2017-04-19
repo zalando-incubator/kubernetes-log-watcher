@@ -5,6 +5,8 @@ import logging
 
 from urllib.parse import urljoin
 
+from typing import Tuple
+
 import pykube
 import requests
 
@@ -62,13 +64,13 @@ def get_pods(kube_url=None, namespace=DEFAULT_NAMESPACE) -> list:
     return pykube.Pod.objects(kube_client).filter(namespace=namespace)
 
 
-def get_pod_labels(pods: list, pod_name: str) -> dict:
+def get_pod_labels_annotations(pods: list, pod_name: str) -> Tuple[dict, dict]:
     for pod in pods:
         metadata = pod.obj['metadata'] if hasattr(pod, 'obj') else pod.get('metadata', {})
-        if metadata['name'] == pod_name:
-            return metadata['labels']
+        if metadata.get('name') == pod_name:
+            return metadata.get('labels', {}), metadata.get('annotations', {})
 
-    return {}
+    return {}, {}
 
 
 def is_pause_container(config: dict) -> bool:

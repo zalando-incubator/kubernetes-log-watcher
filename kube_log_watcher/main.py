@@ -197,7 +197,7 @@ def get_new_containers_log_targets(containers: list, containers_path: str, clust
                 pods = kube.get_pods(kube_url=kube_url, namespace=pod_namespace)
                 pod_map[pod_namespace] = pods
 
-            pod_labels = kube.get_pod_labels(pods, pod_name)
+            pod_labels, pod_annotations = kube.get_pod_labels_annotations(pods, pod_name)
 
             kwargs = {}
 
@@ -214,6 +214,7 @@ def get_new_containers_log_targets(containers: list, containers_path: str, clust
             kwargs['namespace'] = pod_namespace
             kwargs['container_name'] = container_name
             kwargs['node_name'] = CLUSTER_NODE_NAME
+            kwargs['pod_annotations'] = pod_annotations
 
             if not all([kwargs['application_id'], kwargs['application_version']]):
                 logger.warning(
