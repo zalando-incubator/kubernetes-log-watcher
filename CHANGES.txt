@@ -2,7 +2,7 @@
 Kubernetes-log-watcher changelog
 ================================
 
-0.13 (2016-04-19)
+0.13 (2017-04-19)
 -----------------
 
 - Add support for Scalyr custom parsers using pod annotations. [#36]
