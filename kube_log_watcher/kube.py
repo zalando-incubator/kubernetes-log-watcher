@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import logging
+import warnings
 
 from urllib.parse import urljoin
 
@@ -22,6 +23,7 @@ logger = logging.getLogger('kube_log_watcher')
 
 
 def update_ca_certificate():
+    warnings.warn('update_ca_certificate is deprecated.')
     try:
         shutil.copyfile(os.path.join(DEFAULT_SERVICE_ACC, 'ca.crt'), '/usr/local/share/ca-certificates/ca-kube.crt')
         subprocess.check_call(['update-ca-certificates'])

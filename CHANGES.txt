@@ -1,0 +1,10 @@
+================================
+Kubernetes-log-watcher changelog
+================================
+
+0.13 (2016-04-19)
+-----------------
+
+- Add support for Scalyr custom parsers using pod annotations. [#36]
+- More unit test coverage.
+- Deprecate ``update_ca_certificate``.

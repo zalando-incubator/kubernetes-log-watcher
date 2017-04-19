@@ -159,7 +159,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
           spec:
             containers:
             - name: log-watcher
-              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.12
+              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.13
               env:
               - name: CLUSTER_NODE_NAME
                 valueFrom:
@@ -255,7 +255,7 @@ Configuration variables can be set via Env variables:
 - ``WATCHER_AGENTS``: Comma separated string of required log processor agents. (Required. Example: "scalyr,appdynamics")
 - ``WATCHER_CLUSTER_ID``: Kubernetes Cluster ID.
 - ``WATCHER_KUBE_URL``: URL to API proxy service. Service is expected to handle authentication to the Kubernetes cluster. If set, then log-watcher will not use serviceaccount config.
-- ``WATCHER_KUBERNETES_UPDATE_CERTIFICATES``: Call update-ca-certificates for Kubernetes service account ca.crt
+- ``WATCHER_KUBERNETES_UPDATE_CERTIFICATES``: [Deprecated] Call update-ca-certificates for Kubernetes service account ca.crt.
 - ``WATCHER_INTERVAL``: Polling interval (secs) for the watcher to detect containers changes. (Default: 60 sec)
 - ``WATCHER_DEBUG``: Verbose output. (Default: False)
 
@@ -271,6 +271,18 @@ Configuration variables can be set via Env variables:
 - ``WATCHER_SCALYR_JOURNALD_ATTRIBUTES``: Add attributes to Journald logs. By default ``cluster`` and ``node`` will be added by the configuration agent.
 - ``WATCHER_SCALYR_JOURNALD_EXTRA_FIELDS``: Add extra Systemd Journald fields. Should be a JSON string. Example: '{"_COMM": "command"}'
 - ``WATCHER_SCALYR_JOURNALD_PATH``: Journald logs path mounted from the host. (Default: ``/var/log/journald``)
+
+Scalyr custom parser
+....................
+
+In some cases you might need to assign a **custom** Scalyr parser for specific container. This can be achieved via Pod annotations. The following example shows an annotation value that instructs kubernetes-log-watcher to set custom parser ``json-java-parser`` for container ``app-1``.
+
+.. code-block:: yaml
+
+  annotations:
+    kubernetes-log-watcher/scalyr-parser: '[{"container": "app-1", "parser": "json-java-parser"}]'
+
+The value of ``kubernetes-log-watcher/scalyr-parser`` annotation should be a json serialized list. If ``container`` value did not match, then default parser is used (i.e. ``json``).
 
 AppDynamics configuration agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
