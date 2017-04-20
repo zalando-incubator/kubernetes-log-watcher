@@ -275,7 +275,7 @@ Configuration variables can be set via Env variables:
 Scalyr custom parser
 ....................
 
-In some cases you might need to assign a **custom** Scalyr parser for specific container. This can be achieved via Pod annotations. The following example shows an annotation value that instructs kubernetes-log-watcher to set custom parser ``json-java-parser`` for container ``app-1``.
+The default parser for container logs is ``json`` parser. In some cases however you might need to assign a `custom Scalyr parser <https://www.scalyr.com/help/config>`_ for specific container. This can be achieved via Pod annotations. The following example shows an annotation value that instructs kubernetes-log-watcher to set custom parser ``json-java-parser`` for container ``app-1``.
 
 .. code-block:: yaml
 
