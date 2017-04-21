@@ -13,6 +13,10 @@ TPL_NAME = 'scalyr.json.jinja2'
 
 SCALYR_CONFIG_PATH = '/etc/scalyr-agent-2/agent.json'
 
+# If exists! we expect serialized json str: '[{"container": "my-container", "parser": "my-custom-parser"}]'
+SCALYR_ANNOTATION_PARSER = 'kubernetes-log-watcher/scalyr-parser'
+SCALYR_DEFAULT_PARSER = 'json'
+
 logger = logging.getLogger('kube_log_watcher')
 
 
@@ -79,6 +83,26 @@ class ScalyrAgent(BaseWatcher):
                 target['kwargs']['container_name'], target['kwargs']['pod_name']))
             return
 
+        parser = SCALYR_DEFAULT_PARSER
+
+        annotations = target['kwargs'].get('pod_annotations', {})
+        if annotations and SCALYR_ANNOTATION_PARSER in annotations:
+            try:
+                parsers = json.loads(annotations[SCALYR_ANNOTATION_PARSER])
+                if type(parsers) is not list:
+                    logger.warning(
+                        ('Scalyr watcher agent found invalid {} annotation in pod: {}. '
+                         'Expected `list` found: `{}`').format(
+                            SCALYR_ANNOTATION_PARSER, target['kwargs']['pod_name'], type(parsers)))
+                else:
+                    for p in parsers:
+                        if p.get('container') == target['kwargs']['container_name']:
+                            parser = p.get('parser', SCALYR_DEFAULT_PARSER)
+                            logger.debug('Scalyr watcher agent loaded parser: {} for container: {}'.format(
+                                parser, target['kwargs']['container_name']))
+            except:
+                logger.error('Scalyr watcher agent failed to load annotation {}'.format(SCALYR_ANNOTATION_PARSER))
+
         log = {
             'path': log_path,
             'attributes': {
@@ -90,6 +114,7 @@ class ScalyrAgent(BaseWatcher):
                 'namespace': target['kwargs']['namespace'],
                 'container': target['kwargs']['container_name'],
                 'node': target['kwargs']['node_name'],
+                'parser': parser
             }
         }
 
