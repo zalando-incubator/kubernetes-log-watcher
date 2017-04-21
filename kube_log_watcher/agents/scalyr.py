@@ -91,12 +91,15 @@ class ScalyrAgent(BaseWatcher):
                 parsers = json.loads(annotations[SCALYR_ANNOTATION_PARSER])
                 if type(parsers) is not list:
                     logger.warning(
-                        'Scalyr watcher agent found invalid annotation {}. Expected `list` found: `{}`'.format(
-                            SCALYR_ANNOTATION_PARSER, type(parsers)))
+                        ('Scalyr watcher agent found invalid {} annotation in pod: {}. '
+                         'Expected `list` found: `{}`').format(
+                            SCALYR_ANNOTATION_PARSER, target['kwargs']['pod_name'], type(parsers)))
                 else:
                     for p in parsers:
                         if p.get('container') == target['kwargs']['container_name']:
                             parser = p.get('parser', SCALYR_DEFAULT_PARSER)
+                            logger.debug('Scalyr watcher agent loaded parser: {} for container: {}'.format(
+                                parser, target['kwargs']['container_name']))
             except:
                 logger.error('Scalyr watcher agent failed to load annotation {}'.format(SCALYR_ANNOTATION_PARSER))
 
