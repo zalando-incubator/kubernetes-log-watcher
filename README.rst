@@ -36,7 +36,7 @@ Features & Constraints
 * Log watcher accepts one or more log configuration agent.
 * Log watcher will skip ``pause`` containers.
 * Configuration agents provide the ability to dynamically attach tags/attributes/metadata to logs based on Kubernetes labels.
-* Only containers running in Pods with at least ``application`` and ``version`` metadata labels will be considered for log watching.
+* **Optionally** follow logs from containers running in pods with at least ``application`` and ``version`` metadata labels. (new in 0.14)
 * Sync new and stale containers.
 
 Usage
@@ -55,7 +55,7 @@ The following diagram describes how Log watcher DaemonSet interacts with cluster
                              +------------------------------------------------------+
     +--------------------+   |                         NODE                         |   +--------------------+
     |       K8s API      |   |  +----------------+              +----------------+  |   |    Log Storage     |
-    |                    |   |  |     POD 1      |              |     POD 2      |  |   |                    |
+    |                    |   |  |     pod 1      |              |     pod 2      |  |   |                    |
     |                    |   |  |                |              |                |  |   |                    |
     |                    |   |  | +------------+ |              | +------------+ |  |   |                    |
     |                    |   |  | |   Cont 1   | |              | |   Cont 2   | |  |   |                    |
@@ -68,7 +68,7 @@ The following diagram describes how Log watcher DaemonSet interacts with cluster
               |              |           +-----------[0]--------------> +-----+     |             |
               |              |                                          |LOGS |     |             |
               |              |  +-----------------------------------------------+   |             |
-              |              |  | Log watcher POD (DaemonSet)           |     | |   |             |
+              |              |  | Log watcher pod (DaemonSet)           |     | |   |             |
               |              |  |       +-------[1]----------> +------> +-----+ |   |             |
               |              |  |       |                      |                |   |             |
               |              |  | +-----+-----+          +-----+--------------+ |   |             |
@@ -159,7 +159,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
           spec:
             containers:
             - name: log-watcher
-              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.13
+              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.14
               env:
               - name: CLUSTER_NODE_NAME
                 valueFrom:
@@ -251,31 +251,76 @@ Log watcher
 
 Configuration variables can be set via Env variables:
 
-- ``WATCHER_CONTAINERS_PATH``: Containers directory path mounted from the host (Default: ``/var/lib/docker/containers``)
-- ``WATCHER_AGENTS``: Comma separated string of required log processor agents. (Required. Example: "scalyr,appdynamics")
-- ``WATCHER_CLUSTER_ID``: Kubernetes Cluster ID.
-- ``WATCHER_KUBE_URL``: URL to API proxy service. Service is expected to handle authentication to the Kubernetes cluster. If set, then log-watcher will not use serviceaccount config.
-- ``WATCHER_KUBERNETES_UPDATE_CERTIFICATES``: [Deprecated] Call update-ca-certificates for Kubernetes service account ca.crt.
-- ``WATCHER_INTERVAL``: Polling interval (secs) for the watcher to detect containers changes. (Default: 60 sec)
-- ``WATCHER_DEBUG``: Verbose output. (Default: False)
+``WATCHER_CONTAINERS_PATH``
+  Containers directory path mounted from the host (Default: ``/var/lib/docker/containers``)
+
+``WATCHER_KUBERNETES_STRICT_LABELS``
+  If set then only containers running in pods with ``application`` and ``version`` metadata labels will be considered for log watching. (Default is ``False``)
+
+  Default behavior is that kubernetes-log-watcher will adjust ``application_id`` and ``application_version`` from docker container image; in order to provide consistent data to log configuration agents.
+
+  Examples:
+
+    - image: docker/example.org/my-app:0.1
+
+      ``application_id``: my-app
+      ``application_version``: 0.1
+
+    - image: docker/example.org/my-app
+
+      ``application_id``: my-app
+      ``application_version``: latest
+
+
+``WATCHER_AGENTS``
+   Comma separated string of required log processor agents. (Required. Example: "scalyr,appdynamics")
+
+``WATCHER_CLUSTER_ID``
+   Kubernetes Cluster ID.
+
+``WATCHER_KUBE_URL``
+   URL to API proxy service. Service is expected to handle authentication to the Kubernetes cluster. If set, then log-watcher will not use serviceaccount config.
+
+``WATCHER_KUBERNETES_UPDATE_CERTIFICATES``
+   [Deprecated] Call update-ca-certificates for Kubernetes service account ca.crt.
+
+``WATCHER_INTERVAL``
+   Polling interval (secs) for the watcher to detect containers changes. (Default: 60 sec)
+
+``WATCHER_DEBUG``
+   Verbose output. (Default: False)
 
 Scalyr configuration agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Configuration variables can be set via Env variables:
 
-- ``WATCHER_SCALYR_API_KEY``: Scalyr API key. (Required).
-- ``WATCHER_SCALYR_DEST_PATH``: Scalyr configuration agent will symlink containers logs in this location. This is to provide more friendly name for log files. Typical log file name for a container will be in the form ``<application>-<version>.log``. (Required).
-- ``WATCHER_SCALYR_CONFIG_PATH``: Scalyr configuration file path. (Default: ``/etc/scalyr-agent-2/agent.json``)
-- ``WATCHER_SCALYR_JOURNALD``: Scalyr should follow Journald logs. This is for node system processes log shipping (e.g. docker, kube) (Default: ``False``)
-- ``WATCHER_SCALYR_JOURNALD_ATTRIBUTES``: Add attributes to Journald logs. By default ``cluster`` and ``node`` will be added by the configuration agent.
-- ``WATCHER_SCALYR_JOURNALD_EXTRA_FIELDS``: Add extra Systemd Journald fields. Should be a JSON string. Example: '{"_COMM": "command"}'
-- ``WATCHER_SCALYR_JOURNALD_PATH``: Journald logs path mounted from the host. (Default: ``/var/log/journald``)
+``WATCHER_SCALYR_API_KEY``
+  Scalyr API key. (Required).
+
+``WATCHER_SCALYR_DEST_PATH``
+  Scalyr configuration agent will symlink containers logs in this location. This is to provide more friendly name for log files. Typical log file name for a container will be in the form ``<application>-<version>.log``. (Required).
+
+``WATCHER_SCALYR_CONFIG_PATH``
+  Scalyr configuration file path. (Default: ``/etc/scalyr-agent-2/agent.json``)
+
+``WATCHER_SCALYR_JOURNALD``
+  Scalyr should follow Journald logs. This is for node system processes log shipping (e.g. docker, kube) (Default: ``False``)
+
+``WATCHER_SCALYR_JOURNALD_ATTRIBUTES``
+  Add attributes to Journald logs. By default ``cluster`` and ``node`` will be added by the configuration agent.
+
+``WATCHER_SCALYR_JOURNALD_EXTRA_FIELDS``
+  Add extra Systemd Journald fields. Should be a JSON string. Example: '{"_COMM": "command"}'
+
+``WATCHER_SCALYR_JOURNALD_PATH``
+  Journald logs path mounted from the host. (Default: ``/var/log/journald``)
+
 
 Scalyr custom parser
 ....................
 
-The default parser for container logs is ``json`` parser. In some cases however you might need to assign a `custom Scalyr parser <https://www.scalyr.com/help/config>`_ for specific container. This can be achieved via Pod annotations. The following example shows an annotation value that instructs kubernetes-log-watcher to set custom parser ``json-java-parser`` for container ``app-1``.
+The default parser for container logs is ``json`` parser. In some cases however you might need to assign a `custom Scalyr parser <https://www.scalyr.com/help/config>`_ for specific container. This can be achieved via pod annotations. The following example shows an annotation value that instructs kubernetes-log-watcher to set custom parser ``json-java-parser`` for container ``app-1``.
 
 .. code-block:: yaml
 
@@ -289,9 +334,11 @@ AppDynamics configuration agent
 
 Configuration variables can be set via Env variables:
 
-- ``WATCHER_APPDYNAMICS_DEST_PATH``: AppDynamics job files path. (Required).
+``WATCHER_APPDYNAMICS_DEST_PATH``
 
-AppDynamics configuration agent could also add ``app_name`` and ``tier_name`` if ``appdynamics_app`` and ``appdynamics_tier`` were set in Pod metadata labels.
+  AppDynamics job files path. (Required).
+
+AppDynamics configuration agent could also add ``app_name`` and ``tier_name`` if ``appdynamics_app`` and ``appdynamics_tier`` were set in pod metadata labels.
 
 
 Development
