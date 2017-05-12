@@ -36,7 +36,7 @@ Features & Constraints
 * Log watcher accepts one or more log configuration agent.
 * Log watcher will skip ``pause`` containers.
 * Configuration agents provide the ability to dynamically attach tags/attributes/metadata to logs based on Kubernetes labels.
-* **Optionally** follow logs from containers running in pods with at least ``application`` and ``version`` metadata labels. (new in 0.14)
+* **Optionally** follow logs from containers running in pods with at least ``application`` and ``version`` metadata labels. (optional since 0.14)
 * Sync new and stale containers.
 
 Usage
@@ -257,20 +257,7 @@ Configuration variables can be set via Env variables:
 ``WATCHER_KUBERNETES_STRICT_LABELS``
   If set then only containers running in pods with ``application`` and ``version`` metadata labels will be considered for log watching. (Default is ``False``)
 
-  The default behavior is that kubernetes-log-watcher will deduce ``application_id`` and ``application_version`` from docker container image; in order to provide consistent data to log configuration agents.
-
-  Examples:
-
-    - image: docker/example.org/my-app:0.1
-
-      ``application_id``: my-app
-      ``application_version``: 0.1
-
-    - image: docker/example.org/my-app
-
-      ``application_id``: my-app
-      ``application_version``: latest
-
+  If not set then kubernetes-log-watcher will set ``application_id`` from *pod name*; in order to provide consistent attributes to log configuration agents.
 
 ``WATCHER_AGENTS``
    Comma separated string of required log processor agents. (Required. Example: "scalyr,appdynamics")

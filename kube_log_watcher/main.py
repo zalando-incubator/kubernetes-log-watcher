@@ -24,13 +24,12 @@ BUILTIN_AGENTS = {
     'scalyr': ScalyrAgent,
 }
 
+# Set via kubernetes downward API.
+CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
+
 logger = logging.getLogger('kube_log_watcher')
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 logger.setLevel(logging.INFO)
-
-
-# Set via kubernetes downward API.
-CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
 
 
 def get_label_value(config, label) -> str:
@@ -227,7 +226,7 @@ def get_new_containers_log_targets(
             kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
 
             kwargs['application_id'] = pod_labels.get(APP_LABEL)
-            kwargs['application_version'] = pod_labels.get(VERSION_LABEL)
+            kwargs['application_version'] = pod_labels.get(VERSION_LABEL, '')
             kwargs['release'] = pod_labels.get('release', '')
             kwargs['cluster_id'] = cluster_id
             kwargs['pod_name'] = pod_name
@@ -244,9 +243,7 @@ def get_new_containers_log_targets(
                     continue
                 else:
                     if not kwargs['application_id']:
-                        kwargs['application_id'] = kwargs['image']
-                    if not kwargs['application_version']:
-                        kwargs['application_version'] = kwargs['image_version']
+                        kwargs['application_id'] = kwargs['pod_name']
 
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except:
