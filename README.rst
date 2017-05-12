@@ -257,7 +257,7 @@ Configuration variables can be set via Env variables:
 ``WATCHER_KUBERNETES_STRICT_LABELS``
   If set then only containers running in pods with ``application`` and ``version`` metadata labels will be considered for log watching. (Default is ``False``)
 
-  Default behavior is that kubernetes-log-watcher will adjust ``application_id`` and ``application_version`` from docker container image; in order to provide consistent data to log configuration agents.
+  The default behavior is that kubernetes-log-watcher will deduce ``application_id`` and ``application_version`` from docker container image; in order to provide consistent data to log configuration agents.
 
   Examples:
 
