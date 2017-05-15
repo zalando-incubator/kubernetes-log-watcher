@@ -42,7 +42,7 @@ Features & Constraints
 Usage
 =====
 
-Kubernetes log watcher is intended to run in a ``DaemonSet`` along with one or more log processors (e.g. Scalyr, AppDynamics ...). The DaemonSet will ensure that the watcher is running on every cluster node.
+Kubernetes log watcher is intended to run in a ``DaemonSet`` along with one or more log configuration agent (e.g. Scalyr, AppDynamics ...). The DaemonSet will ensure that the watcher is running on every cluster node.
 
 
 Diagram
@@ -254,13 +254,13 @@ Configuration variables can be set via Env variables:
 ``WATCHER_CONTAINERS_PATH``
   Containers directory path mounted from the host (Default: ``/var/lib/docker/containers``)
 
-``WATCHER_KUBERNETES_STRICT_LABELS``
+``WATCHER_STRICT_LABELS``
   If set then only containers running in pods with ``application`` and ``version`` metadata labels will be considered for log watching. (Default is ``False``)
 
   If not set then kubernetes-log-watcher will set ``application_id`` from *pod name*; in order to provide consistent attributes to log configuration agents.
 
 ``WATCHER_AGENTS``
-   Comma separated string of required log processor agents. (Required. Example: "scalyr,appdynamics")
+   Comma separated string of required log configuration agents. (Required. Example: "scalyr,appdynamics")
 
 ``WATCHER_CLUSTER_ID``
    Kubernetes Cluster ID.

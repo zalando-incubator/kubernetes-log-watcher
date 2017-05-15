@@ -311,10 +311,10 @@ def main():
 
     argp.add_argument('--strict-labels', dest='strict_labels', action='store_true', default=False,
                       help='Only Follow containers in pods with "application" and "version" set. '
-                           'Can be set via WATCHER_KUBERNETES_STRICT_LABELS env variable.')
+                           'Can be set via WATCHER_STRICT_LABELS env variable.')
 
     argp.add_argument('--updated-certificates', dest='update_certificates', action='store_true', default=False,
-                      help='[DEPRECTED] Call update-ca-certificates for Kubernetes service account ca.crt. '
+                      help='[DEPRECATED] Call update-ca-certificates for Kubernetes service account ca.crt. '
                            'Can be set via WATCHER_KUBERNETES_UPDATE_CERTIFICATES env variable.')
 
     # TODO: Load required agent dynamically? break hard dependency on builtins!
@@ -336,7 +336,7 @@ def main():
     containers_path = os.environ.get('WATCHER_CONTAINERS_PATH', args.containers_path)
     cluster_id = os.environ.get('WATCHER_CLUSTER_ID', args.cluster_id)
     agents_str = os.environ.get('WATCHER_AGENTS', args.agents)
-    strict_labels = os.environ.get('WATCHER_KUBERNETES_STRICT_LABELS', args.strict_labels)
+    strict_labels = os.environ.get('WATCHER_STRICT_LABELS', args.strict_labels)
 
     update_certificates = os.environ.get('WATCHER_KUBERNETES_UPDATE_CERTIFICATES', args.update_certificates)
     if update_certificates:
