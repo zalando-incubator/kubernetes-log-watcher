@@ -2,6 +2,13 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.14 (2017-05-15)
+-----------------
+
+- Drop constraint for application and version labels. [#38]
+- More unit test coverage.
+
+
 0.13 (2017-04-19)
 -----------------
 
