@@ -7,7 +7,7 @@ from mock import MagicMock, call
 from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.main import (
     get_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
-    get_new_containers_log_targets)
+    get_new_containers_log_targets, get_container_image_parts, watch)
 
 from .conftest import CLUSTER_ID
 
@@ -24,6 +24,22 @@ CONFIG = {
 
 CONTAINERS_PATH = '/mnt/containers/'
 DEST_PATH = '/mnt/jobs/'
+
+
+@pytest.mark.parametrize('image, res', (
+    ('repo/image-1:0.1', ('image-1', '0.1')),
+    ('', ('', 'latest')),
+    ('image-1:0.1', ('image-1', '0.1')),
+    ('repo/image-1:0.1:0.2:0.3', ('image-1', '0.3')),
+    ('repo/:0.1', ('', '0.1')),
+    ('repo/image-1', ('image-1', 'latest')),
+    ('repo/', ('', 'latest')),
+    ('repo/vendor/project/image-1:0.1-alpha-1', ('image-1', '0.1-alpha-1')),
+))
+def test_get_container_image_parts(monkeypatch, image, res):
+    config = {'Image': image}
+
+    assert get_container_image_parts(config) == res
 
 
 @pytest.mark.parametrize(
@@ -103,7 +119,7 @@ def test_get_containers(monkeypatch, walk, config, res, exc):
     )
 )
 def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containers_sync):
-    containers, pods, targets, result = fx_containers_sync
+    containers, pods, targets, _, result = fx_containers_sync
 
     get_pods = MagicMock()
     get_pods.return_value = pods
@@ -144,7 +160,23 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
 
 
 def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
-    containers, pods, result, _ = fx_containers_sync
+    containers, pods, result, _, _ = fx_containers_sync
+
+    get_pods = MagicMock()
+    get_pods.return_value = pods
+
+    monkeypatch.setattr('kube_log_watcher.kube.get_pods', get_pods)
+    monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
+
+    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID, strict_labels=True)
+
+    assert targets == result
+
+
+def test_get_new_containers_log_targets_no_strict_labels(monkeypatch, fx_containers_sync):
+    containers, pods, result_labels, result_no_labels, _ = fx_containers_sync
+
+    result = result_labels + result_no_labels
 
     get_pods = MagicMock()
     get_pods.return_value = pods
@@ -154,7 +186,7 @@ def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
 
     targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID)
 
-    assert targets == result
+    assert sorted(targets, key=lambda k: k['id']) == sorted(result, key=lambda k: k['id'])
 
 
 @pytest.mark.parametrize(
@@ -182,3 +214,82 @@ def test_load_agents(monkeypatch):
     load_agents(['agent1', 'agent2'], CLUSTER_ID)
 
     agent1.assert_called_with(CLUSTER_ID, load_template)
+
+
+@pytest.mark.parametrize('strict', (True, False))
+def test_watch(monkeypatch, strict):
+    containers = [
+        [{'id': 'cont-1'}, {'id': 'cont-2'}, {'id': 'cont-3'}],
+        [{'id': 'cont-1'}, {'id': 'cont-2'}],
+        [{'id': 'cont-1'}, {'id': 'cont-2'}],
+    ]
+
+    existing_ids = [
+        ('cont-1', 'cont-2', 'cont-3'),
+        ('cont-1', 'cont-2'),
+        ('cont-1', 'cont-2'),
+    ]
+
+    stale_ids = [
+        set(),
+        ('cont-3',),
+        set(),
+    ]
+
+    load_agents_mock = MagicMock()
+    load_agents_mock.return_value = ['agent-1', 'agent-2']
+
+    get_containers_mock = MagicMock()
+    get_containers_mock.side_effect = containers
+
+    sync_containers_log_agents_mock = MagicMock()
+    sync_containers_log_agents_mock.side_effect = list(zip(existing_ids, stale_ids))
+
+    sleep = MagicMock()
+    sleep.side_effect = (None, None, KeyboardInterrupt)  # terminate loop on third time
+    monkeypatch.setattr('time.sleep', sleep)
+
+    monkeypatch.setattr('kube_log_watcher.main.load_agents', load_agents_mock)
+    monkeypatch.setattr('kube_log_watcher.main.get_containers', get_containers_mock)
+    monkeypatch.setattr('kube_log_watcher.main.sync_containers_log_agents', sync_containers_log_agents_mock)
+
+    watch(CONTAINERS_PATH, ['a-1', 'a-2'], CLUSTER_ID, strict_labels=strict)
+
+    load_agents_mock.assert_called_with(['a-1', 'a-2'], CLUSTER_ID)
+
+    get_containers_mock.assert_called_with(CONTAINERS_PATH)
+
+    calls = [
+        call(['agent-1', 'agent-2'], set(), containers[0], CONTAINERS_PATH, CLUSTER_ID, kube_url=None,
+             strict_labels=strict),
+        call(['agent-1', 'agent-2'], set(['cont-1', 'cont-2', 'cont-3']), containers[1], CONTAINERS_PATH, CLUSTER_ID,
+             kube_url=None, strict_labels=strict),
+        call(['agent-1', 'agent-2'], set(['cont-1', 'cont-2']), containers[2], CONTAINERS_PATH, CLUSTER_ID,
+             kube_url=None, strict_labels=strict),
+    ]
+
+    sync_containers_log_agents_mock.assert_has_calls(calls, any_order=True)
+
+
+@pytest.mark.parametrize('strict', (True, False))
+def test_watch_failure(monkeypatch, strict):
+    sleep = MagicMock()
+    sleep.return_value = None
+    monkeypatch.setattr('time.sleep', sleep)
+
+    load_agents_mock = MagicMock()
+    load_agents_mock.return_value = ['agent-1', 'agent-2']
+
+    get_containers_mock = MagicMock()
+    get_containers_mock.side_effect = [Exception, Exception, KeyboardInterrupt]
+
+    monkeypatch.setattr('kube_log_watcher.main.load_agents', load_agents_mock)
+    monkeypatch.setattr('kube_log_watcher.main.get_containers', get_containers_mock)
+
+    interval = 60
+    watch(CONTAINERS_PATH, ['a-1', 'a-2'], CLUSTER_ID, interval=interval, strict_labels=strict)
+
+    load_agents_mock.assert_called_with(['a-1', 'a-2'], CLUSTER_ID)
+
+    get_containers_mock.assert_called_with(CONTAINERS_PATH)
+    sleep.assert_called_with(interval / 2)

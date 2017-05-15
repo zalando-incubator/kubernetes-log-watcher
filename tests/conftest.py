@@ -47,7 +47,10 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
         [
             {
                 'config': {
-                    'Config': {'Labels': {'pod.name': 'pod-1', 'pod.namespace': 'default', 'container.name': 'cont-1'}}
+                    'Config': {
+                        'Labels': {'pod.name': 'pod-1', 'pod.namespace': 'default', 'container.name': 'cont-1'},
+                        'Image': 'repo/example.org/cont-1:1.1'
+                    }
                 },
                 'id': 'cont-1',
                 'log_file': '/mnt/containers/cont-1/cont-1-json.log'
@@ -64,21 +67,30 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
             },
             {
                 'config': {
-                    'Config': {'Labels': {'pod.name': 'pod-2', 'pod.namespace': 'default', 'container.name': 'cont-3'}}
+                    'Config': {
+                        'Labels': {'pod.name': 'pod-2', 'pod.namespace': 'default', 'container.name': 'cont-3'},
+                        'Image': 'repo/example.org/cont-3:1.1'
+                    }
                 },
                 'id': 'cont-3',
                 'log_file': '/mnt/containers/cont-3/cont-3-json.log'
             },
             {
                 'config': {
-                    'Config': {'Labels': {'pod.name': 'pod-3', 'pod.namespace': 'default', 'container.name': 'cont-4'}}
+                    'Config': {
+                        'Labels': {'pod.name': 'pod-3', 'pod.namespace': 'default', 'container.name': 'cont-4'},
+                        'Image': 'repo/example.org/cont-4:1.1'
+                    }
                 },
                 'id': 'cont-4',
                 'log_file': '/mnt/containers/cont-4/cont-4-json.log'
             },
             {
                 'config': {
-                    'Config': {'Labels': {'pod.name': 'pod-4', 'pod.namespace': 'kube', 'container.name': 'cont-5'}}
+                    'Config': {
+                        'Labels': {'pod.name': 'pod-4', 'pod.namespace': 'kube', 'container.name': 'cont-5'},
+                        'Image': 'repo/example.org/cont-5'
+                    }
                 },
                 'id': 'cont-5',
                 'log_file': '/mnt/containers/cont-5/cont-5-json.log'
@@ -102,7 +114,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
             {
                 'metadata': {
                     'name': 'pod-3',
-                    'labels': {'version': 'v1'}  # missing 'app' label
+                    'labels': {'version': 'v1'}  # missing 'application' label
                 }
             },
             {
@@ -113,7 +125,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                 }
             },
         ],
-        # 3. targets
+        # 3. targets strict
         [
             {
                 'pod_labels': {'application': 'app-1', 'version': 'v1', 'release': '123'},
@@ -123,7 +135,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'container_id': 'cont-1', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-1-json.log',
                     'application_id': 'app-1', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-1',
                     'log_file_path': '/mnt/containers/cont-1/cont-1-json.log', 'container_name': 'cont-1',
-                    'pod_annotations': {'a/1': 'a-1', 'a/2': 'a-2'},
+                    'pod_annotations': {'a/1': 'a-1', 'a/2': 'a-2'}, 'image': 'cont-1', 'image_version': '1.1'
                 }
             },
             {
@@ -134,11 +146,36 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'container_id': 'cont-5', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-5-json.log',
                     'application_id': 'app-2', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-5',
                     'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5',
-                    'pod_annotations': {},
+                    'pod_annotations': {}, 'image': 'cont-5', 'image_version': 'latest'
                 }
             }
         ],
-        # 4. res
+        # 4. targets no labels
+        [
+            {
+                'pod_labels': {'application': 'app-1'},
+                'id': 'cont-3',
+                'kwargs': {
+                    'pod_name': 'pod-2', 'namespace': 'default', 'node_name': NODE, 'release': '',
+                    'container_id': 'cont-3', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-3-json.log',
+                    'application_id': 'app-1', 'application_version': '', 'container_path': '/mnt/containers/cont-3',
+                    'log_file_path': '/mnt/containers/cont-3/cont-3-json.log', 'container_name': 'cont-3',
+                    'pod_annotations': {}, 'image': 'cont-3', 'image_version': '1.1'
+                }
+            },
+            {
+                'pod_labels': {'version': 'v1'},
+                'id': 'cont-4',
+                'kwargs': {
+                    'pod_name': 'pod-3', 'namespace': 'default', 'node_name': NODE, 'release': '',
+                    'container_id': 'cont-4', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-4-json.log',
+                    'application_id': 'pod-3', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-4',
+                    'log_file_path': '/mnt/containers/cont-4/cont-4-json.log', 'container_name': 'cont-4',
+                    'pod_annotations': {}, 'image': 'cont-4', 'image_version': '1.1'
+                }
+            }
+        ],
+        # 5. res
         {'cont-1', 'cont-5'}
     )
 ])

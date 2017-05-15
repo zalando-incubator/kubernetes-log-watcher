@@ -5,6 +5,8 @@ import sys
 import logging
 import json
 
+from typing import Tuple
+
 import kube_log_watcher.kube as kube
 from kube_log_watcher.template_loader import load_template
 
@@ -22,13 +24,12 @@ BUILTIN_AGENTS = {
     'scalyr': ScalyrAgent,
 }
 
+# Set via kubernetes downward API.
+CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
+
 logger = logging.getLogger('kube_log_watcher')
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 logger.setLevel(logging.INFO)
-
-
-# Set via kubernetes downward API.
-CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
 
 
 def get_label_value(config, label) -> str:
@@ -100,9 +101,18 @@ def get_containers(containers_path: str) -> list:
     return containers
 
 
+def get_container_image_parts(config: dict) -> Tuple[str]:
+    docker_image_parts = config['Image'].split('/')[-1].split(':')
+
+    image = docker_image_parts[0]
+    image_version = docker_image_parts[-1] if len(docker_image_parts) > 1 else 'latest'
+
+    return image, image_version
+
+
 def sync_containers_log_agents(
         agents: list, watched_containers: list, containers: list, containers_path: str, cluster_id: str,
-        kube_url=None) -> list:
+        kube_url=None, strict_labels=False) -> list:
     """
     Sync containers log configs using supplied agents.
 
@@ -123,6 +133,9 @@ def sync_containers_log_agents(
 
     :param kube_url: URL to Kube API proxy.
     :type kube_url: str
+
+    :param strict_labels: Only follow logs from pods with labels "application" and "version" set. Default False.
+    :type strict_labels: bool
 
     :return: Existing container IDs and stale container IDs.
     :rtype: tuple
@@ -147,7 +160,8 @@ def sync_containers_log_agents(
     return existing_container_ids, stale_container_ids
 
 
-def get_new_containers_log_targets(containers: list, containers_path: str, cluster_id: str, kube_url=None) -> list:
+def get_new_containers_log_targets(
+        containers: list, containers_path: str, cluster_id: str, kube_url=None, strict_labels=False) -> list:
     """
     Return list of container log targets. A ``target`` includes:
         {
@@ -167,6 +181,9 @@ def get_new_containers_log_targets(containers: list, containers_path: str, clust
 
     :param kube_url: URL to Kube API proxy.
     :type kube_url: str
+
+    :param strict_labels: Only follow logs from pods with labels "application" and "version" labels set. Default False.
+    :type strict_labels: bool
 
     :return: List of existing container log targets.
     :rtype: list
@@ -206,8 +223,10 @@ def get_new_containers_log_targets(containers: list, containers_path: str, clust
             kwargs['log_file_name'] = os.path.basename(container['log_file'])
             kwargs['log_file_path'] = container['log_file']
 
+            kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
+
             kwargs['application_id'] = pod_labels.get(APP_LABEL)
-            kwargs['application_version'] = pod_labels.get(VERSION_LABEL)
+            kwargs['application_version'] = pod_labels.get(VERSION_LABEL, '')
             kwargs['release'] = pod_labels.get('release', '')
             kwargs['cluster_id'] = cluster_id
             kwargs['pod_name'] = pod_name
@@ -217,10 +236,14 @@ def get_new_containers_log_targets(containers: list, containers_path: str, clust
             kwargs['pod_annotations'] = pod_annotations
 
             if not all([kwargs['application_id'], kwargs['application_version']]):
-                logger.warning(
-                    ('Labels "{}" and "{}" are required for container({}: {}) in pod({}) '
-                     '... Skipping!').format(APP_LABEL, VERSION_LABEL, container_name, container['id'], pod_name))
-                continue
+                if strict_labels:
+                    logger.warning(
+                        ('Labels "{}" and "{}" are required for container({}: {}) in pod({}) '
+                         '... Skipping!').format(APP_LABEL, VERSION_LABEL, container_name, container['id'], pod_name))
+                    continue
+                else:
+                    if not kwargs['application_id']:
+                        kwargs['application_id'] = kwargs['pod_name']
 
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except:
@@ -237,7 +260,7 @@ def load_agents(agents, cluster_id):
     return [BUILTIN_AGENTS[agent.strip(' ')](cluster_id, load_template) for agent in agents]
 
 
-def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None):
+def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None, strict_labels=False):
     """Watch new containers and sync their corresponding log job/config files."""
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
@@ -250,7 +273,8 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None):
 
             # Write new job files!
             existing_container_ids, stale_container_ids = sync_containers_log_agents(
-                agents, watched_containers.copy(), containers, containers_path, cluster_id, kube_url=kube_url)
+                agents, watched_containers.copy(), containers, containers_path, cluster_id, kube_url=kube_url,
+                strict_labels=strict_labels)
 
             watched_containers.update(existing_container_ids)
             watched_containers.intersection_update(existing_container_ids)  # remove old containers!
@@ -285,9 +309,13 @@ def main():
                       'cluster. If set, then log-watcher will not use serviceaccount config. Can be set via '
                       'WATCHER_KUBE_URL env variable.')
 
+    argp.add_argument('--strict-labels', dest='strict_labels', action='store_true', default=False,
+                      help='Only Follow containers in pods with "application" and "version" set. '
+                           'Can be set via WATCHER_STRICT_LABELS env variable.')
+
     argp.add_argument('--updated-certificates', dest='update_certificates', action='store_true', default=False,
-                      help='Call update-ca-certificates for Kubernetes service account ca.crt. Can be set via '
-                           'WATCHER_KUBERNETES_UPDATE_CERTIFICATES env variable.')
+                      help='[DEPRECATED] Call update-ca-certificates for Kubernetes service account ca.crt. '
+                           'Can be set via WATCHER_KUBERNETES_UPDATE_CERTIFICATES env variable.')
 
     # TODO: Load required agent dynamically? break hard dependency on builtins!
     # argp.add_argument('-e', '--extra-agent', dest='extra_agent_path', default=None,
@@ -308,6 +336,7 @@ def main():
     containers_path = os.environ.get('WATCHER_CONTAINERS_PATH', args.containers_path)
     cluster_id = os.environ.get('WATCHER_CLUSTER_ID', args.cluster_id)
     agents_str = os.environ.get('WATCHER_AGENTS', args.agents)
+    strict_labels = os.environ.get('WATCHER_STRICT_LABELS', args.strict_labels)
 
     update_certificates = os.environ.get('WATCHER_KUBERNETES_UPDATE_CERTIFICATES', args.update_certificates)
     if update_certificates:
@@ -337,7 +366,7 @@ def main():
     logger.info('\tKube url: {}'.format(kube_url))
     logger.info('\tInterval: {}'.format(interval))
 
-    watch(containers_path, agents, cluster_id, interval=interval, kube_url=kube_url)
+    watch(containers_path, agents, cluster_id, interval=interval, kube_url=kube_url, strict_labels=strict_labels)
 
 
 if __name__ == '__main__':
