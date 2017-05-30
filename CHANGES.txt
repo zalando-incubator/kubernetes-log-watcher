@@ -2,6 +2,12 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.15 (2017-05-30)
+-----------------
+
+- Make Journald monitor write rate limit configurable. [#41]
+
+
 0.14 (2017-05-15)
 -----------------
 
