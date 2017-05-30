@@ -10,7 +10,10 @@ APPDYNAMICS_DEST_PATH = '/var/log/watcher/'
 
 SCALYR_DEST_PATH = '/var/log/watcher/'
 SCALYR_KEY = 'scalyr-key-123'
-SCALYR_JOURNALD_DEFAULTS = {'journal_path': None, 'attributes': {'cluster': CLUSTER_ID}, 'extra_fields': {}}
+SCALYR_JOURNALD_DEFAULTS = {
+    'journal_path': None, 'attributes': {'cluster': CLUSTER_ID}, 'extra_fields': {}, 'write_rate': 10000,
+    'write_burst': 200000
+}
 SCALYR_ANNOTATION_PARSER = 'kubernetes-log-watcher/scalyr-parser'
 
 TARGET = {

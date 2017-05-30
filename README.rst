@@ -251,30 +251,30 @@ Log watcher
 
 Configuration variables can be set via Env variables:
 
-``WATCHER_CONTAINERS_PATH``
+WATCHER_CONTAINERS_PATH
   Containers directory path mounted from the host (Default: ``/var/lib/docker/containers``)
 
-``WATCHER_STRICT_LABELS``
+WATCHER_STRICT_LABELS
   If set then only containers running in pods with ``application`` and ``version`` metadata labels will be considered for log watching. (Default is ``False``)
 
   If not set then kubernetes-log-watcher will set ``application_id`` from *pod name*; in order to provide consistent attributes to log configuration agents.
 
-``WATCHER_AGENTS``
+WATCHER_AGENTS
    Comma separated string of required log configuration agents. (Required. Example: "scalyr,appdynamics")
 
-``WATCHER_CLUSTER_ID``
+WATCHER_CLUSTER_ID
    Kubernetes Cluster ID.
 
-``WATCHER_KUBE_URL``
+WATCHER_KUBE_URL
    URL to API proxy service. Service is expected to handle authentication to the Kubernetes cluster. If set, then log-watcher will not use serviceaccount config.
 
-``WATCHER_KUBERNETES_UPDATE_CERTIFICATES``
+WATCHER_KUBERNETES_UPDATE_CERTIFICATES
    [Deprecated] Call update-ca-certificates for Kubernetes service account ca.crt.
 
-``WATCHER_INTERVAL``
+WATCHER_INTERVAL
    Polling interval (secs) for the watcher to detect containers changes. (Default: 60 sec)
 
-``WATCHER_DEBUG``
+WATCHER_DEBUG
    Verbose output. (Default: False)
 
 Scalyr configuration agent
@@ -282,27 +282,32 @@ Scalyr configuration agent
 
 Configuration variables can be set via Env variables:
 
-``WATCHER_SCALYR_API_KEY``
+WATCHER_SCALYR_API_KEY
   Scalyr API key. (Required).
 
-``WATCHER_SCALYR_DEST_PATH``
+WATCHER_SCALYR_DEST_PATH
   Scalyr configuration agent will symlink containers logs in this location. This is to provide more friendly name for log files. Typical log file name for a container will be in the form ``<application>-<version>.log``. (Required).
 
-``WATCHER_SCALYR_CONFIG_PATH``
+WATCHER_SCALYR_CONFIG_PATH
   Scalyr configuration file path. (Default: ``/etc/scalyr-agent-2/agent.json``)
 
-``WATCHER_SCALYR_JOURNALD``
+WATCHER_SCALYR_JOURNALD
   Scalyr should follow Journald logs. This is for node system processes log shipping (e.g. docker, kube) (Default: ``False``)
 
-``WATCHER_SCALYR_JOURNALD_ATTRIBUTES``
+WATCHER_SCALYR_JOURNALD_ATTRIBUTES
   Add attributes to Journald logs. By default ``cluster`` and ``node`` will be added by the configuration agent.
 
-``WATCHER_SCALYR_JOURNALD_EXTRA_FIELDS``
+WATCHER_SCALYR_JOURNALD_EXTRA_FIELDS
   Add extra Systemd Journald fields. Should be a JSON string. Example: '{"_COMM": "command"}'
 
-``WATCHER_SCALYR_JOURNALD_PATH``
+WATCHER_SCALYR_JOURNALD_PATH
   Journald logs path mounted from the host. (Default: ``/var/log/journald``)
 
+WATCHER_SCALYR_JOURNALD_WRITE_RATE
+  Journald monitor write rate. (Default: 10000)
+
+WATCHER_SCALYR_JOURNALD_WRITE_BURST
+  Journald monitor write burst. (Default: 200000)
 
 Scalyr custom parser
 ....................
@@ -321,8 +326,7 @@ AppDynamics configuration agent
 
 Configuration variables can be set via Env variables:
 
-``WATCHER_APPDYNAMICS_DEST_PATH``
-
+WATCHER_APPDYNAMICS_DEST_PATH
   AppDynamics job files path. (Required).
 
 AppDynamics configuration agent could also add ``app_name`` and ``tier_name`` if ``appdynamics_app`` and ``appdynamics_tier`` were set in pod metadata labels.

@@ -24,6 +24,11 @@ ENVS = (
         'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
         'WATCHER_SCALYR_JOURNALD': 'true',
     },
+    {
+        'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
+        'WATCHER_SCALYR_JOURNALD': 'true', 'WATCHER_SCALYR_JOURNALD_WRITE_RATE': 1,
+        'WATCHER_SCALYR_JOURNALD_WRITE_BURST': 2,
+    },
 )
 
 KWARGS_KEYS = ('scalyr_key', 'cluster_id', 'logs', 'monitor_journald')
@@ -45,7 +50,12 @@ def assert_agent(agent, env):
     assert agent.config_path == env.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
 
     journald = env.get('WATCHER_SCALYR_JOURNALD')
-    assert agent.journald == (SCALYR_JOURNALD_DEFAULTS if journald else None)
+    journald_defaults = copy.deepcopy(SCALYR_JOURNALD_DEFAULTS)
+    if env.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE'):
+        journald_defaults['write_rate'] = env.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE')
+    if env.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST'):
+        journald_defaults['write_burst'] = env.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST')
+    assert agent.journald == (journald_defaults if journald else None)
 
     assert agent.cluster_id == CLUSTER_ID
 
@@ -369,7 +379,10 @@ def test_remove_log_target(monkeypatch, env, exc):
         (
             {
                 'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'logs': [],
-                'monitor_journald': {'journal_path': None, 'attributes': {}, 'extra_fields': {}},
+                'monitor_journald': {
+                    'journal_path': None, 'attributes': {}, 'extra_fields': {}, 'write_rate': 10000,
+                    'write_burst': 200000
+                },
             },
             {
                 'api_key': 'scalyr-key-123',
@@ -393,7 +406,9 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'monitor_journald': {
                     'journal_path': '/var/log/journal',
                     'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
-                    'extra_fields': {'_COMM': 'command'}
+                    'extra_fields': {'_COMM': 'command'},
+                    'write_rate': 10000,
+                    'write_burst': 200000,
                 },
             },
             {

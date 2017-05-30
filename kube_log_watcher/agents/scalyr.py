@@ -16,6 +16,8 @@ SCALYR_CONFIG_PATH = '/etc/scalyr-agent-2/agent.json'
 # If exists! we expect serialized json str: '[{"container": "my-container", "parser": "my-custom-parser"}]'
 SCALYR_ANNOTATION_PARSER = 'kubernetes-log-watcher/scalyr-parser'
 SCALYR_DEFAULT_PARSER = 'json'
+SCALYR_DEFAULT_WRITE_RATE = 10000
+SCALYR_DEFAULT_WRITE_BURST = 200000
 
 logger = logging.getLogger('kube_log_watcher')
 
@@ -54,6 +56,8 @@ class ScalyrAgent(BaseWatcher):
                 'journal_path': os.environ.get('WATCHER_SCALYR_JOURNALD_PATH'),
                 'attributes': json.loads(attributes_str),
                 'extra_fields': json.loads(extra_fields_str),
+                'write_rate': int(os.environ.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE', SCALYR_DEFAULT_WRITE_RATE)),
+                'write_burst': int(os.environ.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST', SCALYR_DEFAULT_WRITE_BURST)),
             }
             self.journald['attributes']['cluster'] = cluster_id
 
