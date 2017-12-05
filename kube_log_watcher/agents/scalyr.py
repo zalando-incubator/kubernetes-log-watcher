@@ -104,7 +104,7 @@ class ScalyrAgent(BaseWatcher):
                             parser = p.get('parser', SCALYR_DEFAULT_PARSER)
                             logger.debug('Scalyr watcher agent loaded parser: {} for container: {}'.format(
                                 parser, target['kwargs']['container_name']))
-            except:
+            except Exception:
                 logger.error('Scalyr watcher agent failed to load annotation {}'.format(SCALYR_ANNOTATION_PARSER))
 
         log = {
@@ -133,7 +133,7 @@ class ScalyrAgent(BaseWatcher):
 
         try:
             shutil.rmtree(container_dir)
-        except:
+        except Exception:
             logger.exception('Scalyr watcher agent failed to remove container directory {}'.format(container_dir))
 
     def flush(self):
@@ -157,7 +157,7 @@ class ScalyrAgent(BaseWatcher):
 
                 with open(self.config_path, 'w') as fp:
                     fp.write(config)
-            except:
+            except Exception:
                 logger.exception('Scalyr watcher agent failed to write config file.')
             else:
                 self._first_run = False
@@ -190,7 +190,7 @@ class ScalyrAgent(BaseWatcher):
                 os.symlink(src_log_path, dst_log_path)
 
             return dst_log_path
-        except:
+        except Exception:
             logger.exception('Scalyr watcher agent Failed to adjust log path.')
             return None
 
@@ -206,7 +206,7 @@ class ScalyrAgent(BaseWatcher):
                         self.config_path, len(config.get('logs', []))))
             else:
                 logger.warning('Scalyr watcher agent cannot find config file!')
-        except:
+        except Exception:
             logger.exception('Scalyr watcher agent failed to read config!')
 
         return targets
