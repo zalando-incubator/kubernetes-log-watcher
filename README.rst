@@ -361,17 +361,6 @@ or via ``tox``
 
     $ tox
 
-Build
------
-
-Build docker image
-
-.. code-block:: bash
-
-    $ pip install -U scm-source
-    $ scm-source
-    $ docker build -t registry-write.opensource.zalan.do/eagleeye/kubernetes-log-watcher:<WATCHER_VERSION> .
-
 TODO
 ====
 
