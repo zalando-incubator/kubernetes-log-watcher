@@ -58,7 +58,7 @@ class AppDynamicsAgent(BaseWatcher):
         try:
             os.remove(job_file)
             logger.debug('AppDynamics watcher agent Removed container({}) job file'.format(container_id))
-        except:
+        except Exception:
             logger.exception('AppDynamics watcher agent Failed to remove job file: {}'.format(job_file))
 
     def flush(self):
@@ -71,7 +71,7 @@ class AppDynamicsAgent(BaseWatcher):
                     with open(job_file, 'w') as fp:
                         fp.write(job)
 
-                except:
+                except Exception:
                     logger.exception('AppDynamics watcher agent failed to write job file {}'.format(job_file))
                 else:
                     logger.debug('AppDynamics watcher agent updated job file {}'.format(job_file))
