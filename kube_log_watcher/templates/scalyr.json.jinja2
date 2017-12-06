@@ -8,6 +8,10 @@
         "serverHost": "{{ cluster_id }}"
     },
 
+    {% if scalyr_server %}
+    scalyr_server": "{{ scalyr_server }}",
+    {% endif %}
+
     "logs": [
         {% for log in logs %}
             {
