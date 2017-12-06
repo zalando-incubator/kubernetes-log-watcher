@@ -8,6 +8,4 @@ WORKDIR /watcher
 
 RUN python setup.py install
 
-ADD scm-source.json /scm-source.json
-
 CMD ["kube-log-watcher"]
