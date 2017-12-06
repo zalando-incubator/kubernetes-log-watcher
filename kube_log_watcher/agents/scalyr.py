@@ -26,6 +26,7 @@ class ScalyrAgent(BaseWatcher):
     def __init__(self, cluster_id: str, load_template):
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
+        self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER'):144
 
         if not all([self.api_key, self.dest_path]):
             raise RuntimeError('Scalyr watcher agent initialization failed. Env variables WATCHER_SCALYR_API_KEY and '
@@ -142,6 +143,7 @@ class ScalyrAgent(BaseWatcher):
             'cluster_id': self.cluster_id,
             'logs': self.logs,
             'monitor_journald': self.journald,
+            'scalyr_server': self.scalyr_server,
         }
 
         current_paths = self._get_current_log_paths()
