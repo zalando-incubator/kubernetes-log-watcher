@@ -82,7 +82,7 @@ def get_containers(containers_path: str) -> list:
                 elif f == log_file_name:
                     # Assuming same path is mounted on node *logging agent* container.
                     source_log_file = os.path.join(container_path, log_file_name)
-            except:
+            except Exception:
                 logger.exception('Failed while retrieving config for container({})'.format(container_id))
                 break
 
@@ -153,7 +153,7 @@ def sync_containers_log_agents(
 
                 for container_id in stale_container_ids:
                     agent.remove_log_target(container_id)
-        except:
+        except Exception:
             logger.exception('Failed to sync log config with agent {}'.format(agent.name))
 
     # 4. return new containers, stale containers
@@ -246,7 +246,7 @@ def get_new_containers_log_targets(
                         kwargs['application_id'] = kwargs['pod_name']
 
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
-        except:
+        except Exception:
             logger.exception('Failed to create log target for container({})'.format(container['id']))
 
     return containers_log_targets
@@ -285,7 +285,7 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None, 
             time.sleep(interval)
         except KeyboardInterrupt:
             return
-        except:
+        except Exception:
             logger.exception('Failed in watch! Retrying in {} seconds ...'.format(interval / 2))
             time.sleep(interval / 2)
 

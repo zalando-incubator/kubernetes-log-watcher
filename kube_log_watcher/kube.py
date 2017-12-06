@@ -27,7 +27,7 @@ def update_ca_certificate():
     try:
         shutil.copyfile(os.path.join(DEFAULT_SERVICE_ACC, 'ca.crt'), '/usr/local/share/ca-certificates/ca-kube.crt')
         subprocess.check_call(['update-ca-certificates'])
-    except:
+    except Exception:
         logger.exception('Watcher failed to update CA certificates')
         raise
 
