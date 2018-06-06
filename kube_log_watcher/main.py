@@ -19,6 +19,9 @@ DEST_PATH = '/mnt/jobs/'
 APP_LABEL = 'application'
 VERSION_LABEL = 'version'
 
+ANNOTATION_PREFIX = 'annotation.'
+KUBERNETES_PREFIX = 'io.kubernetes.'
+
 BUILTIN_AGENTS = {
     'appdynamics': AppDynamicsAgent,
     'scalyr': ScalyrAgent,
@@ -32,7 +35,27 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 logger.setLevel(logging.INFO)
 
 
-def get_label_value(config, label) -> str:
+def get_pod_labels_from_container(config) -> dict:
+    """
+    Return Pod labels from container Config.
+    """
+    return {
+        k: v for k, v in config['Config']['Labels'].items()
+        if not k.startswith(ANNOTATION_PREFIX) and not k.startswith(KUBERNETES_PREFIX)
+    }
+
+
+def get_pod_annotations_from_container(config) -> dict:
+    """
+    Return Pod annotations from container Config.
+    """
+    return {
+        k.split(ANNOTATION_PREFIX)[-1]: v for k, v in config['Config']['Labels'].items()
+        if k.startswith(ANNOTATION_PREFIX)
+    }
+
+
+def get_container_label_value(config, label) -> str:
     """
     Get label value from container config. Usually those labels are namespaced in the form:
         io.kubernetes.container.name
@@ -200,21 +223,26 @@ def get_new_containers_log_targets(
 
             if kube.is_pause_container(config['Config']):
                 # We have no interest in Pause containers.
-                logger.debug('Skipping pause container({})'.format(container['id']))
                 continue
 
-            pod_name = get_label_value(config, 'pod.name')
-            container_name = get_label_value(config, 'container.name')
-            pod_namespace = get_label_value(config, 'pod.namespace')
+            pod_name = get_container_label_value(config, 'pod.name')
+            container_name = get_container_label_value(config, 'container.name')
+            pod_namespace = get_container_label_value(config, 'pod.namespace')
 
-            pods = pod_map.get(pod_namespace)
-            if not pods:
-                # We need to get pods in different namespace
-                logger.debug('Retrieving pods in namespace: {}'.format(pod_namespace))
-                pods = kube.get_pods(kube_url=kube_url, namespace=pod_namespace)
-                pod_map[pod_namespace] = pods
+            # First we try to extract labels from container config.
+            pod_labels = get_pod_labels_from_container(config)
+            pod_annotations = get_pod_annotations_from_container(config)
 
-            pod_labels, pod_annotations = kube.get_pod_labels_annotations(pods, pod_name)
+            # If labels are not available, then we can try with Kube API.
+            if APP_LABEL not in pod_labels or not pod_annotations:
+                pods = pod_map.get(pod_namespace)
+                if not pods:
+                    # We need to get pods in different namespace
+                    logger.debug('Retrieving pods in namespace: {}'.format(pod_namespace))
+                    pods = kube.get_pods(kube_url=kube_url, namespace=pod_namespace)
+                    pod_map[pod_namespace] = pods
+
+                pod_labels, pod_annotations = kube.get_pod_labels_annotations(pods, pod_name)
 
             kwargs = {}
 
@@ -243,6 +271,8 @@ def get_new_containers_log_targets(
                     continue
                 else:
                     if not kwargs['application_id']:
+                        logger.warning('Cannot determine application_id for pod: {}. Falling back to pod name!'.format(
+                            pod_name))
                         kwargs['application_id'] = kwargs['pod_name']
 
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})

@@ -6,8 +6,9 @@ from mock import MagicMock, call
 
 from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.main import (
-    get_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
-    get_new_containers_log_targets, get_container_image_parts, watch)
+    get_container_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
+    get_new_containers_log_targets, get_container_image_parts, watch, get_pod_annotations_from_container,
+    get_pod_labels_from_container)
 
 from .conftest import CLUSTER_ID
 
@@ -51,8 +52,38 @@ def test_get_container_image_parts(monkeypatch, image, res):
         ('container.nam', None),
     )
 )
-def test_get_label_value(monkeypatch, label, val):
-    assert val == get_label_value(CONFIG, label)
+def test_get_container_label_value(monkeypatch, label, val):
+    assert val == get_container_label_value(CONFIG, label)
+
+
+def test_get_pod_labels_from_container():
+    config = {
+        'Config': {
+            'Labels': {
+                'io.kubernetes.pod.name': 'pod-1',
+                'application': 'app-1',
+                'job': 'job-app-1',
+                'annotation.some-annotation/annotation-val': 'v1',
+            }
+        }
+    }
+
+    assert get_pod_labels_from_container(config) == {'application': 'app-1', 'job': 'job-app-1'}
+
+
+def test_get_pod_annotations_from_container():
+    config = {
+        'Config': {
+            'Labels': {
+                'io.kubernetes.pod.name': 'pod-1',
+                'application': 'app-1',
+                'job': 'job-app-1',
+                'annotation.some-annotation/annotation-val': 'v1',
+            }
+        }
+    }
+
+    assert get_pod_annotations_from_container(config) == {'some-annotation/annotation-val': 'v1'}
 
 
 @pytest.mark.parametrize(

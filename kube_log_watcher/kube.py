@@ -72,6 +72,8 @@ def get_pod_labels_annotations(pods: list, pod_name: str) -> Tuple[dict, dict]:
         if metadata.get('name') == pod_name:
             return metadata.get('labels', {}), metadata.get('annotations', {})
 
+    logger.warning('Failed to get pod "{}" labels and annotations'.format(pod_name))
+
     return {}, {}
 
 
