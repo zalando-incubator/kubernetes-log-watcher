@@ -101,20 +101,6 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                 'id': 'cont-5',
                 'log_file': '/mnt/containers/cont-5/cont-5-json.log'
             },
-            {
-                'config': {
-                    'Config': {
-                        'Labels': {
-                            'io.kubernetes.pod.name': 'pod-4', 'io.kubernetes.pod.namespace': 'kube',
-                            'io.kubernetes.container.name': 'cont-6', 'annotation.some-annotation': 'v1',
-                            'application': 'app-6', 'version': '1.0.2',
-                        },
-                        'Image': 'repo/example.org/cont-6:1.1'
-                    }
-                },
-                'id': 'cont-6',
-                'log_file': '/mnt/containers/cont-6/cont-6-json.log'
-            }
         ],
         # 2. pods
         [
@@ -169,18 +155,6 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'pod_annotations': {}, 'image': 'cont-5', 'image_version': 'latest'
                 }
             },
-            {
-                'pod_labels': {'application': 'app-6', 'version': '1.0.2'},
-                'id': 'cont-6',
-                'kwargs': {
-                    'pod_name': 'pod-4', 'release': '', 'namespace': 'kube', 'node_name': NODE,
-                    'container_id': 'cont-6', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-6-json.log',
-                    'application_id': 'app-6', 'application_version': '1.0.2',
-                    'container_path': '/mnt/containers/cont-6', 'pod_annotations': {'some-annotation': 'v1'},
-                    'image': 'cont-6', 'image_version': '1.1', 'container_name': 'cont-6',
-                    'log_file_path': '/mnt/containers/cont-6/cont-6-json.log',
-                }
-            }
         ],
         # 4. targets no labels
         [
@@ -208,7 +182,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
             }
         ],
         # 5. res
-        {'cont-1', 'cont-5', 'cont-6'}
+        {'cont-1', 'cont-5'}
     )
 ])
 def fx_containers_sync(request):

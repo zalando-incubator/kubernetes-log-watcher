@@ -22,6 +22,10 @@ PAUSE_CONTAINER_PREFIX = 'gcr.io/google_containers/pause-'
 logger = logging.getLogger('kube_log_watcher')
 
 
+class PodNotFound(Exception):
+    pass
+
+
 def update_ca_certificate():
     warnings.warn('update_ca_certificate is deprecated.')
     try:
@@ -64,6 +68,40 @@ def get_pods(kube_url=None, namespace=DEFAULT_NAMESPACE) -> list:
 
     kube_client = get_client()
     return pykube.Pod.objects(kube_client).filter(namespace=namespace)
+
+
+def get_pod(name, namespace=DEFAULT_NAMESPACE, kube_url=None) -> pykube.Pod:
+    """
+    Return Pod with name.
+    If ``kube_url`` is not ``None`` then kubernetes service account config won't be used.
+
+    :param name: Pod name to use in filtering.
+    :type name: str
+
+    :param namespace: Desired namespace of the pod. Default namespace is ``default``.
+    :type namespace: str
+
+    :param kube_url: URL of a proxy to kubernetes cluster api. This is useful to offload authentication/authorization
+                     to proxy service instead of depending on serviceaccount config. Default is ``None``.
+    :type kube_url: str
+
+    :return: The matching pod.
+    :rtype: pykube.Pod
+    """
+    print('WHAAAT')
+    if kube_url:
+        r = requests.get(urljoin(kube_url, PODS_URL.format(namespace)))
+
+        r.raise_for_status()
+
+        return r.json().get('items', [])
+
+    kube_client = get_client()
+    try:
+        return list(
+            pykube.Pod.objects(kube_client).filter(namespace=namespace, field_selector={'metadata.name': name}))[0]
+    except Exception:
+        raise PodNotFound('Cannot find pod: {}'.format(name))
 
 
 def get_pod_labels_annotations(pods: list, pod_name: str) -> Tuple[dict, dict]:

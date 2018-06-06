@@ -211,10 +211,6 @@ def get_new_containers_log_targets(
     :return: List of existing container log targets.
     :rtype: list
     """
-    pod_map = {}
-
-    pod_map[kube.DEFAULT_NAMESPACE] = kube.get_pods(kube_url=kube_url)
-
     containers_log_targets = []
 
     for container in containers:
@@ -229,20 +225,14 @@ def get_new_containers_log_targets(
             container_name = get_container_label_value(config, 'container.name')
             pod_namespace = get_container_label_value(config, 'pod.namespace')
 
-            # First we try to extract labels from container config.
-            pod_labels = get_pod_labels_from_container(config)
-            pod_annotations = get_pod_annotations_from_container(config)
+            try:
+                pod = kube.get_pod(pod_name, namespace=pod_namespace, kube_url=kube_url)
+            except kube.PodNotFound:
+                logger.warning('Cannot find pod "{}" ... skipping container: {}'.format(pod_name, container_name))
+                continue
 
-            # If labels are not available, then we can try with Kube API.
-            if APP_LABEL not in pod_labels or not pod_annotations:
-                pods = pod_map.get(pod_namespace)
-                if not pods:
-                    # We need to get pods in different namespace
-                    logger.debug('Retrieving pods in namespace: {}'.format(pod_namespace))
-                    pods = kube.get_pods(kube_url=kube_url, namespace=pod_namespace)
-                    pod_map[pod_namespace] = pods
-
-                pod_labels, pod_annotations = kube.get_pod_labels_annotations(pods, pod_name)
+            metadata = pod.obj['metadata']
+            pod_labels, pod_annotations = metadata.get('labels', {}), metadata.get('annotations', {})
 
             kwargs = {}
 

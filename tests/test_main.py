@@ -7,8 +7,7 @@ from mock import MagicMock, call
 from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.main import (
     get_container_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
-    get_new_containers_log_targets, get_container_image_parts, watch, get_pod_annotations_from_container,
-    get_pod_labels_from_container)
+    get_new_containers_log_targets, get_container_image_parts, watch)
 
 from .conftest import CLUSTER_ID
 
@@ -25,6 +24,13 @@ CONFIG = {
 
 CONTAINERS_PATH = '/mnt/containers/'
 DEST_PATH = '/mnt/jobs/'
+
+
+def pod_mock(metadata):
+    pod = MagicMock()
+    pod.obj = metadata
+
+    return pod
 
 
 @pytest.mark.parametrize('image, res', (
@@ -54,36 +60,6 @@ def test_get_container_image_parts(monkeypatch, image, res):
 )
 def test_get_container_label_value(monkeypatch, label, val):
     assert val == get_container_label_value(CONFIG, label)
-
-
-def test_get_pod_labels_from_container():
-    config = {
-        'Config': {
-            'Labels': {
-                'io.kubernetes.pod.name': 'pod-1',
-                'application': 'app-1',
-                'job': 'job-app-1',
-                'annotation.some-annotation/annotation-val': 'v1',
-            }
-        }
-    }
-
-    assert get_pod_labels_from_container(config) == {'application': 'app-1', 'job': 'job-app-1'}
-
-
-def test_get_pod_annotations_from_container():
-    config = {
-        'Config': {
-            'Labels': {
-                'io.kubernetes.pod.name': 'pod-1',
-                'application': 'app-1',
-                'job': 'job-app-1',
-                'annotation.some-annotation/annotation-val': 'v1',
-            }
-        }
-    }
-
-    assert get_pod_annotations_from_container(config) == {'some-annotation/annotation-val': 'v1'}
 
 
 @pytest.mark.parametrize(
@@ -193,10 +169,10 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
 def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
     containers, pods, result, _, _ = fx_containers_sync
 
-    get_pods = MagicMock()
-    get_pods.return_value = pods
+    get_pod = MagicMock()
+    get_pod.side_effect = [pod_mock(p) for p in pods]
 
-    monkeypatch.setattr('kube_log_watcher.kube.get_pods', get_pods)
+    monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
     targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID, strict_labels=True)
@@ -209,10 +185,10 @@ def test_get_new_containers_log_targets_no_strict_labels(monkeypatch, fx_contain
 
     result = result_labels + result_no_labels
 
-    get_pods = MagicMock()
-    get_pods.return_value = pods
+    get_pod = MagicMock()
+    get_pod.side_effect = [pod_mock(p) for p in pods]
 
-    monkeypatch.setattr('kube_log_watcher.kube.get_pods', get_pods)
+    monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
     targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID)
