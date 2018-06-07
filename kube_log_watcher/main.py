@@ -35,26 +35,6 @@ logger.addHandler(logging.StreamHandler(stream=sys.stdout))
 logger.setLevel(logging.INFO)
 
 
-def get_pod_labels_from_container(config) -> dict:
-    """
-    Return Pod labels from container Config.
-    """
-    return {
-        k: v for k, v in config['Config']['Labels'].items()
-        if not k.startswith(ANNOTATION_PREFIX) and not k.startswith(KUBERNETES_PREFIX)
-    }
-
-
-def get_pod_annotations_from_container(config) -> dict:
-    """
-    Return Pod annotations from container Config.
-    """
-    return {
-        k.split(ANNOTATION_PREFIX)[-1]: v for k, v in config['Config']['Labels'].items()
-        if k.startswith(ANNOTATION_PREFIX)
-    }
-
-
 def get_container_label_value(config, label) -> str:
     """
     Get label value from container config. Usually those labels are namespaced in the form:
@@ -387,7 +367,3 @@ def main():
     logger.info('\tInterval: {}'.format(interval))
 
     watch(containers_path, agents, cluster_id, interval=interval, kube_url=kube_url, strict_labels=strict_labels)
-
-
-if __name__ == '__main__':
-    main()

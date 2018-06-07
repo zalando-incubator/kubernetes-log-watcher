@@ -4,6 +4,7 @@ import pytest
 
 from mock import MagicMock, call
 
+from kube_log_watcher.kube import PodNotFound
 from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.main import (
     get_container_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
@@ -128,10 +129,10 @@ def test_get_containers(monkeypatch, walk, config, res, exc):
 def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containers_sync):
     containers, pods, targets, _, result = fx_containers_sync
 
-    get_pods = MagicMock()
-    get_pods.return_value = pods
+    get_pod = MagicMock()
+    get_pod.side_effect = pods
 
-    monkeypatch.setattr('kube_log_watcher.kube.get_pods', get_pods)
+    monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
     stale_containers = watched_containers - result
@@ -166,6 +167,46 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
         agent2.remove_log_target.assert_has_calls(remove_calls, any_order=True)
 
 
+@pytest.mark.parametrize(
+    'watched_containers',
+    (
+        set(),
+        {'cont-5'},
+        {'cont-4'},  # stale
+    )
+)
+def test_sync_containers_log_agents_failure(monkeypatch, watched_containers, fx_containers_sync):
+    containers, pods, targets, _, result = fx_containers_sync
+
+    get_pod = MagicMock()
+    get_pod.side_effect = pods
+
+    monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
+    monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
+
+    stale_containers = watched_containers - result
+    if watched_containers:
+        result = result - watched_containers
+        targets = [t for t in targets if t['id'] not in watched_containers]
+
+    get_targets = MagicMock()
+    get_targets.return_value = targets
+    get_stale = MagicMock()
+    get_stale.return_value = stale_containers
+    monkeypatch.setattr('kube_log_watcher.main.get_new_containers_log_targets', get_targets)
+    monkeypatch.setattr('kube_log_watcher.main.get_stale_containers', get_stale)
+
+    agent1 = MagicMock()
+    agent2 = MagicMock()
+    agent1.add_log_target.side_effect, agent2.add_log_target.side_effect = Exception, RuntimeError
+    agents = [agent1, agent2]
+
+    existing, stale = sync_containers_log_agents(agents, watched_containers, containers, CONTAINERS_PATH, CLUSTER_ID)
+
+    assert existing == result
+    assert stale == stale_containers
+
+
 def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
     containers, pods, result, _, _ = fx_containers_sync
 
@@ -178,6 +219,35 @@ def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
     targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID, strict_labels=True)
 
     assert targets == result
+
+
+def test_get_new_containers_log_targets_not_found_pods(monkeypatch, fx_containers_sync):
+    containers, pods, _, _, _ = fx_containers_sync
+
+    get_pod = MagicMock()
+    get_pod.side_effect = PodNotFound
+
+    monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
+    monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
+
+    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID, strict_labels=True)
+
+    assert targets == []
+
+
+def test_get_new_containers_log_targets_failuer(monkeypatch, fx_containers_sync):
+    containers, pods, _, _, _ = fx_containers_sync
+
+    is_pause = MagicMock()
+    is_pause.side_effect = Exception
+
+    # Force exception
+    monkeypatch.setattr('kube_log_watcher.kube.is_pause_container', is_pause)
+    monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
+
+    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID, strict_labels=True)
+
+    assert targets == []
 
 
 def test_get_new_containers_log_targets_no_strict_labels(monkeypatch, fx_containers_sync):
