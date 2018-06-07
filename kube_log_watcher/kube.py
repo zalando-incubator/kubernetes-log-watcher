@@ -88,7 +88,6 @@ def get_pod(name, namespace=DEFAULT_NAMESPACE, kube_url=None) -> pykube.Pod:
     :return: The matching pod.
     :rtype: pykube.Pod
     """
-    print('WHAAAT')
     if kube_url:
         r = requests.get(urljoin(kube_url, PODS_URL.format(namespace)))
 
