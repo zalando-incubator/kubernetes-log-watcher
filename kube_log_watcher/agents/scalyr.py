@@ -124,7 +124,8 @@ class ScalyrAgent(BaseWatcher):
                     logger.warning(
                         ('Scalyr watcher agent found invalid {} annotation in pod: {}. '
                          'Expected `list` found: `{}`').format(
-                            SCALYR_ANNOTATION_SAMPLING_RULES, target['kwargs']['pod_name'], type(containers_sampling_rules)))
+                            SCALYR_ANNOTATION_SAMPLING_RULES,
+                            target['kwargs']['pod_name'], type(containers_sampling_rules)))
                 else:
                     for p in containers_sampling_rules:
                         if p.get('container') == target['kwargs']['container_name']:
@@ -148,7 +149,8 @@ class ScalyrAgent(BaseWatcher):
                     logger.warning(
                         ('Scalyr watcher agent found invalid {} annotation in pod: {}. '
                          'Expected `list` found: `{}`').format(
-                            SCALYR_ANNOTATION_REDACTION_RULES, target['kwargs']['pod_name'], type(containers_redaction_rules)))
+                            SCALYR_ANNOTATION_REDACTION_RULES,
+                            target['kwargs']['pod_name'], type(containers_redaction_rules)))
                 else:
                     for p in containers_redaction_rules:
                         if p.get('container') == target['kwargs']['container_name']:

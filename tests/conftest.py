@@ -35,8 +35,11 @@ TARGET = {
         'log_file_name': 'container-1-json.log',
         'pod_annotations': {
             SCALYR_ANNOTATION_PARSER: '[{"container": "app-1-container-1", "parser": "custom-parser"}]',
-            SCALYR_ANNOTATION_SAMPLING_RULES: '[{"container": "app-1-container-1", "sampling-rules":[{ "match_expression": "<expression here>", "sampling_rate": "0" }]}]',
-            SCALYR_ANNOTATION_REDACTION_RULES: '[{"container": "app-1-container-1", "redaction-rules":[{ "match_expression": "<expression here>" }]}]'
+            SCALYR_ANNOTATION_SAMPLING_RULES:
+                '[{"container": "app-1-container-1", "sampling-rules":[{ "match_expression": "<expression here>", '
+                '"sampling_rate": "0" }]}]',
+            SCALYR_ANNOTATION_REDACTION_RULES:
+                '[{"container": "app-1-container-1", "redaction-rules":[{ "match_expression": "<expression here>" }]}]'
         }
 
     },
