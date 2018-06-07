@@ -51,7 +51,10 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
             {
                 'config': {
                     'Config': {
-                        'Labels': {'pod.name': 'pod-1', 'pod.namespace': 'default', 'container.name': 'cont-1'},
+                        'Labels': {
+                            'io.kubernetes.pod.name': 'pod-1', 'pod.namespace': 'default', 'container.name': 'cont-1',
+                            'annotation.some-annotation': 'v1',
+                        },
                         'Image': 'repo/example.org/cont-1:1.1'
                     }
                 },
@@ -151,7 +154,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5',
                     'pod_annotations': {}, 'image': 'cont-5', 'image_version': 'latest'
                 }
-            }
+            },
         ],
         # 4. targets no labels
         [

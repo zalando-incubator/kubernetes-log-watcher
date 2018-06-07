@@ -1,6 +1,7 @@
 build_steps:
 - desc: "Install dependencies"
   cmd: |
+    apt-get update
     apt-get install -q -y --no-install-recommends \
       git \
       python3.5 \
@@ -28,7 +29,7 @@ build_steps:
       RELEASE_VERSION=$(git describe --tags --always --dirty)
       AGENT_IMAGE=registry-write.opensource.zalan.do/eagleeye/kubernetes-log-watcher:${RELEASE_VERSION}
     else
-      AGENT_IMAGE=registry-write.opensource.zalan.do/eagleeye/kubernetes-log-watcher:${CDP_BUILD_VERSION}
+      AGENT_IMAGE=registry-write.opensource.zalan.do/eagleeye/kubernetes-log-watcher-unstable:${CDP_BUILD_VERSION}
     fi
     docker build --tag "$AGENT_IMAGE" .
     docker push "$AGENT_IMAGE"
