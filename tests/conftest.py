@@ -15,6 +15,8 @@ SCALYR_JOURNALD_DEFAULTS = {
     'write_burst': 200000
 }
 SCALYR_ANNOTATION_PARSER = 'kubernetes-log-watcher/scalyr-parser'
+SCALYR_ANNOTATION_SAMPLING_RULES = 'kubernetes-log-watcher/scalyr-sampling-rules'
+SCALYR_ANNOTATION_REDACTION_RULES = 'kubernetes-log-watcher/scalyr-redaction-rules'
 
 TARGET = {
     'id': 'container-1',
@@ -31,7 +33,11 @@ TARGET = {
         'container_id': 'container-1',
         'container_path': '/mnt/containers/container-1',
         'log_file_name': 'container-1-json.log',
-        'pod_annotations': {SCALYR_ANNOTATION_PARSER: '[{"container": "app-1-container-1", "parser": "custom-parser"}]'}
+        'pod_annotations': {
+            SCALYR_ANNOTATION_PARSER: '[{"container": "app-1-container-1", "parser": "custom-parser"}]',
+            SCALYR_ANNOTATION_SAMPLING_RULES: '[{"container": "app-1-container-1", "sampling-rules":[{ "match_expression": "<expression here>", "sampling_rate": "0" }]}]',
+            SCALYR_ANNOTATION_REDACTION_RULES: '[{"container": "app-1-container-1", "redaction-rules":[{ "match_expression": "<expression here>" }]}]'
+        }
 
     },
     'pod_labels': {}
