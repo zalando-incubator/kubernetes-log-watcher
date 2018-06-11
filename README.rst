@@ -321,6 +321,29 @@ The default parser for container logs is ``json`` parser. In some cases however 
 
 The value of ``kubernetes-log-watcher/scalyr-parser`` annotation should be a json serialized list. If ``container`` value did not match, then default parser is used (i.e. ``json``).
 
+Scalyr sampling rules
+....................
+
+Sampling rules enable to only ship a certain pattern that matches a regular expression and specified amount of log percentage to Scalyr. The example shows an expression that matches ``app-1`` and a match expression ``my-expression``. If it's met, only 10% of it will be shipped to Scalyr using a ``sampling_rate`` of ``0.1``.
+
+.. code-block:: yaml
+
+  sampling rules:
+    kubernetes-log-watcher/scalyr-sampling-rules: '[{"container": "app-1", "sampling-rules":[{ "match_expression": "my-expression", "sampling_rate": "0.1" }]}]'
+
+
+Scalyr log redaction
+....................
+
+Redaction rules enable to avoid shipping sensitive data that shouldn't get transferred to Scalyr either getting fully removed from log files or to replace them with specific strings. The first example below shows how matches will be fully removed and the second shows how matches will be replaced with a different string.
+
+.. code-block:: yaml
+
+  redaction rules:
+    kubernetes-log-watcher/scalyr-redaction-rules: '[{"container": "app-1", "redaction-rules":[{ "match_expression": "my-expression" }]}]'
+    kubernetes-log-watcher/scalyr-redaction-rules: '[{"container": "app-1", "redaction-rules":[{ "match_expression": "my-expression", "replacement": "replacement-expression" }]}]'
+
+
 AppDynamics configuration agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
