@@ -328,7 +328,7 @@ Sampling rules enable to only ship a certain pattern that matches a regular expr
 
 .. code-block:: yaml
 
-  sampling rules:
+  annotations:
     kubernetes-log-watcher/scalyr-sampling-rules: '[{"container": "app-1", "sampling-rules":[{ "match_expression": "my-expression", "sampling_rate": "0.1" }]}]'
 
 
@@ -339,7 +339,7 @@ Redaction rules enable to avoid shipping sensitive data that shouldn't get trans
 
 .. code-block:: yaml
 
-  redaction rules:
+  annotations:
     kubernetes-log-watcher/scalyr-redaction-rules: '[{"container": "app-1", "redaction-rules":[{ "match_expression": "my-expression" }]}]'
     kubernetes-log-watcher/scalyr-redaction-rules: '[{"container": "app-1", "redaction-rules":[{ "match_expression": "my-expression", "replacement": "replacement-expression" }]}]'
 
