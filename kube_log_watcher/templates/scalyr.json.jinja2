@@ -17,13 +17,17 @@
             {
                 "path": "{{ log.path }}",
 
+                {% if log.sampling_rules %}
+                "sampling_rules": {{ log.sampling_rules | tojson }},
+                {% endif %}
+
+                {% if log.redaction_rules %}
+                "redaction_rules": {{ log.redaction_rules | tojson }},
+                {% endif %}
+
                 "copy_from_start": true,
 
-                "attributes": {
-                    {% for k, v in log.attributes.items() %}
-                    "{{ k }}": "{{ v }}"{% if not loop.last %},{% endif %}
-                    {% endfor %}
-                }
+                "attributes": {{ log.attributes | tojson }}
             }{% if not loop.last %},{% endif %}
         {% endfor %}
     ],
