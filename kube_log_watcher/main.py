@@ -164,7 +164,7 @@ def sync_containers_log_agents(
 
 
 def get_new_containers_log_targets(
-        containers: list, containers_path: str, cluster_id: str, kube_url=None, strict_labels=[]) -> list:
+        containers: list, containers_path: str, cluster_id: str, kube_url=None, strict_labels=None) -> list:
     """
     Return list of container log targets. A ``target`` includes:
         {
@@ -192,6 +192,7 @@ def get_new_containers_log_targets(
     :rtype: list
     """
     containers_log_targets = []
+    strict_labels = strict_labels or []
 
     for container in containers:
         try:
@@ -240,7 +241,7 @@ def get_new_containers_log_targets(
                 if value:
                     pod_strict_labels[label] = value
 
-            if not set(strict_labels) <= set(pod_strict_labels):
+            if set(strict_labels) - set(pod_strict_labels.keys()):
                 logger.warning(
                     ('Labels "{}" are required for container({}: {}) in pod({}) '
                      '... Skipping!').format(','.join(strict_labels), container_name, container['id'], pod_name))
@@ -265,7 +266,7 @@ def load_agents(agents, cluster_id):
     return [BUILTIN_AGENTS[agent.strip(' ')](cluster_id, load_template) for agent in agents]
 
 
-def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None, strict_labels=[]):
+def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None, strict_labels=None):
     """Watch new containers and sync their corresponding log job/config files."""
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
@@ -314,7 +315,7 @@ def main():
                       'cluster. If set, then log-watcher will not use serviceaccount config. Can be set via '
                       'WATCHER_KUBE_URL env variable.')
 
-    argp.add_argument('--strict-labels', dest='strict_labels', action='store_true', default=False,
+    argp.add_argument('--strict-labels', dest='strict_labels', default='',
                       help='Only follow containers in pods that are labeled with these labels. Takes a comma separated '
                            ' list of label names. Can be set via WATCHER_STRICT_LABELS env variable.')
 
@@ -372,6 +373,6 @@ def main():
     logger.info('\tAgents: {}'.format(agents))
     logger.info('\tKube url: {}'.format(kube_url))
     logger.info('\tInterval: {}'.format(interval))
-    logger.info('\tStrict labels: {}'.format(','.join(strict_labels)))
+    logger.info('\tStrict labels: {}'.format(strict_labels_str))
 
     watch(containers_path, agents, cluster_id, interval=interval, kube_url=kube_url, strict_labels=strict_labels)
