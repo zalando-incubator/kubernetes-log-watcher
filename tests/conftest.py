@@ -202,6 +202,7 @@ KWARGS = {
     'scalyr_key': SCALYR_KEY,
     'cluster_id': CLUSTER_ID,
     'monitor_journald': None,
+    'parse_lines_json': False,
     'logs': [
         {
             'path': os.path.join(SCALYR_DEST_PATH, 'container-1', 'app-1-v1.log'),

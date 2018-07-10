@@ -291,6 +291,9 @@ WATCHER_SCALYR_DEST_PATH
 WATCHER_SCALYR_CONFIG_PATH
   Scalyr configuration file path. (Default: ``/etc/scalyr-agent-2/agent.json``)
 
+WATCHER_SCALYR_PARSE_LINES_JSON
+  Parse lines lines on the client as JSON. Useful for raw docker logs. (Default: ``False``)
+
 WATCHER_SCALYR_JOURNALD
   Scalyr should follow Journald logs. This is for node system processes log shipping (e.g. docker, kube) (Default: ``False``)
 

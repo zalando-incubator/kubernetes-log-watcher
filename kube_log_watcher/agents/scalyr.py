@@ -33,6 +33,7 @@ class ScalyrAgent(BaseWatcher):
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
         self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER')
+        self.parse_lines_json = os.environ.get('WATCHER_SCALYR_PARSE_LINES_JSON', False)
 
         if not all([self.api_key, self.dest_path]):
             raise RuntimeError('Scalyr watcher agent initialization failed. Env variables WATCHER_SCALYR_API_KEY and '
@@ -205,6 +206,7 @@ class ScalyrAgent(BaseWatcher):
             'logs': self.logs,
             'monitor_journald': self.journald,
             'scalyr_server': self.scalyr_server,
+            'parse_lines_json': self.parse_lines_json,
         }
 
         current_paths = self._get_current_log_paths()
