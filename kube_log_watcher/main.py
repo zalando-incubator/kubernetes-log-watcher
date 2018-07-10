@@ -115,7 +115,7 @@ def get_container_image_parts(config: dict) -> Tuple[str]:
 
 def sync_containers_log_agents(
         agents: list, watched_containers: list, containers: list, containers_path: str, cluster_id: str,
-        kube_url=None, strict_labels=[]) -> list:
+        kube_url=None, strict_labels=None) -> list:
     """
     Sync containers log configs using supplied agents.
 
@@ -234,14 +234,7 @@ def get_new_containers_log_targets(
             kwargs['node_name'] = CLUSTER_NODE_NAME
             kwargs['pod_annotations'] = pod_annotations
 
-            pod_strict_labels = {}
-
-            for label in strict_labels:
-                value = pod_labels.get(label)
-                if value:
-                    pod_strict_labels[label] = value
-
-            if set(strict_labels) - set(pod_strict_labels.keys()):
+            if set(strict_labels) - set(pod_labels.keys()):
                 logger.warning(
                     ('Labels "{}" are required for container({}: {}) in pod({}) '
                      '... Skipping!').format(','.join(strict_labels), container_name, container['id'], pod_name))
