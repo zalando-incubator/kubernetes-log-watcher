@@ -151,8 +151,10 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
     agent2 = MagicMock()
     agents = [agent1, agent2]
 
-    existing, stale = sync_containers_log_agents(agents, watched_containers, containers, CONTAINERS_PATH, CLUSTER_ID)
+    existing, stale = sync_containers_log_agents(agents, watched_containers, containers, CONTAINERS_PATH, CLUSTER_ID,
+                                                 strict_labels=[])
 
+    get_targets.assert_called_with(containers, CONTAINERS_PATH, CLUSTER_ID, kube_url=None, strict_labels=[])
     assert existing == result
     assert stale == stale_containers
 
