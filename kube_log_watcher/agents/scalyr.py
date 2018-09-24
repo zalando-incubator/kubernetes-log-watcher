@@ -174,6 +174,7 @@ class ScalyrAgent(BaseWatcher):
             'redaction_rules': redaction_rules,
             'attributes': {
                 'application': target['kwargs']['application_id'],
+                'environment': target['kwargs']['environment'],
                 'version': target['kwargs']['application_version'],
                 'cluster': target['kwargs']['cluster_id'],
                 'release': target['kwargs']['release'],
