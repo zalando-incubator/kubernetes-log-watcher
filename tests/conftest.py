@@ -22,6 +22,7 @@ TARGET = {
     'id': 'container-1',
     'kwargs': {
         'application_id': 'app-1',
+        'environment': 'test',
         'application_version': 'v1',
         'cluster_id': 'kube-cluster',
         'release': '2016',
@@ -116,26 +117,26 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
             {
                 'metadata': {
                     'name': 'pod-1',
-                    'labels': {'application': 'app-1', 'version': 'v1', 'release': '123'},
+                    'labels': {'application': 'app-1', 'version': 'v1', 'release': '123', 'environment': 'test'},
                     'annotations': {'a/1': 'a-1', 'a/2': 'a-2'},
                 }
             },
             {
                 'metadata': {
                     'name': 'pod-2',
-                    'labels': {'application': 'app-1'}  # missing 'version' label
+                    'labels': {'application': 'app-1', 'environment': 'test'}  # missing 'version' label
                 }
             },
             {
                 'metadata': {
                     'name': 'pod-3',
-                    'labels': {'version': 'v1'}  # missing 'application' label
+                    'labels': {'version': 'v1'}  # missing 'application' and 'environment' labels
                 }
             },
             {
                 'metadata': {
                     'name': 'pod-4',
-                    'labels': {'application': 'app-2', 'version': 'v1'},
+                    'labels': {'application': 'app-2', 'version': 'v1', 'environment': 'test'},
                     'annotations': {},
                 }
             },
@@ -143,39 +144,42 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
         # 3. targets strict
         [
             {
-                'pod_labels': {'application': 'app-1', 'version': 'v1', 'release': '123'},
+                'pod_labels': {'application': 'app-1', 'version': 'v1', 'release': '123', 'environment': 'test'},
                 'id': 'cont-1',
                 'kwargs': {
                     'pod_name': 'pod-1', 'release': '123', 'namespace': 'default', 'node_name': NODE,
                     'container_id': 'cont-1', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-1-json.log',
                     'application_id': 'app-1', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-1',
                     'log_file_path': '/mnt/containers/cont-1/cont-1-json.log', 'container_name': 'cont-1',
-                    'pod_annotations': {'a/1': 'a-1', 'a/2': 'a-2'}, 'image': 'cont-1', 'image_version': '1.1'
+                    'pod_annotations': {'a/1': 'a-1', 'a/2': 'a-2'}, 'image': 'cont-1', 'image_version': '1.1',
+                    'environment': 'test'
                 }
             },
             {
-                'pod_labels': {'application': 'app-2', 'version': 'v1'},
+                'pod_labels': {'application': 'app-2', 'version': 'v1', 'environment': 'test'},
                 'id': 'cont-5',
                 'kwargs': {
                     'pod_name': 'pod-4', 'release': '', 'namespace': 'kube', 'node_name': NODE,
                     'container_id': 'cont-5', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-5-json.log',
                     'application_id': 'app-2', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-5',
                     'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5',
-                    'pod_annotations': {}, 'image': 'cont-5', 'image_version': 'latest'
+                    'pod_annotations': {}, 'image': 'cont-5', 'image_version': 'latest',
+                    'environment': 'test'
                 }
             },
         ],
         # 4. targets no labels
         [
             {
-                'pod_labels': {'application': 'app-1'},
+                'pod_labels': {'application': 'app-1', 'environment': 'test'},
                 'id': 'cont-3',
                 'kwargs': {
                     'pod_name': 'pod-2', 'namespace': 'default', 'node_name': NODE, 'release': '',
                     'container_id': 'cont-3', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-3-json.log',
                     'application_id': 'app-1', 'application_version': '', 'container_path': '/mnt/containers/cont-3',
                     'log_file_path': '/mnt/containers/cont-3/cont-3-json.log', 'container_name': 'cont-3',
-                    'pod_annotations': {}, 'image': 'cont-3', 'image_version': '1.1'
+                    'pod_annotations': {}, 'image': 'cont-3', 'image_version': '1.1',
+                    'environment': 'test'
                 }
             },
             {
@@ -186,7 +190,8 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'container_id': 'cont-4', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-4-json.log',
                     'application_id': 'pod-3', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-4',
                     'log_file_path': '/mnt/containers/cont-4/cont-4-json.log', 'container_name': 'cont-4',
-                    'pod_annotations': {}, 'image': 'cont-4', 'image_version': '1.1'
+                    'pod_annotations': {}, 'image': 'cont-4', 'image_version': '1.1',
+                    'environment': 'unknown'
                 }
             }
         ],

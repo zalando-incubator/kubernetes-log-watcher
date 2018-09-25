@@ -17,6 +17,7 @@ CONTAINERS_PATH = '/mnt/containers/'
 DEST_PATH = '/mnt/jobs/'
 
 APP_LABEL = 'application'
+ENVIRONMENT_LABEL = 'environment'
 VERSION_LABEL = 'version'
 
 ANNOTATION_PREFIX = 'annotation.'
@@ -226,6 +227,7 @@ def get_new_containers_log_targets(
             kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
 
             kwargs['application_id'] = pod_labels.get(APP_LABEL)
+            kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, 'unknown')
             kwargs['application_version'] = pod_labels.get(VERSION_LABEL, '')
             kwargs['release'] = pod_labels.get('release', '')
             kwargs['cluster_id'] = cluster_id
