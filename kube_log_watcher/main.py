@@ -340,7 +340,7 @@ def main():
     agents_str = os.environ.get('WATCHER_AGENTS', args.agents)
     strict_labels_str = os.environ.get('WATCHER_STRICT_LABELS', args.strict_labels)
 
-    strict_labels = strict_labels_str.split(',')
+    strict_labels = strict_labels_str.split(',') if strict_labels_str else []
 
     update_certificates = os.environ.get('WATCHER_KUBERNETES_UPDATE_CERTIFICATES', args.update_certificates)
     if update_certificates:
