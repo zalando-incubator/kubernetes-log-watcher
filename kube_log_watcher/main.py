@@ -144,8 +144,7 @@ def sync_containers_log_agents(
     :return: Existing container IDs and stale container IDs.
     :rtype: tuple
     """
-    containers_log_targets = get_new_containers_log_targets(containers, containers_path, cluster_id, kube_url=kube_url,
-                                                            strict_labels=strict_labels)
+    containers_log_targets = get_new_containers_log_targets(containers, containers_path, cluster_id, kube_url=kube_url)
 
     existing_container_ids = {c['id'] for c in containers_log_targets}
     stale_container_ids = get_stale_containers(watched_containers, existing_container_ids)
