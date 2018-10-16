@@ -389,6 +389,7 @@ TODO
 
 - Support custom extra/external agents (e.g. ``kube-log-watcher --extra-agent /var/lib/custom-agent.py``)
 - Support configuration from config files instead of env variables (e.g. ``kube-log-watcher --config /etc/kube-log-watcher/config.yaml``)
+- Support extending (overriding) constraints (e.g. require ``application``, ``version`` and ``build`` labels to monitor the container)
 - Support running kube-log-watcher as standalone (release to PyPi)
 - Add more configuration agents (logstash, fluentd, etc ...)
 
