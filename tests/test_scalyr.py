@@ -31,7 +31,7 @@ ENVS = (
     },
 )
 
-KWARGS_KEYS = ('scalyr_key', 'parse_lines_json', 'cluster_id', 'logs', 'monitor_journald')
+KWARGS_KEYS = ('scalyr_key', 'cluster_id', 'logs', 'monitor_journald')
 
 
 SCALYR_MONITOR_JOURNALD = copy.deepcopy(SCALYR_JOURNALD_DEFAULTS)
@@ -488,38 +488,6 @@ def test_remove_log_target(monkeypatch, env, exc):
                     }
                 ],
             },
-        ),
-        (
-                {
-                    'scalyr_key': SCALYR_KEY,
-                    'cluster_id': CLUSTER_ID,
-                    'parse_lines_json': True,
-                    'monitor_journald': None,
-                    'logs': [
-                        {
-                            'path': '/p1',
-                            'attributes': {'a1': 'v1', 'parser': 'c-parser'},
-                            'copy_from_start': True,
-                            'redaction_rules': {'match_expression': 'match-expression'}
-                        }
-                    ]
-                },
-                {
-                    'api_key': 'scalyr-key-123',
-                    'implicit_metric_monitor': False,
-                    'implicit_agent_process_metrics_monitor': False,
-                    'server_attributes': {'serverHost': 'kube-cluster'},
-                    'monitors': [],
-                    'logs': [
-                        {
-                            'attributes': {'a1': 'v1', 'parser': 'c-parser'},
-                            'path': '/p1',
-                            'parse_lines_as_json': True,
-                            'copy_from_start': True,
-                            'redaction_rules': {'match_expression': 'match-expression'}
-                        }
-                    ],
-                },
         ),
     )
 )

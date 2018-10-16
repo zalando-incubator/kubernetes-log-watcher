@@ -25,10 +25,6 @@
                 "redaction_rules": {{ log.redaction_rules | tojson }},
                 {% endif %}
 
-                {% if parse_lines_json %}
-                "parse_lines_as_json": true,
-                {% endif %}
-
                 "copy_from_start": true,
 
                 "attributes": {{ log.attributes | tojson }}
