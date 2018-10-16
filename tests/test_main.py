@@ -216,8 +216,7 @@ def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
     monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
-    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID,
-                                             strict_labels=['application', 'version'])
+    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID, strict_labels=True)
 
     assert targets == result
 
@@ -231,8 +230,7 @@ def test_get_new_containers_log_targets_not_found_pods(monkeypatch, fx_container
     monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
-    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID,
-                                             strict_labels=['application', 'version'])
+    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID, strict_labels=True)
 
     assert targets == []
 
@@ -247,8 +245,7 @@ def test_get_new_containers_log_targets_failuer(monkeypatch, fx_containers_sync)
     monkeypatch.setattr('kube_log_watcher.kube.is_pause_container', is_pause)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
 
-    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID,
-                                             strict_labels=['application', 'version'])
+    targets = get_new_containers_log_targets(containers, CONTAINERS_PATH, CLUSTER_ID, strict_labels=True)
 
     assert targets == []
 
@@ -296,7 +293,7 @@ def test_load_agents(monkeypatch):
     agent1.assert_called_with(CLUSTER_ID, load_template)
 
 
-@pytest.mark.parametrize('strict', (['application', 'version'], []))
+@pytest.mark.parametrize('strict', (True, False))
 def test_watch(monkeypatch, strict):
     containers = [
         [{'id': 'cont-1'}, {'id': 'cont-2'}, {'id': 'cont-3'}],
@@ -351,7 +348,7 @@ def test_watch(monkeypatch, strict):
     sync_containers_log_agents_mock.assert_has_calls(calls, any_order=True)
 
 
-@pytest.mark.parametrize('strict', (['application, version'], []))
+@pytest.mark.parametrize('strict', (True, False))
 def test_watch_failure(monkeypatch, strict):
     sleep = MagicMock()
     sleep.return_value = None
