@@ -24,6 +24,19 @@ class PodNotFound(Exception):
     pass
 
 
+class TimedHTTPClient(pykube.HTTPClient):
+    def __init__(self, config, timeout=10):
+        self.timeout = timeout
+        super().__init__(config)
+
+    def get_kwargs(self, **kwargs):
+        """Override parent method to add timeout to all requests"""
+        kw = super().get_kwargs(**kwargs)
+        kw['timeout'] = self.timeout
+
+        return kw
+
+
 def update_ca_certificate():
     warnings.warn('update_ca_certificate is deprecated.')
     try:
@@ -36,7 +49,7 @@ def update_ca_certificate():
 
 def get_client():
     config = pykube.KubeConfig.from_service_account(DEFAULT_SERVICE_ACC)
-    client = pykube.HTTPClient(config)
+    client = TimedHTTPClient(config)
     client.session.trust_env = False
 
     return client
