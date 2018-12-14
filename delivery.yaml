@@ -13,7 +13,6 @@ build_steps:
       libffi-dev \
       libssl-dev \
       tox
-    curl -sSL https://get.docker.com/ | sh
     pip3 install -r requirements.txt
     pip3 install -U flake8
 
@@ -27,9 +26,9 @@ build_steps:
     if [[ ${IS_PR_BUILD} != "true" ]]
     then
       RELEASE_VERSION=$(git describe --tags --always --dirty)
-      AGENT_IMAGE=registry-write.opensource.zalan.do/eagleeye/kubernetes-log-watcher:${RELEASE_VERSION}
+      AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher:${RELEASE_VERSION}
     else
-      AGENT_IMAGE=registry-write.opensource.zalan.do/eagleeye/kubernetes-log-watcher-unstable:${CDP_BUILD_VERSION}
+      AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher-unstable:${CDP_BUILD_VERSION}
     fi
     docker build --tag "$AGENT_IMAGE" .
     docker push "$AGENT_IMAGE"

@@ -42,7 +42,7 @@ def test_get_client(monkeypatch):
     kube_client = MagicMock()
 
     monkeypatch.setattr('pykube.KubeConfig', kube_config)
-    monkeypatch.setattr('pykube.HTTPClient', kube_client)
+    monkeypatch.setattr('kube_log_watcher.kube.TimedHTTPClient', kube_client)
 
     client = get_client()
 
