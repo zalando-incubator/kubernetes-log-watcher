@@ -49,19 +49,25 @@ class Symlinker(BaseWatcher):
         link = (link_dir / sanitize(kw['pod_name'])).with_suffix('.log')
 
         if top_dir.exists():
+            if link.is_symlink and link.samefile(kw['log_file_path']):
+                logger.debug('Symlinker: link already exists for {}. Nothing to be done.'
+                             .format(target['id']))
+                return
+            logger.info('Symlinker: metadata has changed for {}. Creating new symlink.'
+                        .format(target['id']))
             shutil.rmtree(str(top_dir))
-            logger.debug('Removed directory {}'.format(top_dir))
+            logger.debug('Symlinker: Removed directory {}'.format(top_dir))
 
         link_dir.mkdir(parents=True)
         link.symlink_to(kw['log_file_path'])
-        logger.debug('Created symlink {} -> {}'.format(link, kw['log_file_path']))
+        logger.debug('Symlinker: Created symlink {} -> {}'.format(link, kw['log_file_path']))
 
     def remove_log_target(self, target):
         logger.debug('Symlinker: remove_log_target for {} called'.format(target['id']))
         link_dir = str(self.symlink_dir / sanitize(target['kwargs']['container_id']))
         try:
             shutil.rmtree(link_dir)
-            logger.debug('Removed directory {}'.format(link_dir))
+            logger.debug('Symlinker: Removed directory {}'.format(link_dir))
         except Exception:
             logger.exception('{} watcher agent failed to remove link directory {}'.format(self.name, link_dir))
 
