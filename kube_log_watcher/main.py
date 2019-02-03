@@ -35,7 +35,7 @@ CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
 
 logger = logging.getLogger('kube_log_watcher')
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
-logger.setLevel(os.environ.get('LOGLEVEL','INFO').upper())
+logger.setLevel(os.environ.get('LOGLEVEL', 'INFO').upper())
 
 
 def get_container_label_value(config, label) -> str:
