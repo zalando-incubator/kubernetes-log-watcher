@@ -10,11 +10,16 @@ the log shipping agent.
 import logging
 import os
 import pathlib
+import re
 import shutil
 
 from kube_log_watcher.agents.base import BaseWatcher
 
 logger = logging.getLogger('kube_log_watcher')
+
+
+def sanitize(s):
+    return re.sub('[^a-zA-Z0-9_-]', '_', s)
 
 
 class Symlinker(BaseWatcher):
@@ -27,15 +32,15 @@ class Symlinker(BaseWatcher):
 
     def add_log_target(self, target):
         kw = target['kwargs']
-        top_dir = self.symlink_dir / kw['container_id']
+        top_dir = self.symlink_dir / sanitize(kw['container_id'])
         link_dir = top_dir \
-            / kw['application_id'] \
-            / kw['component'] \
-            / kw['namespace'] \
-            / kw['environment'] \
-            / kw['application_version'] \
-            / kw['container_name']
-        link = link_dir / 'pod-1.log'
+            / sanitize(kw['application_id']) \
+            / sanitize(kw['component']) \
+            / sanitize(kw['namespace']) \
+            / sanitize(kw['environment']) \
+            / sanitize(kw['application_version']) \
+            / sanitize(kw['container_name'])
+        link = (link_dir / sanitize(kw['pod_name'])).with_suffix('.log')
 
         if top_dir.exists():
             shutil.rmtree(str(top_dir))
@@ -44,7 +49,7 @@ class Symlinker(BaseWatcher):
         link.symlink_to(kw['log_file_path'])
 
     def remove_log_target(self, target):
-        link_dir = str(self.symlink_dir / target['kwargs']['container_id'])
+        link_dir = str(self.symlink_dir / sanitize(target['kwargs']['container_id']))
         try:
             shutil.rmtree(link_dir)
         except Exception:
