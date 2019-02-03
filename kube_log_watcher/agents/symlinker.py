@@ -26,8 +26,8 @@ class Symlinker(BaseWatcher):
 
     def add_log_target(self, target):
         kw = target['kwargs']
-        link_dir = self.symlink_dir \
-            / kw['container_id'] \
+        top_dir = self.symlink_dir / kw['container_id']
+        link_dir = top_dir \
             / kw['application_id'] \
             / kw['component'] \
             / kw['namespace'] \
@@ -35,6 +35,10 @@ class Symlinker(BaseWatcher):
             / kw['application_version'] \
             / kw['container_name']
         link = link_dir / 'pod-1.log'
+
+        if top_dir.exists():
+            shutil.rmtree(str(top_dir))
+
         link_dir.mkdir(parents=True)
         link.symlink_to(kw['log_file_path'])
 

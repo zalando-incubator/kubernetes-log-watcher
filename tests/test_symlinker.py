@@ -85,3 +85,23 @@ def test_remove_log_target_that_doesnt_exist(tmp_path):
         agent.remove_log_target(target)
 
     assert not (symlink_dir / 'container-1').exists()
+
+
+def test_add_log_target_twice(tmp_path):
+    target = helper_target(tmp_path)
+
+    symlink_dir = tmp_path / "links"
+    symlink_dir.mkdir()
+
+    agent = Symlinker(str(symlink_dir))
+
+    with agent:
+        agent.add_log_target(target)
+        agent.add_log_target(target)
+
+    link = symlink_dir / 'container-1' / 'app-1' / 'comp' / 'default' \
+        / 'test' / 'v1' / 'app-1-container-1' / 'pod-1.log'
+
+    assert link.is_symlink()
+    assert link.samefile(target['kwargs']['log_file_path'])
+    assert link.read_text() == 'foo'
