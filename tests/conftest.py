@@ -117,7 +117,8 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
             {
                 'metadata': {
                     'name': 'pod-1',
-                    'labels': {'application': 'app-1', 'version': 'v1', 'release': '123', 'environment': 'test'},
+                    'labels': {'application': 'app-1', 'version': 'v1', 'release': '123',
+                               'environment': 'test', 'component': 'main'},
                     'annotations': {'a/1': 'a-1', 'a/2': 'a-2'},
                 }
             },
@@ -144,7 +145,8 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
         # 3. targets strict
         [
             {
-                'pod_labels': {'application': 'app-1', 'version': 'v1', 'release': '123', 'environment': 'test'},
+                'pod_labels': {'application': 'app-1', 'version': 'v1', 'release': '123',
+                               'environment': 'test', 'component': 'main'},
                 'id': 'cont-1',
                 'kwargs': {
                     'pod_name': 'pod-1', 'release': '123', 'namespace': 'default', 'node_name': NODE,
@@ -152,7 +154,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'application_id': 'app-1', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-1',
                     'log_file_path': '/mnt/containers/cont-1/cont-1-json.log', 'container_name': 'cont-1',
                     'pod_annotations': {'a/1': 'a-1', 'a/2': 'a-2'}, 'image': 'cont-1', 'image_version': '1.1',
-                    'environment': 'test'
+                    'environment': 'test', 'component': 'main'
                 }
             },
             {
@@ -164,7 +166,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'application_id': 'app-2', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-5',
                     'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5',
                     'pod_annotations': {}, 'image': 'cont-5', 'image_version': 'latest',
-                    'environment': 'test'
+                    'environment': 'test', 'component': 'app-2'
                 }
             },
         ],
@@ -179,7 +181,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'application_id': 'app-1', 'application_version': '', 'container_path': '/mnt/containers/cont-3',
                     'log_file_path': '/mnt/containers/cont-3/cont-3-json.log', 'container_name': 'cont-3',
                     'pod_annotations': {}, 'image': 'cont-3', 'image_version': '1.1',
-                    'environment': 'test'
+                    'environment': 'test', 'component': 'app-1'
                 }
             },
             {
@@ -191,7 +193,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'application_id': 'pod-3', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-4',
                     'log_file_path': '/mnt/containers/cont-4/cont-4-json.log', 'container_name': 'cont-4',
                     'pod_annotations': {}, 'image': 'cont-4', 'image_version': '1.1',
-                    'environment': 'unknown'
+                    'environment': 'unknown', 'component': 'pod-3'
                 }
             }
         ],

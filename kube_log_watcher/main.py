@@ -17,6 +17,7 @@ CONTAINERS_PATH = '/mnt/containers/'
 DEST_PATH = '/mnt/jobs/'
 
 APP_LABEL = 'application'
+COMPONENT_LABEL = 'component'
 ENVIRONMENT_LABEL = 'environment'
 VERSION_LABEL = 'version'
 
@@ -247,6 +248,7 @@ def get_new_containers_log_targets(
                     pod_name))
                 kwargs['application_id'] = kwargs['pod_name']
 
+            kwargs['component'] = pod_labels.get(COMPONENT_LABEL, kwargs['application_id'])
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except Exception:
             logger.exception('Failed to create log target for container({})'.format(container['id']))
