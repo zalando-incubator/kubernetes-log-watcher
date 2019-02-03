@@ -1,12 +1,7 @@
 from kube_log_watcher.agents.symlinker import Symlinker
 
 
-def test_symlinker_name():
-    agent = Symlinker('.')
-    assert agent.name == 'Symlinker'
-
-
-def test_add_log_target(tmp_path):
+def helper_target(tmp_path):
     container_dir = tmp_path / 'containers' / 'container-1'
     container_log = container_dir / 'container-1-json.log'
     target = {
@@ -34,6 +29,17 @@ def test_add_log_target(tmp_path):
     container_dir.mkdir(parents=True)
     container_log.write_text('foo')
 
+    return target
+
+
+def test_symlinker_name():
+    agent = Symlinker('.')
+    assert agent.name == 'Symlinker'
+
+
+def test_add_log_target(tmp_path):
+    target = helper_target(tmp_path)
+
     symlink_dir = tmp_path / "links"
     symlink_dir.mkdir()
 
@@ -51,31 +57,7 @@ def test_add_log_target(tmp_path):
 
 
 def test_remove_log_target(tmp_path):
-    container_dir = tmp_path / 'containers' / 'container-1'
-    container_log = container_dir / 'container-1-json.log'
-    target = {
-        'id': 'container-1',
-        'kwargs': {
-            'application_id': 'app-1',
-            'environment': 'test',
-            'application_version': 'v1',
-            'component': 'comp',
-            'cluster_id': 'kube-cluster',
-            'release': '2016',
-            'pod_name': 'pod-1',
-            'namespace': 'default',
-            'container_name': 'app-1-container-1',
-            'node_name': 'node-1',
-            'log_file_path': str(container_log),
-            'container_id': 'container-1',
-            'container_path': str(container_dir),
-            'log_file_name': 'container-1-json.log',
-            'pod_annotations': {}
-        },
-        'pod_labels': {}
-    }
-
-    container_dir.mkdir(parents=True)
+    target = helper_target(tmp_path)
 
     symlink_dir = tmp_path / "links"
     symlink_dir.mkdir()
