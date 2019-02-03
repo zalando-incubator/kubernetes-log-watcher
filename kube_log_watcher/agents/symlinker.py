@@ -7,9 +7,13 @@ filename, there is no need to dynamically generate configuration for
 the log shipping agent.
 """
 
+import logging
 import pathlib
+import shutil
 
 from kube_log_watcher.agents.base import BaseWatcher
+
+logger = logging.getLogger('kube_log_watcher')
 
 
 class Symlinker(BaseWatcher):
@@ -35,7 +39,11 @@ class Symlinker(BaseWatcher):
         link.symlink_to(kw['log_file_path'])
 
     def remove_log_target(self, target):
-        pass
+        link_dir = str(self.symlink_dir / target['kwargs']['container_id'])
+        try:
+            shutil.rmtree(link_dir)
+        except Exception:
+            logger.exception('{} watcher agent failed to remove link directory {}'.format(self.name, link_dir))
 
     def flush(self):
         pass
