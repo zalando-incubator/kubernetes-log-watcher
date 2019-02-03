@@ -36,6 +36,7 @@ class Symlinker(BaseWatcher):
         return 'Symlinker'
 
     def add_log_target(self, target):
+        logger.debug('Symlinker: add_log_target for {} called'.format(target['id']))
         kw = target['kwargs']
         top_dir = self.symlink_dir / sanitize(kw['container_id'])
         link_dir = top_dir \
@@ -56,6 +57,7 @@ class Symlinker(BaseWatcher):
         logger.debug('Created symlink {} -> {}'.format(link, kw['log_file_path']))
 
     def remove_log_target(self, target):
+        logger.debug('Symlinker: remove_log_target for {} called'.format(target['id']))
         link_dir = str(self.symlink_dir / sanitize(target['kwargs']['container_id']))
         try:
             shutil.rmtree(link_dir)
