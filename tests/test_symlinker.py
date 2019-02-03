@@ -71,3 +71,17 @@ def test_remove_log_target(tmp_path):
         agent.remove_log_target(target)
 
     assert not (symlink_dir / 'container-1').exists()
+
+
+def test_remove_log_target_that_doesnt_exist(tmp_path):
+    target = helper_target(tmp_path)
+
+    symlink_dir = tmp_path / "links"
+    symlink_dir.mkdir()
+
+    agent = Symlinker(str(symlink_dir))
+
+    with agent:
+        agent.remove_log_target(target)
+
+    assert not (symlink_dir / 'container-1').exists()
