@@ -10,7 +10,7 @@ from typing import Tuple
 import kube_log_watcher.kube as kube
 from kube_log_watcher.template_loader import load_template
 
-from kube_log_watcher.agents import ScalyrAgent, AppDynamicsAgent
+from kube_log_watcher.agents import ScalyrAgent, AppDynamicsAgent, SymlinkerLoader
 
 
 CONTAINERS_PATH = '/mnt/containers/'
@@ -27,6 +27,7 @@ KUBERNETES_PREFIX = 'io.kubernetes.'
 BUILTIN_AGENTS = {
     'appdynamics': AppDynamicsAgent,
     'scalyr': ScalyrAgent,
+    'symlinker': SymlinkerLoader
 }
 
 # Set via kubernetes downward API.

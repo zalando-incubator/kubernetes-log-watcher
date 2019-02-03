@@ -8,6 +8,7 @@ the log shipping agent.
 """
 
 import logging
+import os
 import pathlib
 import shutil
 
@@ -51,3 +52,12 @@ class Symlinker(BaseWatcher):
 
     def flush(self):
         pass
+
+
+class SymlinkerLoader(Symlinker):
+    def __new__(cls, _cluster_id, _load_template):
+        symlink_dir = os.environ.get('WATCHER_SYMLINK_DIR')
+        if not symlink_dir:
+            raise RuntimeError(
+                'Symlinker watcher agent initialization failed. Env variable WATCHER_SYMLINK_DIR must be set')
+        return Symlinker(symlink_dir)
