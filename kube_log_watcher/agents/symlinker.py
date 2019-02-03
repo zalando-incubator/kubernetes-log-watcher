@@ -25,6 +25,9 @@ def sanitize(s):
 class Symlinker(BaseWatcher):
     def __init__(self, symlink_dir: str):
         self.symlink_dir = pathlib.Path(symlink_dir)
+        if not self.symlink_dir.is_directory():
+            raise RuntimeError('Symlinker watcher agent initialization failed. Symlink base directory {} does not exist'.format(self.symlink_dir))
+        logger.info('Symlinker watcher agent initialized')
 
     @property
     def name(self):
@@ -44,14 +47,17 @@ class Symlinker(BaseWatcher):
 
         if top_dir.exists():
             shutil.rmtree(str(top_dir))
+            logger.debug('Removed directory {}'.format(top_dir))
 
         link_dir.mkdir(parents=True)
         link.symlink_to(kw['log_file_path'])
+        logger.debug('Created symlink {} -> {}'.format(link, kw['log_file_path']))
 
     def remove_log_target(self, target):
         link_dir = str(self.symlink_dir / sanitize(target['kwargs']['container_id']))
         try:
             shutil.rmtree(link_dir)
+            logger.debug('Removed directory {}'.format(top_dir))
         except Exception:
             logger.exception('{} watcher agent failed to remove link directory {}'.format(self.name, link_dir))
 
