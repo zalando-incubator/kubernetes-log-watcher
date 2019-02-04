@@ -62,9 +62,9 @@ class Symlinker(BaseWatcher):
         link.symlink_to(kw['log_file_path'])
         logger.debug('Symlinker: Created symlink {} -> {}'.format(link, kw['log_file_path']))
 
-    def remove_log_target(self, target):
-        logger.debug('Symlinker: remove_log_target for {} called'.format(target['id']))
-        link_dir = str(self.symlink_dir / sanitize(target['kwargs']['container_id']))
+    def remove_log_target(self, container_id):
+        logger.debug('Symlinker: remove_log_target for {} called'.format(container_id))
+        link_dir = str(self.symlink_dir / sanitize(container_id))
         try:
             shutil.rmtree(link_dir)
             logger.debug('Symlinker: Removed directory {}'.format(link_dir))
