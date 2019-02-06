@@ -194,7 +194,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'application_id': 'pod-3', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-4',
                     'log_file_path': '/mnt/containers/cont-4/cont-4-json.log', 'container_name': 'cont-4',
                     'pod_annotations': {}, 'image': 'cont-4', 'image_version': '1.1',
-                    'environment': 'unknown', 'component': 'pod-3'
+                    'environment': 'production', 'component': 'pod-3'
                 }
             }
         ],

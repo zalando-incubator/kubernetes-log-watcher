@@ -32,6 +32,7 @@ BUILTIN_AGENTS = {
 
 # Set via kubernetes downward API.
 CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
+CLUSTER_ENVIRONMENT = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
 
 logger = logging.getLogger('kube_log_watcher')
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
@@ -229,7 +230,7 @@ def get_new_containers_log_targets(
             kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
 
             kwargs['application_id'] = pod_labels.get(APP_LABEL)
-            kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, 'unknown')
+            kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, CLUSTER_ENVIRONMENT)
             kwargs['application_version'] = pod_labels.get(VERSION_LABEL, 'no_version')
             kwargs['release'] = pod_labels.get('release', '')
             kwargs['cluster_id'] = cluster_id
