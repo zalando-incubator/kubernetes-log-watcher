@@ -10,13 +10,14 @@ from typing import Tuple
 import kube_log_watcher.kube as kube
 from kube_log_watcher.template_loader import load_template
 
-from kube_log_watcher.agents import ScalyrAgent, AppDynamicsAgent
+from kube_log_watcher.agents import ScalyrAgent, AppDynamicsAgent, SymlinkerLoader
 
 
 CONTAINERS_PATH = '/mnt/containers/'
 DEST_PATH = '/mnt/jobs/'
 
 APP_LABEL = 'application'
+COMPONENT_LABEL = 'component'
 ENVIRONMENT_LABEL = 'environment'
 VERSION_LABEL = 'version'
 
@@ -26,14 +27,16 @@ KUBERNETES_PREFIX = 'io.kubernetes.'
 BUILTIN_AGENTS = {
     'appdynamics': AppDynamicsAgent,
     'scalyr': ScalyrAgent,
+    'symlinker': SymlinkerLoader
 }
 
 # Set via kubernetes downward API.
 CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
+CLUSTER_ENVIRONMENT = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
 
 logger = logging.getLogger('kube_log_watcher')
 logger.addHandler(logging.StreamHandler(stream=sys.stdout))
-logger.setLevel(logging.INFO)
+logger.setLevel(os.environ.get('LOGLEVEL', 'INFO').upper())
 
 
 def get_container_label_value(config, label) -> str:
@@ -227,8 +230,8 @@ def get_new_containers_log_targets(
             kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
 
             kwargs['application_id'] = pod_labels.get(APP_LABEL)
-            kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, 'unknown')
-            kwargs['application_version'] = pod_labels.get(VERSION_LABEL, '')
+            kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, CLUSTER_ENVIRONMENT)
+            kwargs['application_version'] = pod_labels.get(VERSION_LABEL, 'none')
             kwargs['release'] = pod_labels.get('release', '')
             kwargs['cluster_id'] = cluster_id
             kwargs['pod_name'] = pod_name
@@ -247,6 +250,7 @@ def get_new_containers_log_targets(
                     pod_name))
                 kwargs['application_id'] = kwargs['pod_name']
 
+            kwargs['component'] = pod_labels.get(COMPONENT_LABEL, kwargs['application_id'])
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except Exception:
             logger.exception('Failed to create log target for container({})'.format(container['id']))

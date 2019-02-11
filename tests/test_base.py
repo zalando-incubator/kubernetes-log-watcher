@@ -40,6 +40,8 @@ def test_builtin_agents_sanity(monkeypatch, klass):
 
     monkeypatch.setattr(klass, '__init__', init)
 
+    monkeypatch.setenv('WATCHER_SYMLINK_DIR', '/')
+
     agent = klass(CLUSTER_ID, load_template)
 
     for attr in attrs:
