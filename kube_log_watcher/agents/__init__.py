@@ -9,5 +9,5 @@ __all__ = (
     AppDynamicsAgent,
     BaseWatcher,
     ScalyrAgent,
-    SymlinkerLoader
+    SymlinkerLoader,
 )
