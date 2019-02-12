@@ -14,6 +14,7 @@ Kubernetes Log Watcher is used to facilitate log shipping on a Kubernetes cluste
 
 - AppDynamics
 - Scalyr
+- Symlinker (embeds metadata in symlink filenames, to be extracted by a log shipping agent such as Fluentd)
 
 ``kubernetes-log-watcher`` is used in `kubernetes-on-aws <https://github.com/zalando-incubator/kubernetes-on-aws>`_ project.
 
@@ -106,7 +107,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
         namespace: kube-system
         labels:
           application: logging-agent
-          version: v0.11
+          version: v0.23
           component: logging
     spec:
         selector:
@@ -117,7 +118,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
             name: logging-agent
             labels:
               application: logging-agent
-              version: v0.11
+              version: v0.23
               component: logging
             annotations:
               scheduler.alpha.kubernetes.io/critical-pod: ''
@@ -159,7 +160,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
           spec:
             containers:
             - name: log-watcher
-              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.14
+              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.23
               env:
               - name: CLUSTER_NODE_NAME
                 valueFrom:
@@ -357,6 +358,14 @@ WATCHER_APPDYNAMICS_DEST_PATH
 
 AppDynamics configuration agent could also add ``app_name`` and ``tier_name`` if ``appdynamics_app`` and ``appdynamics_tier`` were set in pod metadata labels.
 
+Symlinker configuration agent
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The Symlinker agent requires only one environment variable:
+
+WATCHER_SYMLINK_DIR
+  Base directory where symlink directory structure will be created.
+
 
 Development
 ===========
@@ -421,4 +430,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
