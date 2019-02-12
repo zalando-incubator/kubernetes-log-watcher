@@ -2,7 +2,7 @@
 Kubernetes-log-watcher changelog
 ================================
 
-0.23 (2019-02-11)
+0.24 (2019-02-12)
 -----------------
 
 - Add a new Symlinker agent, to be used with Fluentd. [#74]
