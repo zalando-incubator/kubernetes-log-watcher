@@ -77,7 +77,7 @@ class Symlinker(BaseWatcher):
             if link and link.exists():
                 continue
             else:
-                shutil.rmtree(container_dir)
+                shutil.rmtree(str(container_dir))
 
 
 class SymlinkerLoader(Symlinker):
