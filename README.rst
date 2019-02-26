@@ -107,7 +107,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
         namespace: kube-system
         labels:
           application: logging-agent
-          version: v0.24
+          version: v0.25
           component: logging
     spec:
         selector:
@@ -118,7 +118,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
             name: logging-agent
             labels:
               application: logging-agent
-              version: v0.24
+              version: v0.25
               component: logging
             annotations:
               scheduler.alpha.kubernetes.io/critical-pod: ''
@@ -160,7 +160,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
           spec:
             containers:
             - name: log-watcher
-              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.24
+              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.25
               env:
               - name: CLUSTER_NODE_NAME
                 valueFrom:

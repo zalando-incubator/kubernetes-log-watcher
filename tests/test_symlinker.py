@@ -105,3 +105,37 @@ def test_add_log_target_twice(tmp_path):
     assert link.is_symlink()
     assert link.samefile(target['kwargs']['log_file_path'])
     assert link.read_text() == 'foo'
+
+
+def test_cleanup_dangling_symlinks(tmp_path):
+    target = helper_target(tmp_path)
+
+    symlink_dir = tmp_path / "links"
+    symlink_dir.mkdir()
+
+    bad_base_dir = symlink_dir / 'container-0'
+    bad_dir = bad_base_dir / 'app_with_slashes' / 'comp_with_spaces' \
+        / 'default' / 'test' / 'v1_5' / 'app-1-container-1'
+    bad_link = bad_dir / 'pod-123.log'
+
+    bad_dir.mkdir(parents=True)
+
+    old_log = tmp_path / 'doesnt-exist.log'
+    old_log.touch()
+    bad_link.symlink_to(old_log)
+    old_log.unlink()
+
+    agent = Symlinker(str(symlink_dir))
+
+    with agent:
+        agent.add_log_target(target)
+
+    good_link = symlink_dir / 'container-1' / 'app_with_slashes' / 'comp_with_spaces' \
+        / 'default' / 'test' / 'v1_5' / 'app-1-container-1' / 'pod-123.log'
+
+    assert good_link.is_symlink()
+    assert good_link.samefile(target['kwargs']['log_file_path'])
+    assert good_link.read_text() == 'foo'
+
+    assert not(bad_link.is_symlink())
+    assert not(bad_dir.exists())
