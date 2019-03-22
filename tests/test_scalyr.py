@@ -367,18 +367,33 @@ def test_remove_log_target(monkeypatch, env, exc):
     'kwargs,expected',
     (
         (
-            {'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'monitor_journald': None, 'logs': []},
+            {
+                'scalyr_key': SCALYR_KEY,
+                'cluster_id': CLUSTER_ID,
+                'cluster_environment': 'testing',
+                'cluster_alias': 'cluster-alias',
+                'monitor_journald': None,
+                'logs': []
+            },
             {
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {'serverHost': 'kube-cluster'},
+                'server_attributes': {
+                    'serverHost': 'kube-cluster',
+                    'cluster_environment': 'testing',
+                    'cluster_alias': 'cluster-alias'
+                    },
                 'logs': [], 'monitors': []
             },
         ),
         (
             {
-                'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID, 'logs': [],
+                'scalyr_key': SCALYR_KEY,
+                'cluster_id': CLUSTER_ID,
+                'cluster_environment': 'testing',
+                'cluster_alias': 'cluster-alias',
+                'logs': [],
                 'monitor_journald': {
                     'journal_path': None, 'attributes': {}, 'extra_fields': {}, 'write_rate': 10000,
                     'write_burst': 200000
@@ -388,7 +403,11 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {'serverHost': 'kube-cluster'},
+                'server_attributes': {
+                    'serverHost': 'kube-cluster',
+                    'cluster_environment': 'testing',
+                    'cluster_alias': 'cluster-alias'
+                },
                 'logs': [],
                 'monitors': [
                     {
@@ -401,7 +420,10 @@ def test_remove_log_target(monkeypatch, env, exc):
         ),
         (
             {
-                'scalyr_key': SCALYR_KEY, 'cluster_id': CLUSTER_ID,
+                'scalyr_key': SCALYR_KEY,
+                'cluster_id': CLUSTER_ID,
+                'cluster_environment': 'testing',
+                'cluster_alias': 'cluster-alias',
                 'logs': [{'path': '/p1', 'attributes': {'a1': 'v1', 'parser': 'c-parser'}, 'copy_from_start': True}],
                 'monitor_journald': {
                     'journal_path': '/var/log/journal',
@@ -415,7 +437,11 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {'serverHost': 'kube-cluster'},
+                'server_attributes': {
+                    'serverHost': 'kube-cluster',
+                    'cluster_environment': 'testing',
+                    'cluster_alias': 'cluster-alias'
+                    },
                 'logs': [{'attributes': {'a1': 'v1', 'parser': 'c-parser'}, 'path': '/p1', 'copy_from_start': True}],
                 'monitors': [
                     {
@@ -433,6 +459,8 @@ def test_remove_log_target(monkeypatch, env, exc):
             {
                 'scalyr_key': SCALYR_KEY,
                 'cluster_id': CLUSTER_ID,
+                'cluster_environment': 'testing',
+                'cluster_alias': 'cluster-alias',
                 'monitor_journald': None,
                 'logs': [
                     {
@@ -447,7 +475,10 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {'serverHost': 'kube-cluster'},
+                'server_attributes': {
+                    'serverHost': 'kube-cluster',
+                    'cluster_environment': 'testing',
+                    'cluster_alias': 'cluster-alias'},
                 'monitors': [],
                 'logs': [
                     {
@@ -463,6 +494,8 @@ def test_remove_log_target(monkeypatch, env, exc):
             {
                 'scalyr_key': SCALYR_KEY,
                 'cluster_id': CLUSTER_ID,
+                'cluster_environment': 'testing',
+                'cluster_alias': 'cluster-alias',
                 'monitor_journald': None,
                 'logs': [
                     {
@@ -477,7 +510,10 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'api_key': 'scalyr-key-123',
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {'serverHost': 'kube-cluster'},
+                'server_attributes': {
+                    'serverHost': 'kube-cluster',
+                    'cluster_environment': 'testing',
+                    'cluster_alias': 'cluster-alias'},
                 'monitors': [],
                 'logs': [
                     {
@@ -493,6 +529,8 @@ def test_remove_log_target(monkeypatch, env, exc):
                 {
                     'scalyr_key': SCALYR_KEY,
                     'cluster_id': CLUSTER_ID,
+                    'cluster_environment': 'testing',
+                    'cluster_alias': 'cluster-alias',
                     'parse_lines_json': True,
                     'monitor_journald': None,
                     'logs': [
@@ -508,7 +546,11 @@ def test_remove_log_target(monkeypatch, env, exc):
                     'api_key': 'scalyr-key-123',
                     'implicit_metric_monitor': False,
                     'implicit_agent_process_metrics_monitor': False,
-                    'server_attributes': {'serverHost': 'kube-cluster'},
+                    'server_attributes': {
+                        'serverHost': 'kube-cluster',
+                        'cluster_environment': 'testing',
+                        'cluster_alias': 'cluster-alias'
+                        },
                     'monitors': [],
                     'logs': [
                         {

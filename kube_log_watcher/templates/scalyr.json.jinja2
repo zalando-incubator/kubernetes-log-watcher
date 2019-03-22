@@ -5,7 +5,9 @@
     "implicit_agent_process_metrics_monitor": false,
 
     "server_attributes": {
-        "serverHost": "{{ cluster_id }}"
+        "serverHost": "{{ cluster_id }}",
+        "cluster_environment": "{{ cluster_environment }}",
+        "cluster_alias": "{{ cluster_alias }}"
     },
 
     {% if scalyr_server %}
