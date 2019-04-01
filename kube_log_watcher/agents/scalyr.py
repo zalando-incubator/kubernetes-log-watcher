@@ -170,6 +170,11 @@ class ScalyrAgent(BaseWatcher):
                 logger.error('Scalyr watcher agent failed to load annotation {}'.format
                              (SCALYR_ANNOTATION_REDACTION_RULES))
 
+        # add token redaction
+        if not redaction_rules:
+            redaction_rules = []
+        redaction_rules.append({"match_expression": "eyJ[a-zA-Z0-9/+_=-]{5,}\\.eyJ[a-zA-Z0-9/+_=-]{5,}\\.[a-zA-Z0-9/+_=-]{5,}","replacement": "+++TOKEN_REDACTED+++"})
+
         log = {
             'path': log_path,
             'sampling_rules': sampling_rules,
