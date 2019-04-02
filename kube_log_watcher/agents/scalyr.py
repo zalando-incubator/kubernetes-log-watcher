@@ -175,7 +175,7 @@ class ScalyrAgent(BaseWatcher):
             redaction_rules = []
         redaction_rules.append({
                 "match_expression": "eyJ[a-zA-Z0-9/+_=-]{5,}\\.eyJ[a-zA-Z0-9/+_=-]{5,}\\.[a-zA-Z0-9/+_=-]{5,}",
-                "replacement": "+++TOKEN_REDACTED+++"
+                "replacement": "+++JWT_TOKEN_REDACTED+++"
                 })
 
         log = {
