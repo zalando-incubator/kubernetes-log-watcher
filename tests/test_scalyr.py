@@ -171,6 +171,7 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
 
     with agent:
         agent.add_log_target(target)
+        assert agent.logs[0]['attributes']['parser'] == kwargs['logs'][0]['attributes']['parser']
 
     log_path = kwargs['logs'][0]['path']
 
