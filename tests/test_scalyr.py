@@ -600,3 +600,12 @@ def test_parser_other_container(minimal_kwargs):
         )
     }
     assert get_parser(annotations, minimal_kwargs) == "json"
+
+
+def test_parser_not_a_list(minimal_kwargs):
+    annotations = {
+        "kubernetes-log-watcher/scalyr-parser": json.dumps(
+            {"container": "cnt", "parser": "custom-parser"}
+        )
+    }
+    assert get_parser(annotations, minimal_kwargs) == "json"
