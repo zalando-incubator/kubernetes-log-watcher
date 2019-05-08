@@ -8,7 +8,7 @@ from mock import MagicMock
 
 from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.agents.scalyr \
-    import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, get_parser, get_sampling_rules
+    import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, get_parser, get_sampling_rules, get_redaction_rules
 
 from .conftest import CLUSTER_ID, NODE
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS
@@ -651,3 +651,39 @@ def test_sampling_rules_not_a_list(minimal_kwargs):
 def test_sampling_rules_invalid_json(minimal_kwargs):
     annotations = {"kubernetes-log-watcher/scalyr-sampling-rules": "["}
     assert get_sampling_rules(annotations, minimal_kwargs) is None
+
+
+def test_redaction_rules_no_annotation(minimal_kwargs):
+    assert get_redaction_rules({}, minimal_kwargs) is None
+
+
+def test_redaction_rules_custom(minimal_kwargs):
+    annotations = {
+        "kubernetes-log-watcher/scalyr-redaction-rules": json.dumps(
+            [{"container": "cnt", "redaction-rules": {"foo": "bar"}}]
+        )
+    }
+    assert get_redaction_rules(annotations, minimal_kwargs) == {"foo": "bar"}
+
+
+def test_redaction_rules_other_container(minimal_kwargs):
+    annotations = {
+        "kubernetes-log-watcher/scalyr-redaction-rules": json.dumps(
+            [{"container": "other-cnt", "redaction-rules": {"foo": "bar"}}]
+        )
+    }
+    assert get_redaction_rules(annotations, minimal_kwargs) is None
+
+
+def test_redaction_rules_not_a_list(minimal_kwargs):
+    annotations = {
+        "kubernetes-log-watcher/scalyr-redaction-rules": json.dumps(
+            {"container": "cnt", "redaction-rules": {"foo": "bar"}}
+        )
+    }
+    assert get_redaction_rules(annotations, minimal_kwargs) is None
+
+
+def test_redaction_rules_invalid_json(minimal_kwargs):
+    annotations = {"kubernetes-log-watcher/scalyr-redaction-rules": "["}
+    assert get_redaction_rules(annotations, minimal_kwargs) is None
