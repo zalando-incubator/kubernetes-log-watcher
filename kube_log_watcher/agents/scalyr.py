@@ -29,7 +29,6 @@ logger = logging.getLogger('kube_log_watcher')
 
 
 def container_annotation(annotations, container_name, pod_name, annotation_key, result_key, default=None):
-    result = default
     if annotations and annotation_key in annotations:
         try:
             result_candidates = json.loads(annotations[annotation_key])
@@ -41,13 +40,10 @@ def container_annotation(annotations, container_name, pod_name, annotation_key, 
             else:
                 for candidate in result_candidates:
                     if candidate.get('container') == container_name:
-                        result = candidate.get(result_key, default)
-                        logger.debug('Scalyr watcher agent loaded parser: {} for container: {}'.format(
-                            result, container_name))
-                        break
+                        return candidate.get(result_key, default)
         except Exception:
             logger.error('Scalyr watcher agent failed to load annotation {}'.format(annotation_key))
-    return result
+    return default
 
 
 def get_parser(annotations, kwargs):
