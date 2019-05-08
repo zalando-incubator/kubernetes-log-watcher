@@ -609,3 +609,8 @@ def test_parser_not_a_list(minimal_kwargs):
         )
     }
     assert get_parser(annotations, minimal_kwargs) == "json"
+
+
+def test_parser_invalid_json(minimal_kwargs):
+    annotations = {"kubernetes-log-watcher/scalyr-parser": "["}
+    assert get_parser(annotations, minimal_kwargs) == "json"
