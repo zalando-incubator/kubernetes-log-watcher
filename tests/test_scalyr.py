@@ -7,7 +7,7 @@ import pytest
 from mock import MagicMock
 
 from kube_log_watcher.template_loader import load_template
-from kube_log_watcher.agents.scalyr import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME
+from kube_log_watcher.agents.scalyr import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, get_parser
 
 from .conftest import CLUSTER_ID, NODE
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS
@@ -572,3 +572,13 @@ def test_tpl_render(monkeypatch, kwargs, expected):
     config = tpl.render(**kwargs)
 
     assert json.loads(config) == expected
+
+
+@pytest.fixture
+def minimal_kwargs():
+    return {'pod_name': 'some-random-pod',
+            'container_name': 'cnt'}
+
+
+def test_parser_no_annotation(minimal_kwargs):
+    assert get_parser({}, minimal_kwargs) == 'json'
