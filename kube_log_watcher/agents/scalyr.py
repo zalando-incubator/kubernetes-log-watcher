@@ -178,16 +178,12 @@ class ScalyrAgent(BaseWatcher):
             return
 
         kwargs = target['kwargs']
-
         annotations = kwargs.get('pod_annotations', {})
-        parser = get_parser(annotations, kwargs)
-        sampling_rules = get_sampling_rules(annotations, kwargs)
-        redaction_rules = get_redaction_rules(annotations, kwargs)
 
         log = {
             'path': log_path,
-            'sampling_rules': sampling_rules,
-            'redaction_rules': redaction_rules,
+            'sampling_rules': get_sampling_rules(annotations, kwargs),
+            'redaction_rules': get_redaction_rules(annotations, kwargs),
             'attributes': {
                 'application': kwargs['application_id'],
                 'environment': kwargs['environment'],
@@ -198,7 +194,7 @@ class ScalyrAgent(BaseWatcher):
                 'namespace': kwargs['namespace'],
                 'container': kwargs['container_name'],
                 'node': kwargs['node_name'],
-                'parser': parser
+                'parser': get_parser(annotations, kwargs)
             }
         }
 
