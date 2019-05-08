@@ -50,6 +50,35 @@ def get_parser(annotations, kwargs):
     return parser
 
 
+def get_sampling_rules(annotations, kwargs):
+    sampling_rules = None
+    if annotations and SCALYR_ANNOTATION_SAMPLING_RULES in annotations:
+        try:
+            containers_sampling_rules = json.loads(annotations[SCALYR_ANNOTATION_SAMPLING_RULES])
+            if type(containers_sampling_rules) is not list:
+                logger.warning(
+                    ('Scalyr watcher agent found invalid {} annotation in pod: {}. '
+                     'Expected `list` found: `{}`').format(
+                         SCALYR_ANNOTATION_SAMPLING_RULES,
+                         kwargs['pod_name'], type(containers_sampling_rules)))
+            else:
+                for p in containers_sampling_rules:
+                    if p.get('container') == kwargs['container_name']:
+                        sampling_rules = p.get('sampling-rules')
+                        if not sampling_rules:
+                            logger.warning(
+                                ('Scalyr watcher agent did not find sampling rules for {}').format(
+                                    kwargs['container_name']))
+                        else:
+                            logger.debug('Scalyr watcher agent loaded sampling-rule: {} for container: {}'.format(
+                                sampling_rules, kwargs['container_name']))
+                            break
+        except Exception:
+            logger.error('Scalyr watcher agent failed to load annotation {}'.format
+                         (SCALYR_ANNOTATION_SAMPLING_RULES))
+    return sampling_rules
+
+
 class ScalyrAgent(BaseWatcher):
     def __init__(self, cluster_id: str, load_template):
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
@@ -119,38 +148,13 @@ class ScalyrAgent(BaseWatcher):
                 target['kwargs']['container_name'], target['kwargs']['pod_name']))
             return
 
-        sampling_rules = None
         redaction_rules = None
 
         kwargs = target['kwargs']
 
         annotations = kwargs.get('pod_annotations', {})
         parser = get_parser(annotations, kwargs)
-
-        if annotations and SCALYR_ANNOTATION_SAMPLING_RULES in annotations:
-            try:
-                containers_sampling_rules = json.loads(annotations[SCALYR_ANNOTATION_SAMPLING_RULES])
-                if type(containers_sampling_rules) is not list:
-                    logger.warning(
-                        ('Scalyr watcher agent found invalid {} annotation in pod: {}. '
-                         'Expected `list` found: `{}`').format(
-                            SCALYR_ANNOTATION_SAMPLING_RULES,
-                            kwargs['pod_name'], type(containers_sampling_rules)))
-                else:
-                    for p in containers_sampling_rules:
-                        if p.get('container') == kwargs['container_name']:
-                            sampling_rules = p.get('sampling-rules')
-                            if not sampling_rules:
-                                logger.warning(
-                                    ('Scalyr watcher agent did not find sampling rules for {}').format(
-                                     kwargs['container_name']))
-                            else:
-                                logger.debug('Scalyr watcher agent loaded sampling-rule: {} for container: {}'.format(
-                                    sampling_rules, kwargs['container_name']))
-                                break
-            except Exception:
-                logger.error('Scalyr watcher agent failed to load annotation {}'.format
-                             (SCALYR_ANNOTATION_SAMPLING_RULES))
+        sampling_rules = get_sampling_rules(annotations, kwargs)
 
         if annotations and SCALYR_ANNOTATION_REDACTION_RULES in annotations:
             try:
