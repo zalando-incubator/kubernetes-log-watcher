@@ -2,6 +2,18 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.27 (2019-05-10)
+-----------------
+
+- JSON Web Token redaction from all log files. [#82]
+
+
+0.26 (2019-03-22)
+-----------------
+
+- Add Scalyr server fields cluster_alias and cluster_environment. [#78]
+
+
 0.25 (2019-02-26)
 -----------------
 
