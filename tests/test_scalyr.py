@@ -8,7 +8,8 @@ from mock import MagicMock
 
 from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.agents.scalyr \
-    import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, get_parser, get_sampling_rules, get_redaction_rules
+    import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, \
+    get_parser, get_sampling_rules, get_redaction_rules, container_annotation
 
 from .conftest import CLUSTER_ID, NODE
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS
@@ -575,6 +576,80 @@ def test_tpl_render(monkeypatch, kwargs, expected):
     assert json.loads(config) == expected
 
 
+def test_container_annotation_no_annotation():
+    assert container_annotation(
+        annotations={},
+        container_name="cnt",
+        pod_name="pod",
+        annotation_key="foo",
+        result_key="bar",
+        default="def",
+    ) == "def"
+
+
+def test_container_annotation_value_is_set():
+    assert container_annotation(
+        annotations={
+            "foo": json.dumps(
+                [{"container": "cnt",
+                  "bar": {"some": "data", "with": ["arbitrary", "structure"]}},
+                 {"container": "other-cnt",
+                  "bar": "not for us"}]
+            )
+        },
+        container_name="cnt",
+        pod_name="pod",
+        annotation_key="foo",
+        result_key="bar",
+        default="def",
+    ) == {"some": "data", "with": ["arbitrary", "structure"]}
+
+
+def test_container_annotation_other_container():
+    assert container_annotation(
+        annotations={
+            "foo": json.dumps(
+                [{"container": "other-cnt",
+                  "bar": "not for us"}]
+            )
+        },
+        container_name="cnt",
+        pod_name="pod",
+        annotation_key="foo",
+        result_key="bar",
+        default="def",
+    ) == "def"
+
+
+def test_container_annotation_not_a_list():
+    assert container_annotation(
+        annotations={
+            "foo": json.dumps(
+                {"container": "cnt",
+                 "bar": {"some": "data", "with": ["arbitrary", "structure"]}}
+            )
+        },
+        container_name="cnt",
+        pod_name="pod",
+        annotation_key="foo",
+        result_key="bar",
+        default="def",
+    ) == "def"
+
+
+def test_container_annotation_invalid_json():
+    assert container_annotation(
+        annotations={
+            "foo": "[{]"
+        },
+        container_name="cnt",
+        pod_name="pod",
+        annotation_key="foo",
+        result_key="bar",
+        default="def",
+    ) == "def"
+
+
 @pytest.fixture
 def minimal_kwargs():
     return {'pod_name': 'some-random-pod',
@@ -594,29 +669,6 @@ def test_parser_custom(minimal_kwargs):
     assert get_parser(annotations, minimal_kwargs) == "custom-parser"
 
 
-def test_parser_other_container(minimal_kwargs):
-    annotations = {
-        "kubernetes-log-watcher/scalyr-parser": json.dumps(
-            [{"container": "other-cnt", "parser": "custom-parser"}]
-        )
-    }
-    assert get_parser(annotations, minimal_kwargs) == "json"
-
-
-def test_parser_not_a_list(minimal_kwargs):
-    annotations = {
-        "kubernetes-log-watcher/scalyr-parser": json.dumps(
-            {"container": "cnt", "parser": "custom-parser"}
-        )
-    }
-    assert get_parser(annotations, minimal_kwargs) == "json"
-
-
-def test_parser_invalid_json(minimal_kwargs):
-    annotations = {"kubernetes-log-watcher/scalyr-parser": "["}
-    assert get_parser(annotations, minimal_kwargs) == "json"
-
-
 def test_sampling_rules_no_annotation(minimal_kwargs):
     assert get_sampling_rules({}, minimal_kwargs) is None
 
@@ -630,29 +682,6 @@ def test_sampling_rules_custom(minimal_kwargs):
     assert get_sampling_rules(annotations, minimal_kwargs) == {"foo": "bar"}
 
 
-def test_sampling_rules_other_container(minimal_kwargs):
-    annotations = {
-        "kubernetes-log-watcher/scalyr-sampling-rules": json.dumps(
-            [{"container": "other-cnt", "sampling-rules": {"foo": "bar"}}]
-        )
-    }
-    assert get_sampling_rules(annotations, minimal_kwargs) is None
-
-
-def test_sampling_rules_not_a_list(minimal_kwargs):
-    annotations = {
-        "kubernetes-log-watcher/scalyr-sampling-rules": json.dumps(
-            {"container": "cnt", "sampling-rules": {"foo": "bar"}}
-        )
-    }
-    assert get_sampling_rules(annotations, minimal_kwargs) is None
-
-
-def test_sampling_rules_invalid_json(minimal_kwargs):
-    annotations = {"kubernetes-log-watcher/scalyr-sampling-rules": "["}
-    assert get_sampling_rules(annotations, minimal_kwargs) is None
-
-
 def test_redaction_rules_no_annotation(minimal_kwargs):
     assert get_redaction_rules({}, minimal_kwargs) is None
 
@@ -664,26 +693,3 @@ def test_redaction_rules_custom(minimal_kwargs):
         )
     }
     assert get_redaction_rules(annotations, minimal_kwargs) == {"foo": "bar"}
-
-
-def test_redaction_rules_other_container(minimal_kwargs):
-    annotations = {
-        "kubernetes-log-watcher/scalyr-redaction-rules": json.dumps(
-            [{"container": "other-cnt", "redaction-rules": {"foo": "bar"}}]
-        )
-    }
-    assert get_redaction_rules(annotations, minimal_kwargs) is None
-
-
-def test_redaction_rules_not_a_list(minimal_kwargs):
-    annotations = {
-        "kubernetes-log-watcher/scalyr-redaction-rules": json.dumps(
-            {"container": "cnt", "redaction-rules": {"foo": "bar"}}
-        )
-    }
-    assert get_redaction_rules(annotations, minimal_kwargs) is None
-
-
-def test_redaction_rules_invalid_json(minimal_kwargs):
-    annotations = {"kubernetes-log-watcher/scalyr-redaction-rules": "["}
-    assert get_redaction_rules(annotations, minimal_kwargs) is None
