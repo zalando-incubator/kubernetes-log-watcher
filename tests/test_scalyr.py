@@ -687,9 +687,10 @@ def test_redaction_rules_no_annotation(minimal_kwargs):
 
 
 def test_redaction_rules_custom(minimal_kwargs):
+    custom_rule = {"match_expression": "foo", "replacement": "bar"}
     annotations = {
         "kubernetes-log-watcher/scalyr-redaction-rules": json.dumps(
-            [{"container": "cnt", "redaction-rules": {"foo": "bar"}}]
+            [{"container": "cnt", "redaction-rules": [custom_rule]}]
         )
     }
-    assert get_redaction_rules(annotations, minimal_kwargs) == {"foo": "bar"}
+    assert get_redaction_rules(annotations, minimal_kwargs) == [custom_rule]
