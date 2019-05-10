@@ -8,7 +8,7 @@ from mock import MagicMock
 
 from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.agents.scalyr \
-    import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, \
+    import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, JWT_REDACTION_RULE,\
     get_parser, get_sampling_rules, get_redaction_rules, container_annotation
 
 from .conftest import CLUSTER_ID, NODE
@@ -683,13 +683,24 @@ def test_sampling_rules_custom(minimal_kwargs):
 
 
 def test_redaction_rules_no_annotation(minimal_kwargs):
-    assert get_redaction_rules({}, minimal_kwargs) is None
+    assert get_redaction_rules({}, minimal_kwargs) == [JWT_REDACTION_RULE]
 
 
 def test_redaction_rules_custom(minimal_kwargs):
+    custom_rule = {"match_expression": "foo", "replacement": "bar"}
     annotations = {
         "kubernetes-log-watcher/scalyr-redaction-rules": json.dumps(
-            [{"container": "cnt", "redaction-rules": {"foo": "bar"}}]
+            [{"container": "cnt", "redaction-rules": [custom_rule]}]
         )
     }
-    assert get_redaction_rules(annotations, minimal_kwargs) == {"foo": "bar"}
+    assert get_redaction_rules(annotations, minimal_kwargs) == [custom_rule, JWT_REDACTION_RULE]
+
+
+def test_redaction_rules_invalid_format(minimal_kwargs):
+    custom_rule = {"match_expression": "foo", "replacement": "bar"}
+    annotations = {
+        "kubernetes-log-watcher/scalyr-redaction-rules": json.dumps(
+            [{"container": "cnt", "redaction-rules": custom_rule}]   # not a list
+        )
+    }
+    assert get_redaction_rules(annotations, minimal_kwargs) == [JWT_REDACTION_RULE]

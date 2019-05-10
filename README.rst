@@ -107,7 +107,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
         namespace: kube-system
         labels:
           application: logging-agent
-          version: v0.25
+          version: v0.27
           component: logging
     spec:
         selector:
@@ -118,7 +118,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
             name: logging-agent
             labels:
               application: logging-agent
-              version: v0.25
+              version: v0.27
               component: logging
             annotations:
               scheduler.alpha.kubernetes.io/critical-pod: ''
@@ -160,7 +160,7 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
           spec:
             containers:
             - name: log-watcher
-              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.25
+              image: registry.opensource.zalan.do/eagleeye/kubernetes-log-watcher:0.27
               env:
               - name: CLUSTER_NODE_NAME
                 valueFrom:
@@ -347,6 +347,14 @@ Redaction rules enable to avoid shipping sensitive data that shouldn't get trans
     kubernetes-log-watcher/scalyr-redaction-rules: '[{"container": "app-1", "redaction-rules":[{ "match_expression": "my-expression" }]}]'
     kubernetes-log-watcher/scalyr-redaction-rules: '[{"container": "app-1", "redaction-rules":[{ "match_expression": "my-expression", "replacement": "replacement-expression" }]}]'
 
+The following redaction rule is added automatically for all containers. It redacts `JSON Web Tokens  <https://tools.ietf.org/html/rfc7519>`_ from all logs.
+
+.. code-block:: json
+
+   {
+     "match_expression": "eyJ[a-zA-Z0-9/+_=-]{5,}\\.eyJ[a-zA-Z0-9/+_=-]{5,}\\.[a-zA-Z0-9/+_=-]{5,}",
+     "replacement": "+++JWT_TOKEN_REDACTED+++"
+   }
 
 AppDynamics configuration agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

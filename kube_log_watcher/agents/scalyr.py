@@ -21,6 +21,10 @@ SCALYR_ANNOTATION_PARSER = 'kubernetes-log-watcher/scalyr-parser'
 SCALYR_ANNOTATION_SAMPLING_RULES = 'kubernetes-log-watcher/scalyr-sampling-rules'
 # '[{"container": "my-container", "redaction-rules":[{ "match_expression": "<expression here>" }]}]'
 SCALYR_ANNOTATION_REDACTION_RULES = 'kubernetes-log-watcher/scalyr-redaction-rules'
+JWT_REDACTION_RULE = {
+    "match_expression": "eyJ[a-zA-Z0-9/+_=-]{5,}\\.eyJ[a-zA-Z0-9/+_=-]{5,}\\.[a-zA-Z0-9/+_=-]{5,}",
+    "replacement": "+++JWT_TOKEN_REDACTED+++"
+}
 SCALYR_DEFAULT_PARSER = 'json'
 SCALYR_DEFAULT_WRITE_RATE = 10000
 SCALYR_DEFAULT_WRITE_BURST = 200000
@@ -65,12 +69,20 @@ def get_sampling_rules(annotations, kwargs):
 
 
 def get_redaction_rules(annotations, kwargs):
-    return container_annotation(annotations=annotations,
-                                container_name=kwargs['container_name'],
-                                pod_name=kwargs['pod_name'],
-                                annotation_key=SCALYR_ANNOTATION_REDACTION_RULES,
-                                result_key='redaction-rules',
-                                default=None)
+    rules = container_annotation(annotations=annotations,
+                                 container_name=kwargs['container_name'],
+                                 pod_name=kwargs['pod_name'],
+                                 annotation_key=SCALYR_ANNOTATION_REDACTION_RULES,
+                                 result_key='redaction-rules',
+                                 default=[])
+    if type(rules) is not list:
+        logger.warning(
+            ('Scalyr watcher agent found invalid redaction rule annotation in pod/container: {}/{}. '
+             'Expected `list` found: `{}`').format(
+                 kwargs['pod_name'], kwargs['container_name'], type(rules)))
+        rules = []
+    rules.append(JWT_REDACTION_RULE)
+    return rules
 
 
 class ScalyrAgent(BaseWatcher):
