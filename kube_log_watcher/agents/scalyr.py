@@ -163,6 +163,7 @@ class ScalyrAgent(BaseWatcher):
             'redaction_rules': get_redaction_rules(annotations, kwargs),
             'attributes': {
                 'application': kwargs['application_id'],
+                'component': kwargs['component'],
                 'environment': kwargs['environment'],
                 'version': kwargs['application_version'],
                 'cluster': kwargs['cluster_id'],

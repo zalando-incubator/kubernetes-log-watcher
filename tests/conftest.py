@@ -22,6 +22,7 @@ TARGET = {
     'id': 'container-1',
     'kwargs': {
         'application_id': 'app-1',
+        'component': 'main',
         'environment': 'test',
         'application_version': 'v1',
         'cluster_id': 'kube-cluster',
