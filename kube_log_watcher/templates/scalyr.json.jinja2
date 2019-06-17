@@ -34,7 +34,12 @@
                 "copy_from_start": true,
 
                 "attributes": {{ log.attributes | tojson }}
-            }{% if not loop.last %},{% endif %}
+            }{% if log.attributes.application == 'logging-agent' and log.attributes.container == 'scalyr-agent' %},{
+                "path": "/var/log/scalyr-agent-2/logs/*.log",
+                "parse_lines_as_json": false,
+                "copy_from_start": true,
+                "attributes": {{ log.attributes | tojson }}
+            }{% endif %}{% if not loop.last %},{% endif %}
         {% endfor %}
     ],
     "monitors": [
