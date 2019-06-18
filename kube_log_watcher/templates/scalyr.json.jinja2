@@ -35,7 +35,7 @@
 
                 "attributes": {{ log.attributes | tojson }}
             }{% if log.attributes.application == 'logging-agent' and log.attributes.container == 'scalyr-agent' %},{
-                "path": "/var/log/scalyr-agent-2/logs/*.log",
+                "path": "/var/log/scalyr-agent-2/*.log",
                 "parse_lines_as_json": false,
                 "copy_from_start": true,
                 "attributes": {{ log.attributes | tojson }}
