@@ -2,11 +2,16 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.29 (2019-06-19)
+-----------------
+
+- revert #85 [#87]
+
 0.28 (2019-06-18)
 -----------------
 
--  [#84] Set `component` attribute for Scalyr
--  [#85] Add scalyr logfiles to scalyr config
+- Set `component` attribute for Scalyr [#84]
+- Add scalyr logfiles to scalyr config [#85]
 
 0.27 (2019-05-10)
 -----------------
