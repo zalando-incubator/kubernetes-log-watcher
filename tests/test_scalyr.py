@@ -5,13 +5,14 @@ import copy
 import pytest
 
 from mock import MagicMock
+from urllib.parse import quote_plus
 
 from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.agents.scalyr \
     import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, JWT_REDACTION_RULE,\
     get_parser, get_sampling_rules, get_redaction_rules, container_annotation
 
-from .conftest import CLUSTER_ID, NODE
+from .conftest import CLUSTER_ID, NODE, APPLICATION_ID, APPLICATION_VERSION, COMPONENT
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS
 
 ENVS = (
@@ -427,7 +428,13 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'cluster_id': CLUSTER_ID,
                 'cluster_environment': 'testing',
                 'cluster_alias': 'cluster-alias',
-                'logs': [{'path': '/p1', 'attributes': {'a1': 'v1', 'parser': 'c-parser'}, 'copy_from_start': True}],
+                'logs': [
+                    {
+                        'path': '/p1',
+                        'attributes': {'a1': 'v1', 'parser': 'c-parser'},
+                        'copy_from_start': True
+                    }
+                ],
                 'monitor_journald': {
                     'journal_path': '/var/log/journal',
                     'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
@@ -445,7 +452,14 @@ def test_remove_log_target(monkeypatch, env, exc):
                     'cluster_environment': 'testing',
                     'cluster_alias': 'cluster-alias'
                     },
-                'logs': [{'attributes': {'a1': 'v1', 'parser': 'c-parser'}, 'path': '/p1', 'copy_from_start': True}],
+                'logs': [
+                    {
+                        'attributes': {'a1': 'v1', 'parser': 'c-parser'},
+                        'path': '/p1',
+                        'rename_logfile': 'application=/component=/version=',
+                        'copy_from_start': True
+                    }
+                ],
                 'monitors': [
                     {
                         'module': 'scalyr_agent.builtin_monitors.journald_monitor',
@@ -486,6 +500,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'logs': [
                     {
                         'path': '/p1',
+                        'rename_logfile': 'application=/component=/version=',
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'copy_from_start': True,
                         'sampling_rules': {'match_expression': 'match-expression'}
@@ -522,6 +537,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                     {
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'path': '/p1',
+                        'rename_logfile': 'application=/component=/version=',
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}
                     }
@@ -559,6 +575,61 @@ def test_remove_log_target(monkeypatch, env, exc):
                         {
                             'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                             'path': '/p1',
+                            'rename_logfile': 'application=/component=/version=',
+                            'parse_lines_as_json': True,
+                            'copy_from_start': True,
+                            'redaction_rules': {'match_expression': 'match-expression'}
+                        }
+                    ],
+                },
+        ),
+        (
+                {
+                    'scalyr_key': SCALYR_KEY,
+                    'cluster_id': CLUSTER_ID,
+                    'cluster_environment': 'testing',
+                    'cluster_alias': 'cluster-alias',
+                    'parse_lines_json': True,
+                    'monitor_journald': None,
+                    'logs': [
+                        {
+                            'path': '/p1',
+                            'attributes': {
+                                'a1': 'v1',
+                                'parser': 'c-parser',
+                                'application': APPLICATION_ID,
+                                'component': COMPONENT,
+                                'version': APPLICATION_VERSION
+                            },
+                            'copy_from_start': True,
+                            'redaction_rules': {'match_expression': 'match-expression'}
+                        }
+                    ]
+                },
+                {
+                    'api_key': 'scalyr-key-123',
+                    'implicit_metric_monitor': False,
+                    'implicit_agent_process_metrics_monitor': False,
+                    'server_attributes': {
+                        'serverHost': 'kube-cluster',
+                        'cluster_environment': 'testing',
+                        'cluster_alias': 'cluster-alias'
+                        },
+                    'monitors': [],
+                    'logs': [
+                        {
+                            'attributes': {
+                                'a1': 'v1',
+                                'parser': 'c-parser',
+                                'application': APPLICATION_ID,
+                                'component': COMPONENT,
+                                'version': APPLICATION_VERSION
+                            },
+                            'path': '/p1',
+                            'rename_logfile': 'application={}/component={}/version={}'.format(
+                                quote_plus(APPLICATION_ID),
+                                quote_plus(COMPONENT),
+                                quote_plus(APPLICATION_VERSION)),
                             'parse_lines_as_json': True,
                             'copy_from_start': True,
                             'redaction_rules': {'match_expression': 'match-expression'}
