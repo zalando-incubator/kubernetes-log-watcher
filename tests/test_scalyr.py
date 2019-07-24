@@ -456,7 +456,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                     {
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'path': '/p1',
-                        'rename_logfile': '?application=/component=/version=',
+                        'rename_logfile': '?application=&component=&version=',
                         'copy_from_start': True
                     }
                 ],
@@ -500,7 +500,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'logs': [
                     {
                         'path': '/p1',
-                        'rename_logfile': '?application=/component=/version=',
+                        'rename_logfile': '?application=&component=&version=',
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'copy_from_start': True,
                         'sampling_rules': {'match_expression': 'match-expression'}
@@ -537,7 +537,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                     {
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'path': '/p1',
-                        'rename_logfile': '?application=/component=/version=',
+                        'rename_logfile': '?application=&component=&version=',
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}
                     }
@@ -575,7 +575,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                         {
                             'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                             'path': '/p1',
-                            'rename_logfile': '?application=/component=/version=',
+                            'rename_logfile': '?application=&component=&version=',
                             'parse_lines_as_json': True,
                             'copy_from_start': True,
                             'redaction_rules': {'match_expression': 'match-expression'}
@@ -626,7 +626,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                                 'version': APPLICATION_VERSION
                             },
                             'path': '/p1',
-                            'rename_logfile': '?application={}/component={}/version={}'.format(
+                            'rename_logfile': '?application={}&component={}&version={}'.format(
                                 quote_plus(APPLICATION_ID),
                                 quote_plus(COMPONENT),
                                 quote_plus(APPLICATION_VERSION)),
