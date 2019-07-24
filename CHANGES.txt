@@ -2,6 +2,11 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.30 (2019-07-24)
+-----------------
+
+rename log-files to include application, component and version [#88]
+
 0.29 (2019-06-19)
 -----------------
 
