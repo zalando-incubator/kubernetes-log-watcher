@@ -4,6 +4,9 @@ import copy
 import pytest
 
 CLUSTER_ID = 'kube-cluster'
+APPLICATION_ID = 'application-id'
+APPLICATION_VERSION = 'master 1'
+COMPONENT = 'component/1'
 NODE = 'node-1'
 
 APPDYNAMICS_DEST_PATH = '/var/log/watcher/'

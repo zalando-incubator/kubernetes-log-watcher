@@ -1,34 +1,36 @@
-build_steps:
-- desc: "Install dependencies"
-  cmd: |
-    apt-get update
-    apt-get install -q -y --no-install-recommends \
-      git \
-      python3.5 \
-      python3.5-dev \
-      python3-pip \
-      python3-setuptools \
-      python3-wheel \
-      gcc \
-      libffi-dev \
-      libssl-dev \
-      tox
-    pip3 install -r requirements.txt
-    pip3 install -U flake8
+version: "2017-09-20"
+pipeline:
+  - id: "build"
+    type: script
+    commands:
+      - desc: "Install dependencies"
+        cmd: |
+          apt-get update
+          apt-get install -q -y --no-install-recommends \
+            python3.5 \
+            python3.5-dev \
+            python3-pip \
+            python3-setuptools \
+            python3-wheel \
+            gcc \
+            libffi-dev \
+            libssl-dev \
+            tox
+          pip3 install -r requirements.txt
+          pip3 install -U flake8
 
-- desc: "Flake 8"
-  cmd: |
-    flake8 .
+      - desc: "Flake 8"
+        cmd: flake8 .
 
-- desc: "Push Docker Image (if on master) - trigger"
-  cmd: |
-    IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
-    if [[ ${IS_PR_BUILD} != "true" ]]
-    then
-      RELEASE_VERSION=$(git describe --tags --always --dirty)
-      AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher:${RELEASE_VERSION}
-    else
-      AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher-unstable:${CDP_BUILD_VERSION}
-    fi
-    docker build --tag "$AGENT_IMAGE" .
-    docker push "$AGENT_IMAGE"
+      - desc: "Push Docker Image"
+        cmd: |
+          IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
+          if [[ ${IS_PR_BUILD} != "true" ]]
+          then
+            RELEASE_VERSION=$(git describe --tags --always --dirty)
+            AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher:${RELEASE_VERSION}
+          else
+            AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher-unstable:${CDP_BUILD_VERSION}
+          fi
+          docker build --tag "$AGENT_IMAGE" .
+          docker push "$AGENT_IMAGE"
