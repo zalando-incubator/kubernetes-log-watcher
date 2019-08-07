@@ -381,6 +381,13 @@ def test_remove_log_target(monkeypatch, env, exc):
             },
             {
                 'api_key': 'scalyr-key-123',
+                'max_log_offset_size': 100000000,
+                'max_existing_log_offset_size': 200000000,
+                'max_allowed_request_size': 1900000,
+                'min_request_spacing_interval': 0.5,
+                'max_request_spacing_interval': 1.0,
+                'pipeline_threshold': 0.75,
+                "compression_type": "deflate",
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -405,6 +412,13 @@ def test_remove_log_target(monkeypatch, env, exc):
             },
             {
                 'api_key': 'scalyr-key-123',
+                'max_log_offset_size': 100000000,
+                'max_existing_log_offset_size': 200000000,
+                'max_allowed_request_size': 1900000,
+                'min_request_spacing_interval': 0.5,
+                'max_request_spacing_interval': 1.0,
+                'pipeline_threshold': 0.75,
+                "compression_type": "deflate",
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -445,6 +459,13 @@ def test_remove_log_target(monkeypatch, env, exc):
             },
             {
                 'api_key': 'scalyr-key-123',
+                'max_log_offset_size': 100000000,
+                'max_existing_log_offset_size': 200000000,
+                'max_allowed_request_size': 1900000,
+                'min_request_spacing_interval': 0.5,
+                'max_request_spacing_interval': 1.0,
+                'pipeline_threshold': 0.75,
+                "compression_type": "deflate",
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -490,6 +511,13 @@ def test_remove_log_target(monkeypatch, env, exc):
             },
             {
                 'api_key': 'scalyr-key-123',
+                'max_log_offset_size': 100000000,
+                'max_existing_log_offset_size': 200000000,
+                'max_allowed_request_size': 1900000,
+                'min_request_spacing_interval': 0.5,
+                'max_request_spacing_interval': 1.0,
+                'pipeline_threshold': 0.75,
+                "compression_type": "deflate",
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -526,6 +554,13 @@ def test_remove_log_target(monkeypatch, env, exc):
             },
             {
                 'api_key': 'scalyr-key-123',
+                'max_log_offset_size': 100000000,
+                'max_existing_log_offset_size': 200000000,
+                'max_allowed_request_size': 1900000,
+                'min_request_spacing_interval': 0.5,
+                'max_request_spacing_interval': 1.0,
+                'pipeline_threshold': 0.75,
+                "compression_type": "deflate",
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -563,6 +598,13 @@ def test_remove_log_target(monkeypatch, env, exc):
                 },
                 {
                     'api_key': 'scalyr-key-123',
+                    'max_log_offset_size': 100000000,
+                    'max_existing_log_offset_size': 200000000,
+                    'max_allowed_request_size': 1900000,
+                    'min_request_spacing_interval': 0.5,
+                    'max_request_spacing_interval': 1.0,
+                    'pipeline_threshold': 0.75,
+                    "compression_type": "deflate",
                     'implicit_metric_monitor': False,
                     'implicit_agent_process_metrics_monitor': False,
                     'server_attributes': {
@@ -608,6 +650,13 @@ def test_remove_log_target(monkeypatch, env, exc):
                 },
                 {
                     'api_key': 'scalyr-key-123',
+                    'max_log_offset_size': 100000000,
+                    'max_existing_log_offset_size': 200000000,
+                    'max_allowed_request_size': 1900000,
+                    'min_request_spacing_interval': 0.5,
+                    'max_request_spacing_interval': 1.0,
+                    'pipeline_threshold': 0.75,
+                    "compression_type": "deflate",
                     'implicit_metric_monitor': False,
                     'implicit_agent_process_metrics_monitor': False,
                     'server_attributes': {
