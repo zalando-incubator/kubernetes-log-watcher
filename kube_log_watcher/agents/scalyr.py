@@ -91,8 +91,9 @@ class ScalyrAgent(BaseWatcher):
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
         self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER')
         self.parse_lines_json = os.environ.get('WATCHER_SCALYR_PARSE_LINES_JSON', False)
-        self.cluster_alias = os.environ.get('CLUSTER_ALIAS', 'none')
-        self.cluster_environment = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
+        cluster_alias = os.environ.get('CLUSTER_ALIAS', 'none')
+        cluster_environment = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
+        node_name = os.environ.get('CLUSTER_NODE_NAME', 'unknown')
 
         if not all([self.api_key, self.dest_path]):
             raise RuntimeError('Scalyr watcher agent initialization failed. Env variables WATCHER_SCALYR_API_KEY and '
@@ -126,9 +127,17 @@ class ScalyrAgent(BaseWatcher):
                 'write_rate': int(os.environ.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE', SCALYR_DEFAULT_WRITE_RATE)),
                 'write_burst': int(os.environ.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST', SCALYR_DEFAULT_WRITE_BURST)),
             }
-            self.journald['attributes']['cluster'] = cluster_id
 
-        self.cluster_id = cluster_id
+        self.server_attributes = {
+            'serverHost': cluster_id,
+            'cluster': cluster_id,
+            'cluster_environment': cluster_environment,
+            'cluster_alias': cluster_alias,
+            'environment': cluster_environment,
+            'node': node_name,
+            'parser': SCALYR_DEFAULT_PARSER
+        }
+
         self.tpl = load_template(TPL_NAME)
         self.logs = []
         self.kwargs = {}
@@ -166,21 +175,20 @@ class ScalyrAgent(BaseWatcher):
                 'component': kwargs['component'],
                 'environment': kwargs['environment'],
                 'version': kwargs['application_version'],
-                'cluster': kwargs['cluster_id'],
                 'release': kwargs['release'],
                 'pod': kwargs['pod_name'],
                 'namespace': kwargs['namespace'],
                 'container': kwargs['container_name'],
-                'node': kwargs['node_name'],
                 'parser': get_parser(annotations, kwargs)
             }
         }
 
-        self.logs.append(log)
+        # Delete attributes that are already (with the same value) in server_attributes
+        for key in list(log['attributes'].keys()):
+            if key in self.server_attributes and self.server_attributes[key] == log['attributes'][key]:
+                del log['attributes'][key]
 
-        # Set journald node attribute
-        if self.journald and 'node' not in self.journald['attributes']:
-            self.journald['attributes']['node'] = kwargs['node_name']
+        self.logs.append(log)
 
     def remove_log_target(self, container_id: str):
         container_dir = os.path.join(self.dest_path, container_id)
@@ -193,9 +201,7 @@ class ScalyrAgent(BaseWatcher):
     def flush(self):
         kwargs = {
             'scalyr_key': self.api_key,
-            'cluster_id': self.cluster_id,
-            'cluster_alias': self.cluster_alias,
-            'cluster_environment': self.cluster_environment,
+            'server_attributes': self.server_attributes,
             'logs': self.logs,
             'monitor_journald': self.journald,
             'scalyr_server': self.scalyr_server,
