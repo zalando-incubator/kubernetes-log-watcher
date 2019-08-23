@@ -400,6 +400,8 @@ SERVER_ATTRIBUTES_OUT = {
                     'node': 'node-1',
                     'parser': 'json'
                     }
+
+
 @pytest.mark.parametrize(
     'kwargs,expected',
     (
