@@ -388,6 +388,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'max_request_spacing_interval': 1.0,
                 'pipeline_threshold': 0.1,
                 "compression_type": "deflate",
+                "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -419,6 +420,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'max_request_spacing_interval': 1.0,
                 'pipeline_threshold': 0.1,
                 "compression_type": "deflate",
+                "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -466,6 +468,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'max_request_spacing_interval': 1.0,
                 'pipeline_threshold': 0.1,
                 "compression_type": "deflate",
+                "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -518,6 +521,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'max_request_spacing_interval': 1.0,
                 'pipeline_threshold': 0.1,
                 "compression_type": "deflate",
+                "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -561,6 +565,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 'max_request_spacing_interval': 1.0,
                 'pipeline_threshold': 0.1,
                 "compression_type": "deflate",
+                "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': {
@@ -605,6 +610,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                     'max_request_spacing_interval': 1.0,
                     'pipeline_threshold': 0.1,
                     "compression_type": "deflate",
+                    "compression_level": 9,
                     'implicit_metric_monitor': False,
                     'implicit_agent_process_metrics_monitor': False,
                     'server_attributes': {
@@ -657,6 +663,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                     'max_request_spacing_interval': 1.0,
                     'pipeline_threshold': 0.1,
                     "compression_type": "deflate",
+                    "compression_level": 9,
                     'implicit_metric_monitor': False,
                     'implicit_agent_process_metrics_monitor': False,
                     'server_attributes': {
