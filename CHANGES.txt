@@ -2,10 +2,30 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.34 (2019-08-27)
+
+-----------------
+- Optimize what are attributes and what are server_attributes [#93]
+
+0.33 (2019-08-22)
+-----------------
+
+- Increase compression level to 9 [#92]
+
+0.32 (2019-08-22)
+-----------------
+
+- Increase max_allowed_request_size and decrease pipeline_threshold [#91]
+
+0.31 (2019-08-07)
+-----------------
+
+- Optimize scalyr-agent sending parameters [#90]
+
 0.30 (2019-07-24)
 -----------------
 
-rename log-files to include application, component and version [#88]
+- Rename log-files to include application, component and version [#88]
 
 0.29 (2019-06-19)
 -----------------
