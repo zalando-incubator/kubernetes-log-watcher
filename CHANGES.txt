@@ -3,8 +3,8 @@ Kubernetes-log-watcher changelog
 ================================
 
 0.34 (2019-08-27)
-
 -----------------
+
 - Optimize what are attributes and what are server_attributes [#93]
 
 0.33 (2019-08-22)
