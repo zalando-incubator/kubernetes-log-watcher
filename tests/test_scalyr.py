@@ -12,26 +12,24 @@ from kube_log_watcher.agents.scalyr \
     import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, JWT_REDACTION_RULE,\
     get_parser, get_sampling_rules, get_redaction_rules, container_annotation
 
-from .conftest import CLUSTER_ID, NODE, APPLICATION_ID, APPLICATION_VERSION, COMPONENT
-from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS
+from .conftest \
+    import CLUSTER_ID, CLUSTER_ENVIRONMENT, CLUSTER_ALIAS, NODE, APPLICATION_ID, APPLICATION_VERSION, COMPONENT
+from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS, SCALYR_DEFAULT_PARSER
+
+DEFAULT_ENV = {
+    'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
+    'CLUSTER_ENVIRONMENT': CLUSTER_ENVIRONMENT,
+    'CLUSTER_ALIAS': CLUSTER_ALIAS,
+    'CLUSTER_NODE_NAME': NODE,
+    'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
+}
 
 ENVS = (
-    {
-        'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
-        'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'
-    },
-    {
-        'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
-    },
-    {
-        'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
-        'WATCHER_SCALYR_JOURNALD': 'true',
-    },
-    {
-        'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
-        'WATCHER_SCALYR_JOURNALD': 'true', 'WATCHER_SCALYR_JOURNALD_WRITE_RATE': 1,
-        'WATCHER_SCALYR_JOURNALD_WRITE_BURST': 2,
-    },
+    {**DEFAULT_ENV, 'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'},
+    {**DEFAULT_ENV},
+    {**DEFAULT_ENV, 'WATCHER_SCALYR_JOURNALD': 'true'},
+    {**DEFAULT_ENV, 'WATCHER_SCALYR_JOURNALD': 'true', 'WATCHER_SCALYR_JOURNALD_WRITE_RATE': '1',
+        'WATCHER_SCALYR_JOURNALD_WRITE_BURST': '2'},
 )
 
 KWARGS_KEYS = ('scalyr_key', 'parse_lines_json', 'cluster_id', 'logs', 'monitor_journald')
@@ -55,12 +53,18 @@ def assert_agent(agent, env):
     journald = env.get('WATCHER_SCALYR_JOURNALD')
     journald_defaults = copy.deepcopy(SCALYR_JOURNALD_DEFAULTS)
     if env.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE'):
-        journald_defaults['write_rate'] = env.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE')
+        journald_defaults['write_rate'] = int(env.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE'))
     if env.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST'):
-        journald_defaults['write_burst'] = env.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST')
+        journald_defaults['write_burst'] = int(env.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST'))
     assert agent.journald == (journald_defaults if journald else None)
 
-    assert agent.cluster_id == CLUSTER_ID
+    assert agent.server_attributes['serverHost'] == CLUSTER_ID
+    assert agent.server_attributes['cluster'] == CLUSTER_ID
+    assert agent.server_attributes['cluster_environment'] == CLUSTER_ENVIRONMENT
+    assert agent.server_attributes['environment'] == CLUSTER_ENVIRONMENT
+    assert agent.server_attributes['cluster_alias'] == CLUSTER_ALIAS
+    assert agent.server_attributes['node'] == NODE
+    assert agent.server_attributes['parser'] == SCALYR_DEFAULT_PARSER
 
 
 def patch_env(monkeypatch, env):
@@ -174,7 +178,10 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
 
     with agent:
         agent.add_log_target(target)
-        assert agent.logs[0]['attributes']['parser'] == kwargs['logs'][0]['attributes']['parser']
+        if kwargs['logs'][0]['attributes']['parser'] == SCALYR_DEFAULT_PARSER:
+            assert 'parser' not in agent.logs[0]['attributes']
+        else:
+            assert agent.logs[0]['attributes']['parser'] == kwargs['logs'][0]['attributes']['parser']
 
     log_path = kwargs['logs'][0]['path']
 
@@ -367,16 +374,25 @@ def test_remove_log_target(monkeypatch, env, exc):
     rmtree.assert_called_with(os.path.join(agent.dest_path, container_id))
 
 
+SERVER_ATTRIBUTES = {
+                    'serverHost': CLUSTER_ID,
+                    'cluster': CLUSTER_ID,
+                    'cluster_environment': CLUSTER_ENVIRONMENT,
+                    'cluster_alias': CLUSTER_ALIAS,
+                    'environment': CLUSTER_ENVIRONMENT,
+                    'node': NODE,
+                    'parser': SCALYR_DEFAULT_PARSER
+                }
+
+
 @pytest.mark.parametrize(
     'kwargs,expected',
     (
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'cluster_id': CLUSTER_ID,
-                'cluster_environment': 'testing',
-                'cluster_alias': 'cluster-alias',
                 'monitor_journald': None,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': []
             },
             {
@@ -391,20 +407,14 @@ def test_remove_log_target(monkeypatch, env, exc):
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {
-                    'serverHost': 'kube-cluster',
-                    'cluster_environment': 'testing',
-                    'cluster_alias': 'cluster-alias'
-                    },
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [], 'monitors': []
             },
         ),
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'cluster_id': CLUSTER_ID,
-                'cluster_environment': 'testing',
-                'cluster_alias': 'cluster-alias',
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [],
                 'monitor_journald': {
                     'journal_path': None, 'attributes': {}, 'extra_fields': {}, 'write_rate': 10000,
@@ -423,11 +433,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {
-                    'serverHost': 'kube-cluster',
-                    'cluster_environment': 'testing',
-                    'cluster_alias': 'cluster-alias'
-                },
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [],
                 'monitors': [
                     {
@@ -441,9 +447,7 @@ def test_remove_log_target(monkeypatch, env, exc):
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'cluster_id': CLUSTER_ID,
-                'cluster_environment': 'testing',
-                'cluster_alias': 'cluster-alias',
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [
                     {
                         'path': '/p1',
@@ -453,7 +457,6 @@ def test_remove_log_target(monkeypatch, env, exc):
                 ],
                 'monitor_journald': {
                     'journal_path': '/var/log/journal',
-                    'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
                     'extra_fields': {'_COMM': 'command'},
                     'write_rate': 10000,
                     'write_burst': 200000,
@@ -471,11 +474,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {
-                    'serverHost': 'kube-cluster',
-                    'cluster_environment': 'testing',
-                    'cluster_alias': 'cluster-alias'
-                    },
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [
                     {
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
@@ -490,7 +489,6 @@ def test_remove_log_target(monkeypatch, env, exc):
                         'monitor_log_write_rate': 10000,
                         'monitor_log_max_write_burst': 200000,
                         'journal_path': '/var/log/journal',
-                        'attributes': {'cluster': CLUSTER_ID, 'node': NODE},
                         'extra_fields': {'_COMM': 'command'}
                     }
                 ]
@@ -499,9 +497,7 @@ def test_remove_log_target(monkeypatch, env, exc):
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'cluster_id': CLUSTER_ID,
-                'cluster_environment': 'testing',
-                'cluster_alias': 'cluster-alias',
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitor_journald': None,
                 'logs': [
                     {
@@ -524,10 +520,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {
-                    'serverHost': 'kube-cluster',
-                    'cluster_environment': 'testing',
-                    'cluster_alias': 'cluster-alias'},
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
                     {
@@ -543,9 +536,7 @@ def test_remove_log_target(monkeypatch, env, exc):
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'cluster_id': CLUSTER_ID,
-                'cluster_environment': 'testing',
-                'cluster_alias': 'cluster-alias',
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitor_journald': None,
                 'logs': [
                     {
@@ -568,10 +559,7 @@ def test_remove_log_target(monkeypatch, env, exc):
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': {
-                    'serverHost': 'kube-cluster',
-                    'cluster_environment': 'testing',
-                    'cluster_alias': 'cluster-alias'},
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
                     {
@@ -585,113 +573,101 @@ def test_remove_log_target(monkeypatch, env, exc):
             },
         ),
         (
-                {
-                    'scalyr_key': SCALYR_KEY,
-                    'cluster_id': CLUSTER_ID,
-                    'cluster_environment': 'testing',
-                    'cluster_alias': 'cluster-alias',
-                    'parse_lines_json': True,
-                    'monitor_journald': None,
-                    'logs': [
-                        {
-                            'path': '/p1',
-                            'attributes': {'a1': 'v1', 'parser': 'c-parser'},
-                            'copy_from_start': True,
-                            'redaction_rules': {'match_expression': 'match-expression'}
-                        }
-                    ]
-                },
-                {
-                    'api_key': 'scalyr-key-123',
-                    'max_log_offset_size': 100000000,
-                    'max_existing_log_offset_size': 200000000,
-                    'max_allowed_request_size': 5500000,
-                    'min_request_spacing_interval': 0.5,
-                    'max_request_spacing_interval': 1.0,
-                    'pipeline_threshold': 0.1,
-                    "compression_type": "deflate",
-                    "compression_level": 9,
-                    'implicit_metric_monitor': False,
-                    'implicit_agent_process_metrics_monitor': False,
-                    'server_attributes': {
-                        'serverHost': 'kube-cluster',
-                        'cluster_environment': 'testing',
-                        'cluster_alias': 'cluster-alias'
-                        },
-                    'monitors': [],
-                    'logs': [
-                        {
-                            'attributes': {'a1': 'v1', 'parser': 'c-parser'},
-                            'path': '/p1',
-                            'rename_logfile': '?application=&component=&version=',
-                            'parse_lines_as_json': True,
-                            'copy_from_start': True,
-                            'redaction_rules': {'match_expression': 'match-expression'}
-                        }
-                    ],
-                },
+            {
+                'scalyr_key': SCALYR_KEY,
+                'server_attributes': SERVER_ATTRIBUTES,
+                'parse_lines_json': True,
+                'monitor_journald': None,
+                'logs': [
+                    {
+                        'path': '/p1',
+                        'attributes': {'a1': 'v1', 'parser': 'c-parser'},
+                        'copy_from_start': True,
+                        'redaction_rules': {'match_expression': 'match-expression'}
+                    }
+                ]
+            },
+            {
+                'api_key': 'scalyr-key-123',
+                'max_log_offset_size': 100000000,
+                'max_existing_log_offset_size': 200000000,
+                'max_allowed_request_size': 5500000,
+                'min_request_spacing_interval': 0.5,
+                'max_request_spacing_interval': 1.0,
+                'pipeline_threshold': 0.1,
+                "compression_type": "deflate",
+                "compression_level": 9,
+                'implicit_metric_monitor': False,
+                'implicit_agent_process_metrics_monitor': False,
+                'server_attributes': SERVER_ATTRIBUTES,
+                'monitors': [],
+                'logs': [
+                    {
+                        'attributes': {'a1': 'v1', 'parser': 'c-parser'},
+                        'path': '/p1',
+                        'rename_logfile': '?application=&component=&version=',
+                        'parse_lines_as_json': True,
+                        'copy_from_start': True,
+                        'redaction_rules': {'match_expression': 'match-expression'}
+                    }
+                ],
+            },
         ),
         (
-                {
-                    'scalyr_key': SCALYR_KEY,
-                    'cluster_id': CLUSTER_ID,
-                    'cluster_environment': 'testing',
-                    'cluster_alias': 'cluster-alias',
-                    'parse_lines_json': True,
-                    'monitor_journald': None,
-                    'logs': [
-                        {
-                            'path': '/p1',
-                            'attributes': {
-                                'a1': 'v1',
-                                'parser': 'c-parser',
-                                'application': APPLICATION_ID,
-                                'component': COMPONENT,
-                                'version': APPLICATION_VERSION
-                            },
-                            'copy_from_start': True,
-                            'redaction_rules': {'match_expression': 'match-expression'}
-                        }
-                    ]
-                },
-                {
-                    'api_key': 'scalyr-key-123',
-                    'max_log_offset_size': 100000000,
-                    'max_existing_log_offset_size': 200000000,
-                    'max_allowed_request_size': 5500000,
-                    'min_request_spacing_interval': 0.5,
-                    'max_request_spacing_interval': 1.0,
-                    'pipeline_threshold': 0.1,
-                    "compression_type": "deflate",
-                    "compression_level": 9,
-                    'implicit_metric_monitor': False,
-                    'implicit_agent_process_metrics_monitor': False,
-                    'server_attributes': {
-                        'serverHost': 'kube-cluster',
-                        'cluster_environment': 'testing',
-                        'cluster_alias': 'cluster-alias'
+            {
+                'scalyr_key': SCALYR_KEY,
+                'server_attributes': SERVER_ATTRIBUTES,
+                'parse_lines_json': True,
+                'monitor_journald': None,
+                'logs': [
+                    {
+                        'path': '/p1',
+                        'attributes': {
+                            'a1': 'v1',
+                            'parser': 'c-parser',
+                            'application': APPLICATION_ID,
+                            'component': COMPONENT,
+                            'version': APPLICATION_VERSION
                         },
-                    'monitors': [],
-                    'logs': [
-                        {
-                            'attributes': {
-                                'a1': 'v1',
-                                'parser': 'c-parser',
-                                'application': APPLICATION_ID,
-                                'component': COMPONENT,
-                                'version': APPLICATION_VERSION
-                            },
-                            'path': '/p1',
-                            'rename_logfile': '?application={}&component={}&version={}'.format(
-                                quote_plus(APPLICATION_ID),
-                                quote_plus(COMPONENT),
-                                quote_plus(APPLICATION_VERSION)),
-                            'parse_lines_as_json': True,
-                            'copy_from_start': True,
-                            'redaction_rules': {'match_expression': 'match-expression'}
-                        }
-                    ],
-                },
+                        'copy_from_start': True,
+                        'redaction_rules': {'match_expression': 'match-expression'}
+                    }
+                ]
+            },
+            {
+                'api_key': 'scalyr-key-123',
+                'max_log_offset_size': 100000000,
+                'max_existing_log_offset_size': 200000000,
+                'max_allowed_request_size': 5500000,
+                'min_request_spacing_interval': 0.5,
+                'max_request_spacing_interval': 1.0,
+                'pipeline_threshold': 0.1,
+                "compression_type": "deflate",
+                "compression_level": 9,
+                'implicit_metric_monitor': False,
+                'implicit_agent_process_metrics_monitor': False,
+                'server_attributes': SERVER_ATTRIBUTES,
+                'monitors': [],
+                'logs': [
+                    {
+                        'attributes': {
+                            'a1': 'v1',
+                            'parser': 'c-parser',
+                            'application': APPLICATION_ID,
+                            'component': COMPONENT,
+                            'version': APPLICATION_VERSION
+                        },
+                        'path': '/p1',
+                        'rename_logfile': '?application={}&component={}&version={}'.format(
+                            quote_plus(APPLICATION_ID),
+                            quote_plus(COMPONENT),
+                            quote_plus(APPLICATION_VERSION)),
+                        'parse_lines_as_json': True,
+                        'copy_from_start': True,
+                        'redaction_rules': {'match_expression': 'match-expression'}
+                    }
+                ],
+            },
         ),
     )
 )

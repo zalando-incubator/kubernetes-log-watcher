@@ -4,6 +4,8 @@ import copy
 import pytest
 
 CLUSTER_ID = 'kube-cluster'
+CLUSTER_ENVIRONMENT = 'testing'
+CLUSTER_ALIAS = 'cluster-alias'
 APPLICATION_ID = 'application-id'
 APPLICATION_VERSION = 'master 1'
 COMPONENT = 'component/1'
@@ -14,12 +16,13 @@ APPDYNAMICS_DEST_PATH = '/var/log/watcher/'
 SCALYR_DEST_PATH = '/var/log/watcher/'
 SCALYR_KEY = 'scalyr-key-123'
 SCALYR_JOURNALD_DEFAULTS = {
-    'journal_path': None, 'attributes': {'cluster': CLUSTER_ID}, 'extra_fields': {}, 'write_rate': 10000,
+    'journal_path': None, 'attributes': {}, 'extra_fields': {}, 'write_rate': 10000,
     'write_burst': 200000
 }
 SCALYR_ANNOTATION_PARSER = 'kubernetes-log-watcher/scalyr-parser'
 SCALYR_ANNOTATION_SAMPLING_RULES = 'kubernetes-log-watcher/scalyr-sampling-rules'
 SCALYR_ANNOTATION_REDACTION_RULES = 'kubernetes-log-watcher/scalyr-redaction-rules'
+SCALYR_DEFAULT_PARSER = 'json'
 
 TARGET = {
     'id': 'container-1',
@@ -221,12 +224,10 @@ KWARGS = {
             'attributes': {
                 'application': 'app-1',
                 'version': 'v1',
-                'cluster': 'kube-cluster',
                 'release': '2016',
                 'pod': 'pod-1',
                 'namespace': 'default',
                 'container': 'app-1-container-1',
-                'node': NODE,
                 'parser': 'custom-parser',
             }
         }
