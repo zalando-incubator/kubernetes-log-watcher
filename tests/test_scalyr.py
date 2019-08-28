@@ -20,24 +20,16 @@ DEFAULT_ENV = {
     'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
     'CLUSTER_ENVIRONMENT': CLUSTER_ENVIRONMENT,
     'CLUSTER_ALIAS': CLUSTER_ALIAS,
-    'CLUSTER_NODE_NAME': NODE
+    'CLUSTER_NODE_NAME': NODE,
+    'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
 }
 
 ENVS = (
-    {**DEFAULT_ENV, **{
-        'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH, 'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'}},
-    {**DEFAULT_ENV, **{
-        'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
-    }},
-    {**DEFAULT_ENV, **{
-        'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
-        'WATCHER_SCALYR_JOURNALD': 'true'
-    }},
-    {**DEFAULT_ENV, **{
-        'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
-        'WATCHER_SCALYR_JOURNALD': 'true', 'WATCHER_SCALYR_JOURNALD_WRITE_RATE': '1',
-        'WATCHER_SCALYR_JOURNALD_WRITE_BURST': '2'
-    }},
+    {**DEFAULT_ENV, 'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'},
+    {**DEFAULT_ENV},
+    {**DEFAULT_ENV, 'WATCHER_SCALYR_JOURNALD': 'true'},
+    {**DEFAULT_ENV, 'WATCHER_SCALYR_JOURNALD': 'true', 'WATCHER_SCALYR_JOURNALD_WRITE_RATE': '1',
+        'WATCHER_SCALYR_JOURNALD_WRITE_BURST': '2'},
 )
 
 KWARGS_KEYS = ('scalyr_key', 'parse_lines_json', 'cluster_id', 'logs', 'monitor_journald')
@@ -382,7 +374,7 @@ def test_remove_log_target(monkeypatch, env, exc):
     rmtree.assert_called_with(os.path.join(agent.dest_path, container_id))
 
 
-SERVER_ATTRIBUTES_IN = {
+SERVER_ATTRIBUTES = {
                     'serverHost': CLUSTER_ID,
                     'cluster': CLUSTER_ID,
                     'cluster_environment': CLUSTER_ENVIRONMENT,
@@ -391,15 +383,6 @@ SERVER_ATTRIBUTES_IN = {
                     'node': NODE,
                     'parser': SCALYR_DEFAULT_PARSER
                 }
-SERVER_ATTRIBUTES_OUT = {
-                    'serverHost': 'kube-cluster',
-                    'cluster': 'kube-cluster',
-                    'cluster_environment': 'testing',
-                    'cluster_alias': 'cluster-alias',
-                    'environment': 'testing',
-                    'node': 'node-1',
-                    'parser': 'json'
-                    }
 
 
 @pytest.mark.parametrize(
@@ -409,7 +392,7 @@ SERVER_ATTRIBUTES_OUT = {
             {
                 'scalyr_key': SCALYR_KEY,
                 'monitor_journald': None,
-                'server_attributes': SERVER_ATTRIBUTES_IN,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': []
             },
             {
@@ -424,14 +407,14 @@ SERVER_ATTRIBUTES_OUT = {
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': SERVER_ATTRIBUTES_OUT,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [], 'monitors': []
             },
         ),
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'server_attributes': SERVER_ATTRIBUTES_IN,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [],
                 'monitor_journald': {
                     'journal_path': None, 'attributes': {}, 'extra_fields': {}, 'write_rate': 10000,
@@ -450,7 +433,7 @@ SERVER_ATTRIBUTES_OUT = {
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': SERVER_ATTRIBUTES_OUT,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [],
                 'monitors': [
                     {
@@ -464,7 +447,7 @@ SERVER_ATTRIBUTES_OUT = {
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'server_attributes': SERVER_ATTRIBUTES_IN,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [
                     {
                         'path': '/p1',
@@ -491,7 +474,7 @@ SERVER_ATTRIBUTES_OUT = {
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': SERVER_ATTRIBUTES_OUT,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [
                     {
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
@@ -514,7 +497,7 @@ SERVER_ATTRIBUTES_OUT = {
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'server_attributes': SERVER_ATTRIBUTES_IN,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitor_journald': None,
                 'logs': [
                     {
@@ -537,7 +520,7 @@ SERVER_ATTRIBUTES_OUT = {
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': SERVER_ATTRIBUTES_OUT,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
                     {
@@ -553,7 +536,7 @@ SERVER_ATTRIBUTES_OUT = {
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'server_attributes': SERVER_ATTRIBUTES_IN,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitor_journald': None,
                 'logs': [
                     {
@@ -576,7 +559,7 @@ SERVER_ATTRIBUTES_OUT = {
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': SERVER_ATTRIBUTES_OUT,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
                     {
@@ -592,7 +575,7 @@ SERVER_ATTRIBUTES_OUT = {
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'server_attributes': SERVER_ATTRIBUTES_IN,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'parse_lines_json': True,
                 'monitor_journald': None,
                 'logs': [
@@ -616,7 +599,7 @@ SERVER_ATTRIBUTES_OUT = {
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': SERVER_ATTRIBUTES_OUT,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
                     {
@@ -633,7 +616,7 @@ SERVER_ATTRIBUTES_OUT = {
         (
             {
                 'scalyr_key': SCALYR_KEY,
-                'server_attributes': SERVER_ATTRIBUTES_IN,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'parse_lines_json': True,
                 'monitor_journald': None,
                 'logs': [
@@ -663,7 +646,7 @@ SERVER_ATTRIBUTES_OUT = {
                 "compression_level": 9,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
-                'server_attributes': SERVER_ATTRIBUTES_OUT,
+                'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
                     {
