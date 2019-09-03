@@ -8,36 +8,27 @@
     "pipeline_threshold": 0.1,
     "compression_type": "deflate",
     "compression_level": 9,
-
     "implicit_metric_monitor": false,
     "implicit_agent_process_metrics_monitor": false,
-
     "server_attributes": {{ server_attributes | tojson }},
-
     {% if scalyr_server %}
     "scalyr_server": "{{ scalyr_server }}",
     {% endif %}
-
     "logs": [
         {% for log in logs %}
             {
                 "path": "{{ log.path }}",
                 "rename_logfile": "?application={{ log.attributes.application | quote_plus }}&component={{ log.attributes.component | quote_plus }}&version={{ log.attributes.version | quote_plus }}",
-
                 {% if log.sampling_rules %}
                 "sampling_rules": {{ log.sampling_rules | tojson }},
                 {% endif %}
-
                 {% if log.redaction_rules %}
                 "redaction_rules": {{ log.redaction_rules | tojson }},
                 {% endif %}
-
                 {% if parse_lines_json %}
                 "parse_lines_as_json": true,
                 {% endif %}
-
                 "copy_from_start": true,
-
                 "attributes": {{ log.attributes | tojson }}
             }{% if not loop.last %},{% endif %}
         {% endfor %}
@@ -48,7 +39,6 @@
             {% if monitor_journald.journal_path %}
             "journal_path": "{{ monitor_journald.journal_path }}",
             {% endif %}
-
             {% if monitor_journald.attributes %}
             "attributes": {
                 {% for k, v in monitor_journald.attributes.items() %}
@@ -56,7 +46,6 @@
                 {% endfor %}
             },
             {% endif %}
-
             {% if monitor_journald.extra_fields %}
             "extra_fields": {
                 {% for k, v in monitor_journald.extra_fields.items() %}
@@ -64,7 +53,6 @@
                 {% endfor %}
             },
             {% endif %}
-
             "module": "scalyr_agent.builtin_monitors.journald_monitor",
             "monitor_log_write_rate": {{ monitor_journald.write_rate }},
             "monitor_log_max_write_burst": {{ monitor_journald.write_burst }}
