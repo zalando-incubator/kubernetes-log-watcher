@@ -32,7 +32,7 @@ ENVS = (
         'WATCHER_SCALYR_JOURNALD_WRITE_BURST': '2'},
 )
 
-KWARGS_KEYS = ('scalyr_key', 'parse_lines_json', 'cluster_id', 'logs', 'monitor_journald')
+KWARGS_KEYS = ('scalyr_key', 'parse_lines_json', 'enable_profiling', 'cluster_id', 'logs', 'monitor_journald')
 
 
 SCALYR_MONITOR_JOURNALD = copy.deepcopy(SCALYR_JOURNALD_DEFAULTS)
@@ -587,6 +587,7 @@ SERVER_ATTRIBUTES = {
                 'scalyr_key': SCALYR_KEY,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'parse_lines_json': True,
+                'enable_profiling': False,
                 'monitor_journald': None,
                 'logs': [
                     {
@@ -630,6 +631,7 @@ SERVER_ATTRIBUTES = {
                 'scalyr_key': SCALYR_KEY,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'parse_lines_json': True,
+                'enable_profiling': True,
                 'monitor_journald': None,
                 'logs': [
                     {
@@ -655,6 +657,7 @@ SERVER_ATTRIBUTES = {
                 'max_request_spacing_interval': 1.0,
                 'pipeline_threshold': 0.1,
                 "compression_type": "deflate",
+                'enable_profiling': True,
                 "compression_level": 9,
                 "max_line_size": 49900,
                 "read_page_size": 131072,

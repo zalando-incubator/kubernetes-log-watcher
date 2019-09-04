@@ -10,6 +10,9 @@
     "compression_level": 9,
     "max_line_size": 49900,
     "read_page_size": 131072,
+    {% if enable_profiling %}
+    "enable_profiling": true,
+    {% endif %}
     "implicit_metric_monitor": false,
     "implicit_agent_process_metrics_monitor": false,
     "server_attributes": {{ server_attributes | tojson }},

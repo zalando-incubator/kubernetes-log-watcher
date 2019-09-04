@@ -2,6 +2,11 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.36 (2019-09-04)
+-----------------
+
+- Add option to enable profiling [#235]
+
 0.35 (2019-09-04)
 -----------------
 
