@@ -2,15 +2,10 @@
 Kubernetes-log-watcher changelog
 ================================
 
-0.36 (2019-09-04)
------------------
-
-- Increase max line length to 49900 for scalyr-agent [#235]
-
 0.35 (2019-09-04)
 -----------------
 
-- Remove empty lines from scalyr-agent config
+- Increase max line length to 49900 for scalyr-agent [#235]
 
 0.34 (2019-08-27)
 -----------------
