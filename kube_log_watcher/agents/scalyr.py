@@ -90,7 +90,8 @@ class ScalyrAgent(BaseWatcher):
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
         self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER')
-        self.parse_lines_json = os.environ.get('WATCHER_SCALYR_PARSE_LINES_JSON', False)
+        self.parse_lines_json = os.environ.get('WATCHER_SCALYR_PARSE_LINES_JSON', '').lower() == 'true'
+        self.enable_profiling = os.environ.get('WATCHER_SCALYR_ENABLE_PROFILING', '').lower() == 'true'
         cluster_alias = os.environ.get('CLUSTER_ALIAS', 'none')
         cluster_environment = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
         node_name = os.environ.get('CLUSTER_NODE_NAME', 'unknown')
@@ -206,6 +207,7 @@ class ScalyrAgent(BaseWatcher):
             'monitor_journald': self.journald,
             'scalyr_server': self.scalyr_server,
             'parse_lines_json': self.parse_lines_json,
+            'enable_profiling': self.enable_profiling,
         }
 
         current_paths = self._get_current_log_paths()

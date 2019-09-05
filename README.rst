@@ -292,6 +292,9 @@ WATCHER_SCALYR_DEST_PATH
 WATCHER_SCALYR_CONFIG_PATH
   Scalyr configuration file path. (Default: ``/etc/scalyr-agent-2/agent.json``)
 
+WATCHER_SCALYR_ENABLE_PROFILING
+  If true, the agent will log performance profiling data about itself into a log file.
+
 WATCHER_SCALYR_PARSE_LINES_JSON
   Parse lines lines on the client as JSON. Useful for raw docker logs. (Default: ``False``)
 
