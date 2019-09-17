@@ -27,8 +27,7 @@ pipeline:
           IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
           if [[ ${IS_PR_BUILD} != "true" ]]
           then
-            RELEASE_VERSION=$(git describe --tags --always --dirty)
-            AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher:${RELEASE_VERSION}
+            AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher:${CDP_BUILD_VERSION}
           else
             AGENT_IMAGE=registry-write.opensource.zalan.do/logging/kubernetes-log-watcher-unstable:${CDP_BUILD_VERSION}
           fi
