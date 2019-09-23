@@ -180,6 +180,7 @@ class ScalyrAgent(BaseWatcher):
                 'pod': kwargs['pod_name'],
                 'namespace': kwargs['namespace'],
                 'container': kwargs['container_name'],
+                'container_id': kwargs['container_id'],
                 'parser': get_parser(annotations, kwargs)
             }
         }

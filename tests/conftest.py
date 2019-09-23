@@ -10,6 +10,7 @@ APPLICATION = 'application-id'
 VERSION = 'master 1'
 COMPONENT = 'component/1'
 NODE = 'node-1'
+CONTAINER_ID = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
 
 APPDYNAMICS_DEST_PATH = '/var/log/watcher/'
 

@@ -13,7 +13,7 @@ from kube_log_watcher.agents.scalyr \
     get_parser, get_sampling_rules, get_redaction_rules, container_annotation
 
 from .conftest \
-    import CLUSTER_ID, CLUSTER_ENVIRONMENT, CLUSTER_ALIAS, NODE, APPLICATION, VERSION, COMPONENT
+    import CLUSTER_ID, CLUSTER_ENVIRONMENT, CLUSTER_ALIAS, NODE, APPLICATION, VERSION, COMPONENT, CONTAINER_ID
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS, SCALYR_DEFAULT_PARSER
 
 DEFAULT_ENV = {
@@ -485,7 +485,7 @@ SERVER_ATTRIBUTES = {
                     {
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'path': '/p1',
-                        'rename_logfile': '?application=&component=&version=',
+                        'rename_logfile': '?application=&component=&version=&container_id=',
                         'copy_from_start': True
                     }
                 ],
@@ -533,7 +533,7 @@ SERVER_ATTRIBUTES = {
                 'logs': [
                     {
                         'path': '/p1',
-                        'rename_logfile': '?application=&component=&version=',
+                        'rename_logfile': '?application=&component=&version=&container_id=',
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'copy_from_start': True,
                         'sampling_rules': {'match_expression': 'match-expression'}
@@ -575,7 +575,7 @@ SERVER_ATTRIBUTES = {
                     {
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'path': '/p1',
-                        'rename_logfile': '?application=&component=&version=',
+                        'rename_logfile': '?application=&component=&version=&container_id=',
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}
                     }
@@ -618,7 +618,7 @@ SERVER_ATTRIBUTES = {
                     {
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'path': '/p1',
-                        'rename_logfile': '?application=&component=&version=',
+                        'rename_logfile': '?application=&component=&version=&container_id=',
                         'parse_lines_as_json': True,
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}
@@ -641,7 +641,8 @@ SERVER_ATTRIBUTES = {
                             'parser': 'c-parser',
                             'application': APPLICATION,
                             'component': COMPONENT,
-                            'version': VERSION
+                            'version': VERSION,
+                            'container_id': CONTAINER_ID,
                         },
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}
@@ -672,13 +673,16 @@ SERVER_ATTRIBUTES = {
                             'parser': 'c-parser',
                             'application': APPLICATION,
                             'component': COMPONENT,
-                            'version': VERSION
+                            'version': VERSION,
+                            'container_id': CONTAINER_ID,
                         },
                         'path': '/p1',
-                        'rename_logfile': '?application={}&component={}&version={}'.format(
+                        'rename_logfile': '?application={}&component={}&version={}&container_id={}'.format(
                             quote_plus(APPLICATION),
                             quote_plus(COMPONENT),
-                            quote_plus(VERSION)),
+                            quote_plus(VERSION),
+                            quote_plus(CONTAINER_ID),
+                        ),
                         'parse_lines_as_json': True,
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}
