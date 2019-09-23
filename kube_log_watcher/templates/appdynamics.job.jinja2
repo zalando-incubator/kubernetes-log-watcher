@@ -69,12 +69,12 @@ source:
 # these fields.
 #
 fields:
-  sourceType: application-{{ application_id }}
+  sourceType: application-{{ application }}
   nodeName: {{ node_name }}
   LogFile: {{ log_file_name }}
 
-  application_id: {{ application_id }}
-  application_version: {{ application_version }}
+  application_id: {{ application }}
+  application_version: {{ version }}
   container_name: {{ container_name }}
   application_pod: {{ pod_name }}
   application_namespace: {{ namespace }}

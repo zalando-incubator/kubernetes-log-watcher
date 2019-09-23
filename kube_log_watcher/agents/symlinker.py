@@ -40,11 +40,11 @@ class Symlinker(BaseWatcher):
         kw = target['kwargs']
         top_dir = self.symlink_dir / sanitize(kw['container_id'])
         link_dir = top_dir \
-            / sanitize(kw['application_id']) \
+            / sanitize(kw['application']) \
             / sanitize(kw['component']) \
             / sanitize(kw['namespace']) \
             / sanitize(kw['environment']) \
-            / sanitize(kw['application_version']) \
+            / sanitize(kw['version']) \
             / sanitize(kw['container_name'])
         link = (link_dir / sanitize(kw['pod_name'])).with_suffix('.log')
 

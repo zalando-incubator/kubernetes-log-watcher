@@ -13,7 +13,7 @@ from kube_log_watcher.agents.scalyr \
     get_parser, get_sampling_rules, get_redaction_rules, container_annotation
 
 from .conftest \
-    import CLUSTER_ID, CLUSTER_ENVIRONMENT, CLUSTER_ALIAS, NODE, APPLICATION_ID, APPLICATION_VERSION, COMPONENT
+    import CLUSTER_ID, CLUSTER_ENVIRONMENT, CLUSTER_ALIAS, NODE, APPLICATION, VERSION, COMPONENT
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS, SCALYR_DEFAULT_PARSER
 
 DEFAULT_ENV = {
@@ -639,9 +639,9 @@ SERVER_ATTRIBUTES = {
                         'attributes': {
                             'a1': 'v1',
                             'parser': 'c-parser',
-                            'application': APPLICATION_ID,
+                            'application': APPLICATION,
                             'component': COMPONENT,
-                            'version': APPLICATION_VERSION
+                            'version': VERSION
                         },
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}
@@ -670,15 +670,15 @@ SERVER_ATTRIBUTES = {
                         'attributes': {
                             'a1': 'v1',
                             'parser': 'c-parser',
-                            'application': APPLICATION_ID,
+                            'application': APPLICATION,
                             'component': COMPONENT,
-                            'version': APPLICATION_VERSION
+                            'version': VERSION
                         },
                         'path': '/p1',
                         'rename_logfile': '?application={}&component={}&version={}'.format(
-                            quote_plus(APPLICATION_ID),
+                            quote_plus(APPLICATION),
                             quote_plus(COMPONENT),
-                            quote_plus(APPLICATION_VERSION)),
+                            quote_plus(VERSION)),
                         'parse_lines_as_json': True,
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}

@@ -258,7 +258,7 @@ WATCHER_CONTAINERS_PATH
 WATCHER_STRICT_LABELS
   If set then only containers running in pods with the list of metadata labels will be considered for log watching. Value is a comma separated string of label names. (Default is ``''``)
 
-  If no ``application`` label is set then kubernetes-log-watcher will set ``application_id`` from *pod name*; in order to provide consistent attributes to log configuration agents.
+  If no ``application`` label is set then kubernetes-log-watcher will set ``application`` from *pod name*; in order to provide consistent attributes to log configuration agents.
 
 WATCHER_AGENTS
    Comma separated string of required log configuration agents. (Required. Example: "scalyr,appdynamics")

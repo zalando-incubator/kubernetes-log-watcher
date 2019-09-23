@@ -172,10 +172,10 @@ class ScalyrAgent(BaseWatcher):
             'sampling_rules': get_sampling_rules(annotations, kwargs),
             'redaction_rules': get_redaction_rules(annotations, kwargs),
             'attributes': {
-                'application': kwargs['application_id'],
+                'application': kwargs['application'],
                 'component': kwargs['component'],
                 'environment': kwargs['environment'],
-                'version': kwargs['application_version'],
+                'version': kwargs['version'],
                 'release': kwargs['release'],
                 'pod': kwargs['pod_name'],
                 'namespace': kwargs['namespace'],
@@ -237,8 +237,8 @@ class ScalyrAgent(BaseWatcher):
     def _adjust_target_log_path(self, target):
         try:
             src_log_path = target['kwargs'].get('log_file_path')
-            application = target['kwargs'].get('application_id')
-            version = target['kwargs'].get('application_version')
+            application = target['kwargs'].get('application')
+            version = target['kwargs'].get('version')
             container_id = target['id']
 
             if not os.path.exists(src_log_path):
