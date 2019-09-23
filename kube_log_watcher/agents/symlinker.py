@@ -44,7 +44,7 @@ class Symlinker(BaseWatcher):
             / sanitize(kw['component']) \
             / sanitize(kw['namespace']) \
             / sanitize(kw['environment']) \
-            / sanitize(kw['version']) \
+            / sanitize(kw['version'] or 'none') \
             / sanitize(kw['container_name'])
         link = (link_dir / sanitize(kw['pod_name'])).with_suffix('.log')
 

@@ -238,7 +238,7 @@ class ScalyrAgent(BaseWatcher):
         try:
             src_log_path = target['kwargs'].get('log_file_path')
             application = target['kwargs'].get('application')
-            version = target['kwargs'].get('version')
+            version = target['kwargs'].get('version') or 'none'
             container_id = target['id']
 
             if not os.path.exists(src_log_path):

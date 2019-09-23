@@ -231,7 +231,7 @@ def get_new_containers_log_targets(
 
             kwargs['application'] = pod_labels.get(APP_LABEL)
             kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, CLUSTER_ENVIRONMENT)
-            kwargs['version'] = pod_labels.get(VERSION_LABEL, 'none')
+            kwargs['version'] = pod_labels.get(VERSION_LABEL, '')
             kwargs['release'] = pod_labels.get('release', '')
             kwargs['cluster_id'] = cluster_id
             kwargs['pod_name'] = pod_name
