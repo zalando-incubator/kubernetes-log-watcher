@@ -174,7 +174,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'application': 'app-2', 'version': 'v1', 'container_path': '/mnt/containers/cont-5',
                     'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5',
                     'pod_annotations': {}, 'image': 'cont-5', 'image_version': 'latest',
-                    'environment': 'test', 'component': 'app-2'
+                    'environment': 'test', 'component': None
                 }
             },
         ],
@@ -190,7 +190,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'container_path': '/mnt/containers/cont-3',
                     'log_file_path': '/mnt/containers/cont-3/cont-3-json.log', 'container_name': 'cont-3',
                     'pod_annotations': {}, 'image': 'cont-3', 'image_version': '1.1',
-                    'environment': 'test', 'component': 'app-1'
+                    'environment': 'test', 'component': None
                 }
             },
             {
@@ -202,7 +202,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                     'application': 'pod-3', 'version': 'v1', 'container_path': '/mnt/containers/cont-4',
                     'log_file_path': '/mnt/containers/cont-4/cont-4-json.log', 'container_name': 'cont-4',
                     'pod_annotations': {}, 'image': 'cont-4', 'image_version': '1.1',
-                    'environment': 'production', 'component': 'pod-3'
+                    'environment': 'production', 'component': None
                 }
             }
         ],

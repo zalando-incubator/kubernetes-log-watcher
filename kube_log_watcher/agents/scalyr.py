@@ -167,28 +167,32 @@ class ScalyrAgent(BaseWatcher):
         kwargs = target['kwargs']
         annotations = kwargs.get('pod_annotations', {})
 
+        attributes = {
+            'application': kwargs['application'],
+            'component': kwargs['component'],
+            'environment': kwargs['environment'],
+            'version': kwargs['version'],
+            'release': kwargs['release'],
+            'pod': kwargs['pod_name'],
+            'namespace': kwargs['namespace'],
+            'container': kwargs['container_name'],
+            'container_id': kwargs['container_id'],
+            'parser': get_parser(annotations, kwargs)
+        }
+
+        # Keep only attributes that has value not duplicated in server_attributes
+        attributes = {
+            k: v
+            for k, v in attributes.items()
+            if v and (self.server_attributes.get(k) != v)
+        }
+
         log = {
             'path': log_path,
             'sampling_rules': get_sampling_rules(annotations, kwargs),
             'redaction_rules': get_redaction_rules(annotations, kwargs),
-            'attributes': {
-                'application': kwargs['application'],
-                'component': kwargs['component'],
-                'environment': kwargs['environment'],
-                'version': kwargs['version'],
-                'release': kwargs['release'],
-                'pod': kwargs['pod_name'],
-                'namespace': kwargs['namespace'],
-                'container': kwargs['container_name'],
-                'container_id': kwargs['container_id'],
-                'parser': get_parser(annotations, kwargs)
-            }
+            'attributes': attributes,
         }
-
-        # Delete attributes that are already (with the same value) in server_attributes
-        for key in list(log['attributes'].keys()):
-            if key in self.server_attributes and self.server_attributes[key] == log['attributes'][key]:
-                del log['attributes'][key]
 
         self.logs.append(log)
 

@@ -230,6 +230,7 @@ def get_new_containers_log_targets(
             kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
 
             kwargs['application'] = pod_labels.get(APP_LABEL)
+            kwargs['component'] = pod_labels.get(COMPONENT_LABEL)
             kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, CLUSTER_ENVIRONMENT)
             kwargs['version'] = pod_labels.get(VERSION_LABEL, '')
             kwargs['release'] = pod_labels.get('release', '')
@@ -250,7 +251,6 @@ def get_new_containers_log_targets(
                     pod_name))
                 kwargs['application'] = kwargs['pod_name']
 
-            kwargs['component'] = pod_labels.get(COMPONENT_LABEL, kwargs['application'])
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except Exception:
             logger.exception('Failed to create log target for container({})'.format(container['id']))
