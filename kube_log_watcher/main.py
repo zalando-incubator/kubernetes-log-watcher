@@ -229,9 +229,10 @@ def get_new_containers_log_targets(
 
             kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
 
-            kwargs['application_id'] = pod_labels.get(APP_LABEL)
+            kwargs['application'] = pod_labels.get(APP_LABEL)
+            kwargs['component'] = pod_labels.get(COMPONENT_LABEL)
             kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, CLUSTER_ENVIRONMENT)
-            kwargs['application_version'] = pod_labels.get(VERSION_LABEL, 'none')
+            kwargs['version'] = pod_labels.get(VERSION_LABEL, '')
             kwargs['release'] = pod_labels.get('release', '')
             kwargs['cluster_id'] = cluster_id
             kwargs['pod_name'] = pod_name
@@ -245,12 +246,11 @@ def get_new_containers_log_targets(
                     ('Labels "{}" are required for container({}: {}) in pod({}) '
                      '... Skipping!').format(','.join(strict_labels), container_name, container['id'], pod_name))
                 continue
-            if not kwargs['application_id']:
-                logger.warning('Cannot determine application_id for pod: {}. Falling back to pod name!'.format(
+            if not kwargs['application']:
+                logger.warning('Cannot determine application for pod: {}. Falling back to pod name!'.format(
                     pod_name))
-                kwargs['application_id'] = kwargs['pod_name']
+                kwargs['application'] = kwargs['pod_name']
 
-            kwargs['component'] = pod_labels.get(COMPONENT_LABEL, kwargs['application_id'])
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except Exception:
             logger.exception('Failed to create log target for container({})'.format(container['id']))

@@ -6,10 +6,11 @@ import pytest
 CLUSTER_ID = 'kube-cluster'
 CLUSTER_ENVIRONMENT = 'testing'
 CLUSTER_ALIAS = 'cluster-alias'
-APPLICATION_ID = 'application-id'
-APPLICATION_VERSION = 'master 1'
+APPLICATION = 'application-id'
+VERSION = 'master 1'
 COMPONENT = 'component/1'
 NODE = 'node-1'
+CONTAINER_ID = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
 
 APPDYNAMICS_DEST_PATH = '/var/log/watcher/'
 
@@ -27,10 +28,10 @@ SCALYR_DEFAULT_PARSER = 'json'
 TARGET = {
     'id': 'container-1',
     'kwargs': {
-        'application_id': 'app-1',
+        'application': 'app-1',
         'component': 'main',
         'environment': 'test',
-        'application_version': 'v1',
+        'version': 'v1',
         'cluster_id': 'kube-cluster',
         'release': '2016',
         'pod_name': 'pod-1',
@@ -158,7 +159,7 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                 'kwargs': {
                     'pod_name': 'pod-1', 'release': '123', 'namespace': 'default', 'node_name': NODE,
                     'container_id': 'cont-1', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-1-json.log',
-                    'application_id': 'app-1', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-1',
+                    'application': 'app-1', 'version': 'v1', 'container_path': '/mnt/containers/cont-1',
                     'log_file_path': '/mnt/containers/cont-1/cont-1-json.log', 'container_name': 'cont-1',
                     'pod_annotations': {'a/1': 'a-1', 'a/2': 'a-2'}, 'image': 'cont-1', 'image_version': '1.1',
                     'environment': 'test', 'component': 'main'
@@ -170,10 +171,10 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                 'kwargs': {
                     'pod_name': 'pod-4', 'release': '', 'namespace': 'kube', 'node_name': NODE,
                     'container_id': 'cont-5', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-5-json.log',
-                    'application_id': 'app-2', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-5',
+                    'application': 'app-2', 'version': 'v1', 'container_path': '/mnt/containers/cont-5',
                     'log_file_path': '/mnt/containers/cont-5/cont-5-json.log', 'container_name': 'cont-5',
                     'pod_annotations': {}, 'image': 'cont-5', 'image_version': 'latest',
-                    'environment': 'test', 'component': 'app-2'
+                    'environment': 'test', 'component': None
                 }
             },
         ],
@@ -185,11 +186,11 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                 'kwargs': {
                     'pod_name': 'pod-2', 'namespace': 'default', 'node_name': NODE, 'release': '',
                     'container_id': 'cont-3', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-3-json.log',
-                    'application_id': 'app-1', 'application_version': 'none',
+                    'application': 'app-1', 'version': '',
                     'container_path': '/mnt/containers/cont-3',
                     'log_file_path': '/mnt/containers/cont-3/cont-3-json.log', 'container_name': 'cont-3',
                     'pod_annotations': {}, 'image': 'cont-3', 'image_version': '1.1',
-                    'environment': 'test', 'component': 'app-1'
+                    'environment': 'test', 'component': None
                 }
             },
             {
@@ -198,10 +199,10 @@ TARGET_INVALID_ANNOT['kwargs']['pod_annotations'] = {SCALYR_ANNOTATION_PARSER: '
                 'kwargs': {
                     'pod_name': 'pod-3', 'namespace': 'default', 'node_name': NODE, 'release': '',
                     'container_id': 'cont-4', 'cluster_id': 'kube-cluster', 'log_file_name': 'cont-4-json.log',
-                    'application_id': 'pod-3', 'application_version': 'v1', 'container_path': '/mnt/containers/cont-4',
+                    'application': 'pod-3', 'version': 'v1', 'container_path': '/mnt/containers/cont-4',
                     'log_file_path': '/mnt/containers/cont-4/cont-4-json.log', 'container_name': 'cont-4',
                     'pod_annotations': {}, 'image': 'cont-4', 'image_version': '1.1',
-                    'environment': 'production', 'component': 'pod-3'
+                    'environment': 'production', 'component': None
                 }
             }
         ],
@@ -261,8 +262,8 @@ def fx_scalyr(request):
     {
         'target': TARGET,
         'kwargs': {
-            'application_id': 'app-1',
-            'application_version': 'v1',
+            'application': 'app-1',
+            'version': 'v1',
             'cluster_id': 'kube-cluster',
             'release': '2016',
             'pod_name': 'pod-1',

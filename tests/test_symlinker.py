@@ -7,9 +7,9 @@ def helper_target(tmp_path):
     target = {
         'id': 'container-1',
         'kwargs': {
-            'application_id': 'app/with/slashes',
+            'application': 'app/with/slashes',
             'environment': 'test',
-            'application_version': 'v1.5',
+            'version': 'v1.5',
             'component': 'comp with spaces',
             'cluster_id': 'kube-cluster',
             'release': '2016',

@@ -23,7 +23,7 @@
         {% for log in logs %}
             {
                 "path": "{{ log.path }}",
-                "rename_logfile": "?application={{ log.attributes.application | quote_plus }}&component={{ log.attributes.component | quote_plus }}&version={{ log.attributes.version | quote_plus }}",
+                "rename_logfile": "?application={{ log.attributes.application | quote_plus }}&component={{ log.attributes.component | quote_plus }}&version={{ log.attributes.version | quote_plus }}&container_id={{ log.attributes.container_id | quote_plus }}",
                 {% if log.sampling_rules %}
                 "sampling_rules": {{ log.sampling_rules | tojson }},
                 {% endif %}

@@ -16,11 +16,9 @@ pipeline:
             libffi-dev \
             libssl-dev \
             tox
-          pip3 install -r requirements.txt
-          pip3 install -U flake8
 
-      - desc: "Flake 8"
-        cmd: flake8 .
+      - desc: "Run tox"
+        cmd: tox
 
       - desc: "Push Docker Image"
         cmd: |
