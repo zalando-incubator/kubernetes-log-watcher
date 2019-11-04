@@ -2,7 +2,6 @@ import pytest
 
 from mock import MagicMock
 
-from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.main import BUILTIN_AGENTS
 
 from kube_log_watcher.agents import BaseWatcher
@@ -11,7 +10,7 @@ from .conftest import CLUSTER_ID
 
 
 def test_base_watcher_not_implemented(monkeypatch):
-    agent = BaseWatcher(CLUSTER_ID, load_template)
+    agent = BaseWatcher(CLUSTER_ID)
 
     with pytest.raises(NotImplementedError):
         agent.name
@@ -42,7 +41,7 @@ def test_builtin_agents_sanity(monkeypatch, klass):
 
     monkeypatch.setenv('WATCHER_SYMLINK_DIR', '/')
 
-    agent = klass(CLUSTER_ID, load_template)
+    agent = klass(CLUSTER_ID)
 
     for attr in attrs:
         assert hasattr(agent, attr) is True

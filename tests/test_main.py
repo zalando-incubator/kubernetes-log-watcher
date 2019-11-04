@@ -5,7 +5,6 @@ import pytest
 from mock import MagicMock, call
 
 from kube_log_watcher.kube import PodNotFound
-from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.main import (
     get_container_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
     get_new_containers_log_targets, get_container_image_parts, watch)
@@ -295,7 +294,7 @@ def test_load_agents(monkeypatch):
 
     load_agents(['agent1', 'agent2'], CLUSTER_ID)
 
-    agent1.assert_called_with(CLUSTER_ID, load_template)
+    agent1.assert_called_with(CLUSTER_ID)
 
 
 @pytest.mark.parametrize('strict', (['application', 'version'], []))

@@ -81,7 +81,7 @@ class Symlinker(BaseWatcher):
 
 
 class SymlinkerLoader(Symlinker):
-    def __new__(cls, _cluster_id, _load_template):
+    def __new__(cls, _cluster_id):
         symlink_dir = os.environ.get('WATCHER_SYMLINK_DIR')
         if not symlink_dir:
             raise RuntimeError(

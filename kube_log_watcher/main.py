@@ -8,7 +8,6 @@ import json
 from typing import Tuple
 
 import kube_log_watcher.kube as kube
-from kube_log_watcher.template_loader import load_template
 
 from kube_log_watcher.agents import ScalyrAgent, AppDynamicsAgent, SymlinkerLoader
 
@@ -263,7 +262,7 @@ def get_stale_containers(watched_containers: set, existing_container_ids: list) 
 
 
 def load_agents(agents, cluster_id):
-    return [BUILTIN_AGENTS[agent.strip(' ')](cluster_id, load_template) for agent in agents]
+    return [BUILTIN_AGENTS[agent.strip(' ')](cluster_id) for agent in agents]
 
 
 def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None, strict_labels=None):

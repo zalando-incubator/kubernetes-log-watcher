@@ -4,7 +4,6 @@ import pytest
 
 from mock import MagicMock
 
-from kube_log_watcher.template_loader import load_template
 from kube_log_watcher.agents.appdynamics import AppDynamicsAgent
 
 from .conftest import CLUSTER_ID, APPDYNAMICS_DEST_PATH
@@ -46,7 +45,7 @@ def test_add_log_target(monkeypatch, fx_appdynamics):
     target = fx_appdynamics['target']
     kwargs = fx_appdynamics['kwargs']
 
-    agent = AppDynamicsAgent(CLUSTER_ID, load_template)
+    agent = AppDynamicsAgent(CLUSTER_ID)
 
     assert_agent(agent, ENV)
 
@@ -77,7 +76,7 @@ def test_remove_log_target(monkeypatch, exc):
         remove.side_effect = exc
     monkeypatch.setattr('os.remove', remove)
 
-    agent = AppDynamicsAgent(CLUSTER_ID, load_template)
+    agent = AppDynamicsAgent(CLUSTER_ID)
 
     assert_agent(agent, ENV)
 
