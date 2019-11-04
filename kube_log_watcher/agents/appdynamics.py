@@ -14,14 +14,14 @@ logger = logging.getLogger('kube_log_watcher')
 
 
 class AppDynamicsAgent(BaseWatcher):
-    def __init__(self, cluster_id: str):
+    def __init__(self, configuration):
         self.dest_path = os.environ.get('WATCHER_APPDYNAMICS_DEST_PATH')
 
         if not self.dest_path:
             raise RuntimeError('AppDyanmics watcher agent initialization failed. Env variable '
                                'WATCHER_APPDYNAMICS_DEST_PATH must be set.')
 
-        self.cluster_id = cluster_id
+        self.cluster_id = configuration['cluster_id']
         self.tpl = load_template(TPL_NAME)
 
         self.logs = []

@@ -9,7 +9,7 @@ from typing import Tuple
 
 import kube_log_watcher.kube as kube
 
-from kube_log_watcher.agents import ScalyrAgent, AppDynamicsAgent, SymlinkerLoader
+from kube_log_watcher.agents import ScalyrAgent, AppDynamicsAgent, Symlinker
 
 
 CONTAINERS_PATH = '/mnt/containers/'
@@ -26,7 +26,7 @@ KUBERNETES_PREFIX = 'io.kubernetes.'
 BUILTIN_AGENTS = {
     'appdynamics': AppDynamicsAgent,
     'scalyr': ScalyrAgent,
-    'symlinker': SymlinkerLoader
+    'symlinker': Symlinker,
 }
 
 # Set via kubernetes downward API.
@@ -261,8 +261,8 @@ def get_stale_containers(watched_containers: set, existing_container_ids: list) 
     return set(watched_containers) - set(existing_container_ids)
 
 
-def load_agents(agents, cluster_id):
-    return [BUILTIN_AGENTS[agent.strip(' ')](cluster_id) for agent in agents]
+def load_agents(agents, configuration):
+    return [BUILTIN_AGENTS[agent.strip(' ')](configuration) for agent in agents]
 
 
 def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None, strict_labels=None):
@@ -270,7 +270,10 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None, 
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
 
-    agents = load_agents(agents_list, cluster_id)
+    configuration = {
+        'cluster_id': cluster_id,
+    }
+    agents = load_agents(agents_list, configuration)
 
     while True:
         try:

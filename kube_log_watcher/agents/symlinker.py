@@ -23,7 +23,11 @@ def sanitize(s):
 
 
 class Symlinker(BaseWatcher):
-    def __init__(self, symlink_dir: str):
+    def __init__(self, configuration):
+        symlink_dir = os.environ.get('WATCHER_SYMLINK_DIR', configuration.get('symlink_dir'))
+        if not symlink_dir:
+            raise RuntimeError(
+                'Symlinker watcher agent initialization failed. Env variable WATCHER_SYMLINK_DIR must be set')
         self.symlink_dir = pathlib.Path(symlink_dir)
         if not self.symlink_dir.is_dir():
             raise RuntimeError(
@@ -78,12 +82,3 @@ class Symlinker(BaseWatcher):
                 continue
             else:
                 shutil.rmtree(str(container_dir))
-
-
-class SymlinkerLoader(Symlinker):
-    def __new__(cls, _cluster_id):
-        symlink_dir = os.environ.get('WATCHER_SYMLINK_DIR')
-        if not symlink_dir:
-            raise RuntimeError(
-                'Symlinker watcher agent initialization failed. Env variable WATCHER_SYMLINK_DIR must be set')
-        return Symlinker(symlink_dir)

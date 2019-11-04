@@ -33,7 +33,7 @@ def helper_target(tmp_path):
 
 
 def test_symlinker_name():
-    agent = Symlinker('.')
+    agent = Symlinker({'symlink_dir': '.'})
     assert agent.name == 'Symlinker'
 
 
@@ -43,7 +43,7 @@ def test_add_log_target(tmp_path):
     symlink_dir = tmp_path / "links"
     symlink_dir.mkdir()
 
-    agent = Symlinker(str(symlink_dir))
+    agent = Symlinker({'symlink_dir': str(symlink_dir)})
 
     with agent:
         agent.add_log_target(target)
@@ -62,7 +62,7 @@ def test_remove_log_target(tmp_path):
     symlink_dir = tmp_path / "links"
     symlink_dir.mkdir()
 
-    agent = Symlinker(str(symlink_dir))
+    agent = Symlinker({'symlink_dir': str(symlink_dir)})
 
     with agent:
         agent.add_log_target(target)
@@ -79,7 +79,7 @@ def test_remove_log_target_that_doesnt_exist(tmp_path):
     symlink_dir = tmp_path / "links"
     symlink_dir.mkdir()
 
-    agent = Symlinker(str(symlink_dir))
+    agent = Symlinker({'symlink_dir': str(symlink_dir)})
 
     with agent:
         agent.remove_log_target(target['id'])
@@ -93,7 +93,7 @@ def test_add_log_target_twice(tmp_path):
     symlink_dir = tmp_path / "links"
     symlink_dir.mkdir()
 
-    agent = Symlinker(str(symlink_dir))
+    agent = Symlinker({'symlink_dir': str(symlink_dir)})
 
     with agent:
         agent.add_log_target(target)
@@ -125,7 +125,7 @@ def test_cleanup_dangling_symlinks(tmp_path):
     bad_link.symlink_to(old_log)
     old_log.unlink()
 
-    agent = Symlinker(str(symlink_dir))
+    agent = Symlinker({'symlink_dir': str(symlink_dir)})
 
     with agent:
         agent.add_log_target(target)

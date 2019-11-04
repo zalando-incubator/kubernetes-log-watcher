@@ -45,7 +45,9 @@ def test_add_log_target(monkeypatch, fx_appdynamics):
     target = fx_appdynamics['target']
     kwargs = fx_appdynamics['kwargs']
 
-    agent = AppDynamicsAgent(CLUSTER_ID)
+    agent = AppDynamicsAgent({
+        'cluster_id': CLUSTER_ID,
+    })
 
     assert_agent(agent, ENV)
 
@@ -76,7 +78,9 @@ def test_remove_log_target(monkeypatch, exc):
         remove.side_effect = exc
     monkeypatch.setattr('os.remove', remove)
 
-    agent = AppDynamicsAgent(CLUSTER_ID)
+    agent = AppDynamicsAgent({
+        'cluster_id': CLUSTER_ID,
+    })
 
     assert_agent(agent, ENV)
 

@@ -146,7 +146,9 @@ def test_initialization_failure(monkeypatch, env, exists):
     monkeypatch.setattr('os.path.exists', exists)
 
     with pytest.raises(RuntimeError):
-        ScalyrAgent(CLUSTER_ID)
+        ScalyrAgent({
+            'cluster_id': CLUSTER_ID,
+        })
 
 
 @pytest.mark.parametrize('env', ENVS)
@@ -171,7 +173,9 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
     current_targets.return_value = []
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
-    agent = ScalyrAgent(CLUSTER_ID)
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+    })
     assert_agent(agent, env)
 
     mock_open, mock_fp = patch_open(monkeypatch)
@@ -205,7 +209,9 @@ def test_add_log_target_no_src(monkeypatch, env, fx_scalyr):
     exists.side_effect = (True, True, False)
     monkeypatch.setattr('os.path.exists', exists)
 
-    agent = ScalyrAgent(CLUSTER_ID)
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+    })
 
     assert_agent(agent, env)
 
@@ -239,7 +245,9 @@ def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
     current_targets.return_value = [log_path]
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
-    agent = ScalyrAgent(CLUSTER_ID)
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+    })
 
     assert_agent(agent, env)
 
@@ -283,7 +291,9 @@ def test_flush_failure(monkeypatch, env, fx_scalyr):
     current_targets.return_value = []
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
-    agent = ScalyrAgent(CLUSTER_ID)
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+    })
 
     assert_agent(agent, env)
 
@@ -327,7 +337,9 @@ def test_get_current_log_paths(monkeypatch, env, config, result):
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
 
-    agent = ScalyrAgent(CLUSTER_ID)
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+    })
 
     assert_agent(agent, env)
 
@@ -364,7 +376,9 @@ def test_remove_log_target(monkeypatch, env, exc):
         rmtree.side_effect = exc
     monkeypatch.setattr('shutil.rmtree', rmtree)
 
-    agent = ScalyrAgent(CLUSTER_ID)
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+    })
 
     assert_agent(agent, env)
 

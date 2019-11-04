@@ -86,7 +86,8 @@ def get_redaction_rules(annotations, kwargs):
 
 
 class ScalyrAgent(BaseWatcher):
-    def __init__(self, cluster_id: str):
+    def __init__(self, configuration):
+        cluster_id = configuration['cluster_id']
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
         self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER')

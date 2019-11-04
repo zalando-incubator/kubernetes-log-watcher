@@ -8,7 +8,7 @@ class BaseWatcher:
     BaseWatcher implementing a contextmanager.
     """
 
-    def __init__(self, cluster_id: str):
+    def __init__(self, configuration):
         pass
 
     @property

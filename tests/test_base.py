@@ -10,7 +10,9 @@ from .conftest import CLUSTER_ID
 
 
 def test_base_watcher_not_implemented(monkeypatch):
-    agent = BaseWatcher(CLUSTER_ID)
+    agent = BaseWatcher({
+        'cluster_id': CLUSTER_ID,
+    })
 
     with pytest.raises(NotImplementedError):
         agent.name
@@ -41,7 +43,9 @@ def test_builtin_agents_sanity(monkeypatch, klass):
 
     monkeypatch.setenv('WATCHER_SYMLINK_DIR', '/')
 
-    agent = klass(CLUSTER_ID)
+    agent = klass({
+        'cluster_id': CLUSTER_ID,
+    })
 
     for attr in attrs:
         assert hasattr(agent, attr) is True
