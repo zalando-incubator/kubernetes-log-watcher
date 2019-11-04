@@ -88,6 +88,9 @@ def get_redaction_rules(annotations, kwargs):
 class ScalyrAgent(BaseWatcher):
     def __init__(self, configuration):
         cluster_id = configuration['cluster_id']
+        self.scalyr_sampling_rules = self.parse_scalyr_sampling_rules(
+            configuration.get('scalyr_sampling_rules', []),
+        )
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
         self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER')
@@ -147,6 +150,22 @@ class ScalyrAgent(BaseWatcher):
 
         logger.info('Scalyr watcher agent initialization complete!')
 
+    def parse_scalyr_sampling_rules(self, scalyr_sampling_rules):
+        parsed_scalyr_sampling_rules = []
+
+        for scalyr_sampling_rule in scalyr_sampling_rules:
+            try:
+                if ('probability' in scalyr_sampling_rule) and not (0 <= scalyr_sampling_rule['probability'] <= 1):
+                    raise ValueError('`probability` must be between 0 and 1')
+
+                json.loads(scalyr_sampling_rule['value'])
+            except (TypeError, KeyError, ValueError) as error:
+                logger.warning('Cannot parse rule `{}`: {}'.format(scalyr_sampling_rule, repr(error)))
+            else:
+                parsed_scalyr_sampling_rules.append(scalyr_sampling_rule)
+
+        return parsed_scalyr_sampling_rules
+
     @property
     def name(self):
         return 'Scalyr'
@@ -154,6 +173,27 @@ class ScalyrAgent(BaseWatcher):
     @property
     def first_run(self):
         return self._first_run
+
+    def get_scalyr_sampling_rule(self, container_data):
+        for scalyr_sampling_rule in self.scalyr_sampling_rules:
+            if (
+                ('application' in scalyr_sampling_rule)
+                and (scalyr_sampling_rule['application'] != container_data['application'])
+            ):
+                continue
+
+            if (
+                ('component' in scalyr_sampling_rule)
+                and (scalyr_sampling_rule['component'] != container_data['component'])
+            ):
+                continue
+
+            if 'probability' in scalyr_sampling_rule:
+                container_id = int(container_data['container_id'], 16)
+                if ((container_id % 100) + 1) > scalyr_sampling_rule['probability'] * 100:
+                    continue
+
+            return scalyr_sampling_rule['value']
 
     def add_log_target(self, target: dict):
         """
@@ -187,6 +227,15 @@ class ScalyrAgent(BaseWatcher):
             for k, v in attributes.items()
             if v and (self.server_attributes.get(k) != v)
         }
+
+        sampling_rules = self.get_scalyr_sampling_rule(kwargs)
+        if sampling_rules is not None:
+            logger.warning('Overwriting container {} ({}/{}) sampling annotation'.format(
+                kwargs['container_id'],
+                kwargs['application'],
+                kwargs['component'],
+            ))
+            annotations[SCALYR_ANNOTATION_SAMPLING_RULES] = sampling_rules
 
         log = {
             'path': log_path,
