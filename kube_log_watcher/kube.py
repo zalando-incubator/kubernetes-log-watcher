@@ -1,14 +1,14 @@
+import logging
 import os
 import shutil
 import subprocess
-import logging
 import warnings
-
 from urllib.parse import urljoin
 
 import pykube
 import requests
 
+import kube_log_watcher
 
 DEFAULT_SERVICE_ACC = '/var/run/secrets/kubernetes.io/serviceaccount'
 DEFAULT_NAMESPACE = 'default'
@@ -51,6 +51,7 @@ def get_client():
     config = pykube.KubeConfig.from_service_account(DEFAULT_SERVICE_ACC)
     client = TimedHTTPClient(config)
     client.session.trust_env = False
+    client.session.headers["User-Agent"] = "kube-log-watcher/{}".format(kube_log_watcher.__version__)
 
     return client
 
