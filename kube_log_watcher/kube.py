@@ -1,14 +1,14 @@
+import logging
 import os
 import shutil
 import subprocess
-import logging
 import warnings
-
 from urllib.parse import urljoin
 
 import pykube
 import requests
 
+import kube_log_watcher
 
 DEFAULT_SERVICE_ACC = '/var/run/secrets/kubernetes.io/serviceaccount'
 DEFAULT_NAMESPACE = 'default'
@@ -51,6 +51,7 @@ def get_client():
     config = pykube.KubeConfig.from_service_account(DEFAULT_SERVICE_ACC)
     client = TimedHTTPClient(config)
     client.session.trust_env = False
+    client.session.headers["User-Agent"] = "kube-log-watcher/{}".format(kube_log_watcher.__version__)
 
     return client
 
@@ -82,8 +83,7 @@ def get_pod(name, namespace=DEFAULT_NAMESPACE, kube_url=None) -> pykube.Pod:
             return r.json().get('items', [])[0]
 
         kube_client = get_client()
-        return list(
-            pykube.Pod.objects(kube_client).filter(namespace=namespace, field_selector={'metadata.name': name}))[0]
+        return pykube.Pod.objects(api=kube_client, namespace=namespace).get_by_name(name)
     except Exception:
         raise PodNotFound('Cannot find pod: {}'.format(name))
 

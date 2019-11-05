@@ -1,10 +1,9 @@
+import pykube.exceptions
 import pytest
-
 from mock import MagicMock
 
-from kube_log_watcher.kube import get_pod, is_pause_container, get_client, PodNotFound
 from kube_log_watcher.kube import PAUSE_CONTAINER_PREFIX, DEFAULT_SERVICE_ACC
-
+from kube_log_watcher.kube import get_pod, is_pause_container, get_client, PodNotFound
 
 KUBE_URL = 'https://my-kube-api'
 
@@ -68,47 +67,60 @@ def test_get_pod_url(monkeypatch, namespace):
 
 @pytest.mark.parametrize('namespace', ('default', 'kube-system'))
 def test_get_pod_pykube(monkeypatch, namespace):
-    get = MagicMock()
-    pod = MagicMock()
-    res = [1]
-    pod.objects.return_value.filter.return_value = res
+    mock_pod = MagicMock(name='pod')
+    mock_client = MagicMock(name='client')
 
-    monkeypatch.setattr('kube_log_watcher.kube.get_client', get)
-    monkeypatch.setattr('pykube.Pod', pod)
+    pykube_pod = MagicMock()
+    pykube_pod_objects = MagicMock()
+
+    pykube_pod.objects.return_value = pykube_pod_objects
+    pykube_pod_objects.get_by_name.return_value = mock_pod
+
+    monkeypatch.setattr('kube_log_watcher.kube.get_client', lambda: mock_client)
+    monkeypatch.setattr('pykube.Pod', pykube_pod)
 
     result = get_pod('my-pod', namespace=namespace)
 
-    assert res[0] == result
+    assert result == mock_pod
 
-    get.assert_called_once()
-    pod.objects.return_value.filter.assert_called_with(namespace=namespace, field_selector={'metadata.name': 'my-pod'})
+    pykube_pod.objects.assert_called_once()
+    pykube_pod.objects.assert_called_with(api=mock_client, namespace=namespace)
+
+    pykube_pod_objects.get_by_name.assert_called_once()
+    pykube_pod_objects.get_by_name.assert_called_with('my-pod')
 
 
 @pytest.mark.parametrize('namespace', ('default', 'kube-system'))
 def test_get_pod_pykube_not_found(monkeypatch, namespace):
-    get = MagicMock()
-    pod = MagicMock()
-    res = []
-    pod.objects.return_value.filter.return_value = res
+    mock_client = MagicMock(name='client')
 
-    monkeypatch.setattr('kube_log_watcher.kube.get_client', get)
-    monkeypatch.setattr('pykube.Pod', pod)
+    pykube_pod = MagicMock()
+    pykube_pod_objects = MagicMock()
+
+    pykube_pod.objects.return_value = pykube_pod_objects
+    pykube_pod_objects.get_by_name.side_effect = pykube.exceptions.ObjectDoesNotExist()
+
+    monkeypatch.setattr('kube_log_watcher.kube.get_client', lambda: mock_client)
+    monkeypatch.setattr('pykube.Pod', pykube_pod)
 
     with pytest.raises(PodNotFound):
         get_pod('my-pod', namespace=namespace)
 
-    get.assert_called_once()
-    pod.objects.return_value.filter.assert_called_with(namespace=namespace, field_selector={'metadata.name': 'my-pod'})
+    pykube_pod.objects.assert_called_once()
+    pykube_pod.objects.assert_called_with(api=mock_client, namespace=namespace)
+
+    pykube_pod_objects.get_by_name.assert_called_once()
+    pykube_pod_objects.get_by_name.assert_called_with('my-pod')
 
 
 @pytest.mark.parametrize(
     'config,res',
     (
-        ({'Image': PAUSE_CONTAINER_PREFIX}, True),
-        ({'Image': PAUSE_CONTAINER_PREFIX + '-123'}, True),
-        ({}, False),
-        ({'Image': PAUSE_CONTAINER_PREFIX[:-1]}, False),
-        ({'Image': PAUSE_CONTAINER_PREFIX[1:]}, False),
+            ({'Image': PAUSE_CONTAINER_PREFIX}, True),
+            ({'Image': PAUSE_CONTAINER_PREFIX + '-123'}, True),
+            ({}, False),
+            ({'Image': PAUSE_CONTAINER_PREFIX[:-1]}, False),
+            ({'Image': PAUSE_CONTAINER_PREFIX[1:]}, False),
     )
 )
 def test_pause_container(monkeypatch, config, res):
