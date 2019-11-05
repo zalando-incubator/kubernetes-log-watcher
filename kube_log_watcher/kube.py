@@ -83,8 +83,7 @@ def get_pod(name, namespace=DEFAULT_NAMESPACE, kube_url=None) -> pykube.Pod:
             return r.json().get('items', [])[0]
 
         kube_client = get_client()
-        return list(
-            pykube.Pod.objects(kube_client).filter(namespace=namespace, field_selector={'metadata.name': name}))[0]
+        return pykube.Pod.objects(api=kube_client, namespace=namespace).get_by_name(name)
     except Exception:
         raise PodNotFound('Cannot find pod: {}'.format(name))
 
