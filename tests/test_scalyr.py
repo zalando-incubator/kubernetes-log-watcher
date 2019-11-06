@@ -141,8 +141,7 @@ def test_initialization_failure(monkeypatch, env, exists):
     patch_env(monkeypatch, env)
     patch_os(monkeypatch)
 
-    exists = MagicMock()
-    exists.side_effect = exists
+    exists = MagicMock(side_effect=exists)
     monkeypatch.setattr('os.path.exists', exists)
 
     with pytest.raises(RuntimeError):
