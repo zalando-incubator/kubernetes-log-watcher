@@ -7,7 +7,7 @@ import logging
 import json
 
 from kube_log_watcher.agents.base import BaseWatcher
-
+from kube_log_watcher.template_loader import load_template
 
 TPL_NAME = 'scalyr.json.jinja2'
 
@@ -86,7 +86,8 @@ def get_redaction_rules(annotations, kwargs):
 
 
 class ScalyrAgent(BaseWatcher):
-    def __init__(self, cluster_id: str, load_template):
+    def __init__(self, configuration):
+        cluster_id = configuration['cluster_id']
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
         self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER')
