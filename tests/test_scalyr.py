@@ -203,6 +203,7 @@ def test_initialization_failure(monkeypatch, env, exists):
     with pytest.raises(RuntimeError):
         ScalyrAgent({
             'cluster_id': CLUSTER_ID,
+            'scalyr_sampling_rules': None,
         })
 
 

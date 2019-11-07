@@ -90,7 +90,7 @@ class ScalyrAgent(BaseWatcher):
     def __init__(self, configuration):
         cluster_id = configuration['cluster_id']
         self.scalyr_sampling_rules = self.parse_scalyr_sampling_rules(
-            configuration.get('scalyr_sampling_rules', []),
+            configuration.get('scalyr_sampling_rules') or [],
         )
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
