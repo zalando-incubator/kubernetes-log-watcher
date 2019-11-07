@@ -1,10 +1,11 @@
 """
 Scalyr watcher agent for providing config file and variables required to ship logs to Scalyr.
 """
+import binascii
+import json
+import logging
 import os
 import shutil
-import logging
-import json
 
 from kube_log_watcher.agents.base import BaseWatcher
 from kube_log_watcher.template_loader import load_template
@@ -189,8 +190,8 @@ class ScalyrAgent(BaseWatcher):
                 continue
 
             if 'probability' in scalyr_sampling_rule:
-                container_id = int(container_data['container_id'], 16)
-                if ((container_id % 100) + 1) > scalyr_sampling_rule['probability'] * 100:
+                container_crc = binascii.crc32(container_data['container_id'].encode())
+                if ((container_crc % 100) + 1) > scalyr_sampling_rule['probability'] * 100:
                     continue
 
             return scalyr_sampling_rule['value']

@@ -944,7 +944,7 @@ def test_get_scalyr_sampling_rule(monkeypatch, env, fx_scalyr):
     rule = agent.get_scalyr_sampling_rule({
         'application': 'app-1',
         'component': 'comp-1',
-        'container_id': '472de5794b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
     })
     assert rule == '{"annotation": 2}'
 
@@ -960,7 +960,7 @@ def test_get_scalyr_sampling_rule(monkeypatch, env, fx_scalyr):
     rule = agent.get_scalyr_sampling_rule({
         'application': 'app-1',
         'component': 'comp-2',
-        'container_id': '472de5794b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
     })
     assert rule == '{"annotation": 3}'
 
@@ -968,7 +968,7 @@ def test_get_scalyr_sampling_rule(monkeypatch, env, fx_scalyr):
     rule = agent.get_scalyr_sampling_rule({
         'application': 'app-1',
         'component': 'comp-3',
-        'container_id': '472de5794b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
     })
     assert rule == '{"annotation": 4}'
 
@@ -976,7 +976,7 @@ def test_get_scalyr_sampling_rule(monkeypatch, env, fx_scalyr):
     rule = agent.get_scalyr_sampling_rule({
         'application': 'app-1',
         'component': 'comp-4',
-        'container_id': '472de5794b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
     })
     assert rule == '{"annotation": 4}'
 
@@ -984,7 +984,7 @@ def test_get_scalyr_sampling_rule(monkeypatch, env, fx_scalyr):
     rule = agent.get_scalyr_sampling_rule({
         'application': 'app-5',
         'component': 'comp-5',
-        'container_id': '472de5794b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
     })
     assert rule == '{"annotation": 8}'
 
