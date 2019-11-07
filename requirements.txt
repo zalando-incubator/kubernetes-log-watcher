@@ -1,2 +1,3 @@
 Jinja2
 pykube>=0.15.0
+PyYAML==5.1.2

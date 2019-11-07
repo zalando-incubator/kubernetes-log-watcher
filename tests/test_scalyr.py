@@ -38,6 +38,62 @@ KWARGS_KEYS = ('scalyr_key', 'parse_lines_json', 'enable_profiling', 'cluster_id
 SCALYR_MONITOR_JOURNALD = copy.deepcopy(SCALYR_JOURNALD_DEFAULTS)
 SCALYR_MONITOR_JOURNALD['attributes']['node'] = NODE
 
+SCALYR_SAMPLING_RULES = [
+    {
+        'application': 'app-1',
+        'component': 'comp-1',
+        'probability': 0,
+        'value': '{"annotation": 1}',
+    },
+    {
+        'application': 'app-1',
+        'component': 'comp-1',
+        'probability': 0.5,
+        'value': '{"annotation": 2}',
+    },
+    {
+        'application': 'app-1',
+        'component': 'comp-2',
+        'probability': 1,
+        'value': '{"annotation": 3}',
+    },
+    {
+        'application': 'app-1',
+        'value': '{"annotation": 4}',
+    },
+    {
+        'application': 'app-1',
+        'component': 'comp-3',
+        'probability': 10,
+        'value': '{"annotation": 5}',
+    },
+    {
+        'application': 'app-1',
+        'component': 'comp-3',
+        'value': '{"annotation": 6}',
+    },
+    {
+        'application': 'app-2',
+        'component': 'comp-1',
+        'value': '{"annotation": 7}',
+    },
+    {
+        'component': 'comp-5',
+        'value': '{"annotation": 8}',
+    },
+    {
+        'application': 'app-2',
+        'value': '{"annotation": 9}',
+    },
+    {
+        'application': 'app-3',
+    },
+    {
+        'application': 'app-3',
+        'value': 'not valid JSON',
+    },
+]
+
 
 def assert_fx_sanity(kwargs):
     assert set(KWARGS_KEYS) == set(kwargs.keys())
@@ -841,3 +897,130 @@ def test_redaction_rules_invalid_format(minimal_kwargs):
         )
     }
     assert get_redaction_rules(annotations, minimal_kwargs) == [JWT_REDACTION_RULE]
+
+
+@pytest.mark.parametrize('env', ENVS)
+def test_parse_scalyr_sampling_rules(monkeypatch, env, fx_scalyr):
+    patch_os(monkeypatch)
+    patch_env(monkeypatch, env)
+
+    exists = MagicMock()
+    exists.side_effect = (True, True, False)
+    monkeypatch.setattr('os.path.exists', exists)
+
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+        'scalyr_sampling_rules': SCALYR_SAMPLING_RULES,
+    })
+
+    print(agent.scalyr_sampling_rules)
+    assert agent.scalyr_sampling_rules == [
+        {'application': 'app-1', 'component': 'comp-1', 'probability': 0, 'value': '{"annotation": 1}'},
+        {'application': 'app-1', 'component': 'comp-1', 'probability': 0.5, 'value': '{"annotation": 2}'},
+        {'application': 'app-1', 'component': 'comp-2', 'probability': 1, 'value': '{"annotation": 3}'},
+        {'application': 'app-1', 'value': '{"annotation": 4}'},
+        {'application': 'app-1', 'component': 'comp-3', 'value': '{"annotation": 6}'},
+        {'application': 'app-2', 'component': 'comp-1', 'value': '{"annotation": 7}'},
+        {'component': 'comp-5', 'value': '{"annotation": 8}'},
+        {'application': 'app-2', 'value': '{"annotation": 9}'},
+    ]
+
+
+@pytest.mark.parametrize('env', ENVS)
+def test_get_scalyr_sampling_rule(monkeypatch, env, fx_scalyr):
+    patch_os(monkeypatch)
+    patch_env(monkeypatch, env)
+
+    exists = MagicMock()
+    exists.side_effect = (True, True, False)
+    monkeypatch.setattr('os.path.exists', exists)
+
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+        'scalyr_sampling_rules': SCALYR_SAMPLING_RULES,
+    })
+
+    # Component is not applied because of `probability`
+    rule = agent.get_scalyr_sampling_rule({
+        'application': 'app-1',
+        'component': 'comp-1',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+    })
+    assert rule == '{"annotation": 2}'
+
+    # Component is applied because of `probability`
+    rule = agent.get_scalyr_sampling_rule({
+        'application': 'app-1',
+        'component': 'comp-1',
+        'container_id': 'f2c88e81c4a4dd91023e5725bae3f743caef6e6bd727e255c7c6949a8bf56978',
+    })
+    assert rule == '{"annotation": 4}'
+
+    # Get rule for component
+    rule = agent.get_scalyr_sampling_rule({
+        'application': 'app-1',
+        'component': 'comp-2',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+    })
+    assert rule == '{"annotation": 3}'
+
+    # Component rule is lower than application rule - use application's one
+    rule = agent.get_scalyr_sampling_rule({
+        'application': 'app-1',
+        'component': 'comp-3',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+    })
+    assert rule == '{"annotation": 4}'
+
+    # No rule for component - use application's rule
+    rule = agent.get_scalyr_sampling_rule({
+        'application': 'app-1',
+        'component': 'comp-4',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+    })
+    assert rule == '{"annotation": 4}'
+
+    # Get rule by component
+    rule = agent.get_scalyr_sampling_rule({
+        'application': 'app-5',
+        'component': 'comp-5',
+        'container_id': '472de5194b88bc3302721ac28dcfe3a9fdc58350d0a8dcafab2f24683bca50f8',
+    })
+    assert rule == '{"annotation": 8}'
+
+
+@pytest.mark.parametrize('env', ENVS)
+def test_add_log_target_with_sampling(monkeypatch, env, fx_scalyr):
+    patch_env(monkeypatch, env)
+
+    target = fx_scalyr['target']
+
+    exists = MagicMock()
+    exists.side_effect = (True, True, True, False, False)
+    monkeypatch.setattr('os.path.exists', exists)
+
+    patch_os(monkeypatch)
+
+    agent = ScalyrAgent({
+        'cluster_id': CLUSTER_ID,
+        'scalyr_sampling_rules': [
+            {
+                'application': 'app-2',
+                'value': '[{"container": "app-1-container-1", "sampling-rules":[{ "match_expression": "WARNING", "sampling_rate": 0 }]}]',          # noqa: E501
+            },
+            {
+                'application': 'app-1',
+                'component': 'main',
+                'value': '[{"container": "app-1-container-1", "sampling-rules":[{ "match_expression": "INFO", "sampling_rate": 0 }]}]',             # noqa: E501
+            },
+            {
+                'application': 'app-1',
+                'value': '[{"container": "app-1-container-1", "sampling-rules":[{ "match_expression": "DEBUG", "sampling_rate": 0 }]}]',            # noqa: E501
+            },
+        ],
+    })
+    assert_agent(agent, env)
+
+    agent.add_log_target(target)
+
+    assert agent.logs[0]['sampling_rules'] == [{'match_expression': 'INFO', 'sampling_rate': 0}]

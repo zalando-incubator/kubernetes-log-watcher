@@ -382,3 +382,47 @@ def test_watch_failure(monkeypatch, strict):
 
     get_containers_mock.assert_called_with(CONTAINERS_PATH)
     sleep.assert_called_with(interval / 2)
+
+
+def test_load_configuration(monkeypatch, tmp_path):
+    watcher_config_file = tmp_path / 'log-watcher.yaml'
+
+    get_containers_mock = MagicMock()
+    get_containers_mock.return_value = []
+    monkeypatch.setattr('kube_log_watcher.main.get_containers', get_containers_mock)
+
+    load_agents_mock = MagicMock()
+    load_agents_mock.return_value = []
+    monkeypatch.setattr('kube_log_watcher.main.load_agents', load_agents_mock)
+
+    step = 0
+
+    def sync_containers_log_agents(*args, **kwargs):
+        nonlocal step
+
+        if step in [0, 1]:
+            watcher_config_file.write_text('')
+        elif step in [2, 3]:
+            watcher_config_file.write_text('{"foo":')
+        elif step in [4, 5]:
+            watcher_config_file.write_text('{"foo": "bar"}')
+        elif step in [6, 7]:
+            watcher_config_file.write_text('{"foo": "baz"}')
+        else:
+            raise KeyboardInterrupt
+
+        step += 1
+        return [], []
+
+    monkeypatch.setattr('kube_log_watcher.main.sync_containers_log_agents', sync_containers_log_agents)
+
+    watch(CONTAINERS_PATH, [], CLUSTER_ID, interval=0.001, watcher_config_file=str(watcher_config_file))
+
+    assert load_agents_mock.call_count == 4
+
+    load_agents_mock.assert_has_calls([
+        call([], {'cluster_id': 'kube-cluster'}),
+        call([], {'cluster_id': 'kube-cluster'}),
+        call([], {'foo': 'bar', 'cluster_id': 'kube-cluster'}),
+        call([], {'foo': 'baz', 'cluster_id': 'kube-cluster'}),
+    ])

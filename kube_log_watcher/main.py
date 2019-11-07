@@ -1,9 +1,10 @@
 import argparse
-import time
+import json
+import logging
 import os
 import sys
-import logging
-import json
+import time
+import yaml
 
 from typing import Tuple
 
@@ -265,18 +266,36 @@ def load_agents(agents, configuration):
     return [BUILTIN_AGENTS[agent.strip(' ')](configuration) for agent in agents]
 
 
-def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None, strict_labels=None):
+def load_watcher_config(watcher_config_file):
+    if watcher_config_file:
+        try:
+            with open(watcher_config_file) as f:
+                return yaml.safe_load(f)
+        except Exception as error:
+            logger.warning('Cannot read `{}` watcher configuration file: {}'.format(watcher_config_file, repr(error)))
+
+    return {}
+
+
+def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
+          strict_labels=None, watcher_config_file=None):
     """Watch new containers and sync their corresponding log job/config files."""
     # TODO: Check if filesystem watcher is *better* solution than polling.
     watched_containers = set()
+    watcher_config = load_watcher_config(watcher_config_file)
 
-    configuration = {
-        'cluster_id': cluster_id,
-    }
+    configuration = dict(watcher_config, cluster_id=cluster_id)
     agents = load_agents(agents_list, configuration)
 
     while True:
         try:
+            new_watcher_config = load_watcher_config(watcher_config_file)
+            if watcher_config != new_watcher_config:
+                logger.info('Reloading agents with new configuration')
+                watcher_config = new_watcher_config
+                configuration = dict(watcher_config, cluster_id=cluster_id)
+                agents = load_agents(agents_list, configuration)
+
             containers = get_containers(containers_path)
 
             # Write new job files!
@@ -370,11 +389,22 @@ def main():
 
     interval = os.environ.get('WATCHER_INTERVAL', args.interval)
 
+    watcher_config_file = os.environ.get('WATCHER_CONFIG')
+
     logger.info('Loaded configuration:')
     logger.info('\tContainers path: {}'.format(containers_path))
     logger.info('\tAgents: {}'.format(agents))
     logger.info('\tKube url: {}'.format(kube_url))
     logger.info('\tInterval: {}'.format(interval))
     logger.info('\tStrict labels: {}'.format(strict_labels_str))
+    logger.info('\tWatcher configuration file: {}'.format(watcher_config_file))
 
-    watch(containers_path, agents, cluster_id, interval=interval, kube_url=kube_url, strict_labels=strict_labels)
+    watch(
+        containers_path,
+        agents,
+        cluster_id,
+        interval=interval,
+        kube_url=kube_url,
+        strict_labels=strict_labels,
+        watcher_config_file=watcher_config_file,
+    )

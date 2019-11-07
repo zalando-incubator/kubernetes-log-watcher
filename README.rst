@@ -180,6 +180,8 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
                 value: /mnt/scalyr-logs
               - name: WATCHER_SCALYR_CONFIG_PATH
                 value: /mnt/scalyr-config/agent.json
+              - name: WATCHER_CONFIG
+                value: /mnt/scalyr-config/agent.json
               - name: WATCHER_SCALYR_JOURNALD
                 value: "true"
 
@@ -282,6 +284,9 @@ Scalyr configuration agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Configuration variables can be set via Env variables:
+
+WATCHER_CONFIG
+  Log watcher configuration file (YAML).
 
 WATCHER_SCALYR_API_KEY
   Scalyr API key. (Required).

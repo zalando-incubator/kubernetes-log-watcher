@@ -1,0 +1,13 @@
+scalyr_sampling_rules:
+  -
+    application: "some_application"       # Optional
+    value: '[{"container": "my-app-container", "sampling-rules":[{ "match_expression": ".", "sampling_rate": 0 }]}]'          # Required
+  -
+    application: "some_application"       # Optional
+    component: "some_component"           # Optional
+    value: '[{"container": "my-app-container", "sampling-rules":[{ "match_expression": "DEBUG", "sampling_rate": 0.3 }]}]'    # Required
+  -
+    application: "some_application"       # Optional
+    component: "some_component"           # Optional
+    probability: 0.5                      # Optional, between 0 and 1.
+    value: '[{"container": "my-app-container", "sampling-rules":[{ "match_expression": "INFO", "sampling_rate": 0 }]}]'       # Required
