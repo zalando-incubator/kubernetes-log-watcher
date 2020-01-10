@@ -246,10 +246,6 @@ def get_new_containers_log_targets(
                     ('Labels "{}" are required for container({}: {}) in pod({}) '
                      '... Skipping!').format(','.join(strict_labels), container_name, container['id'], pod_name))
                 continue
-            if not kwargs['application']:
-                logger.warning('Cannot determine application for pod: {}. Falling back to pod name!'.format(
-                    pod_name))
-                kwargs['application'] = kwargs['pod_name']
 
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except Exception:
