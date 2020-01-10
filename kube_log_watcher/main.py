@@ -229,7 +229,7 @@ def get_new_containers_log_targets(
 
             kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
 
-            kwargs['application'] = pod_labels.get(APP_LABEL)
+            kwargs['application'] = pod_labels.get(APP_LABEL, '')
             kwargs['component'] = pod_labels.get(COMPONENT_LABEL)
             kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, CLUSTER_ENVIRONMENT)
             kwargs['version'] = pod_labels.get(VERSION_LABEL, '')
