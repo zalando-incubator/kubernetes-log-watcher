@@ -293,7 +293,7 @@ class ScalyrAgent(BaseWatcher):
     def _adjust_target_log_path(self, target):
         try:
             src_log_path = target['kwargs'].get('log_file_path')
-            application = target['kwargs'].get('application')
+            application = target['kwargs'].get('application') or target['kwargs'].get('pod_name') or 'none'
             version = target['kwargs'].get('version') or 'none'
             container_id = target['id']
 
