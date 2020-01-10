@@ -44,8 +44,8 @@ class Symlinker(BaseWatcher):
         kw = target['kwargs']
         top_dir = self.symlink_dir / sanitize(kw['container_id'])
         link_dir = top_dir \
-            / sanitize(kw['application']) \
-            / sanitize(kw['component'] or kw['application']) \
+            / sanitize(kw['application'] or 'none') \
+            / sanitize(kw['component'] or kw['application'] or 'none') \
             / sanitize(kw['namespace']) \
             / sanitize(kw['environment']) \
             / sanitize(kw['version'] or 'none') \
