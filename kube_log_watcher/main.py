@@ -229,7 +229,7 @@ def get_new_containers_log_targets(
 
             kwargs['image'], kwargs['image_version'] = get_container_image_parts(config['Config'])
 
-            kwargs['application'] = pod_labels.get(APP_LABEL)
+            kwargs['application'] = pod_labels.get(APP_LABEL, '')
             kwargs['component'] = pod_labels.get(COMPONENT_LABEL)
             kwargs['environment'] = pod_labels.get(ENVIRONMENT_LABEL, CLUSTER_ENVIRONMENT)
             kwargs['version'] = pod_labels.get(VERSION_LABEL, '')
@@ -246,10 +246,6 @@ def get_new_containers_log_targets(
                     ('Labels "{}" are required for container({}: {}) in pod({}) '
                      '... Skipping!').format(','.join(strict_labels), container_name, container['id'], pod_name))
                 continue
-            if not kwargs['application']:
-                logger.warning('Cannot determine application for pod: {}. Falling back to pod name!'.format(
-                    pod_name))
-                kwargs['application'] = kwargs['pod_name']
 
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except Exception:

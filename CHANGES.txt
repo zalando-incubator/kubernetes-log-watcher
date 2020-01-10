@@ -2,6 +2,11 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.37 (2020-01-10)
+-----------------
+
+- Remove application from pod-name fallback [#107]
+
 0.36 (2019-09-04)
 -----------------
 
