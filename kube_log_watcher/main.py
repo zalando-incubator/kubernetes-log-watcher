@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import yaml
+import sentry_sdk
 
 from typing import Tuple
 
@@ -91,6 +92,7 @@ def get_containers(containers_path: str) -> list:
                     source_log_file = os.path.join(container_path, log_file_name)
             except Exception:
                 logger.exception('Failed while retrieving config for container({})'.format(container_id))
+                sentry_sdk.capture_exception()
                 break
 
         if source_log_file and config:
@@ -163,6 +165,7 @@ def sync_containers_log_agents(
                     agent.remove_log_target(container_id)
         except Exception:
             logger.exception('Failed to sync log config with agent {}'.format(agent.name))
+            sentry_sdk.capture_exception()
 
     # 4. return new containers, stale containers
     return existing_container_ids, stale_container_ids
@@ -215,6 +218,7 @@ def get_new_containers_log_targets(
                 pod = kube.get_pod(pod_name, namespace=pod_namespace, kube_url=kube_url)
             except kube.PodNotFound:
                 logger.warning('Cannot find pod "{}" ... skipping container: {}'.format(pod_name, container_name))
+                sentry_sdk.capture_exception()
                 continue
 
             metadata = pod.obj['metadata']
@@ -250,6 +254,7 @@ def get_new_containers_log_targets(
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except Exception:
             logger.exception('Failed to create log target for container({})'.format(container['id']))
+            sentry_sdk.capture_exception()
 
     return containers_log_targets
 
@@ -269,6 +274,7 @@ def load_watcher_config(watcher_config_file):
                 return yaml.safe_load(f)
         except Exception as error:
             logger.warning('Cannot read `{}` watcher configuration file: {}'.format(watcher_config_file, repr(error)))
+            sentry_sdk.capture_exception()
 
     return {}
 
@@ -281,7 +287,12 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
     watcher_config = load_watcher_config(watcher_config_file)
 
     configuration = dict(watcher_config, cluster_id=cluster_id)
-    agents = load_agents(agents_list, configuration)
+
+    try:
+        agents = load_agents(agents_list, configuration)
+    except Exception:
+        sentry_sdk.capture_exception()
+        raise
 
     while True:
         try:
@@ -310,10 +321,22 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
             return
         except Exception:
             logger.exception('Failed in watch! Retrying in {} seconds ...'.format(interval / 2))
+            sentry_sdk.capture_exception()
             time.sleep(interval / 2)
 
 
 def main():
+    sentry_dsn = os.environ.get("SENTRY_DSN")
+    if sentry_dsn:
+        sentry_sdk.init(
+            dsn=os.environ["SENTRY_DSN"],
+            release=os.environ["VERSION"],
+            default_integrations=True,
+            send_default_pii=False,
+            with_locals=False,
+            sample_rate=0,
+        )
+
     argp = argparse.ArgumentParser(description='kubernetes containers log watcher.')
     argp.add_argument('-c', '--containers-path', dest='containers_path', default=CONTAINERS_PATH,
                       help='Containers directory path mounted from the host. Can be set via WATCHER_CONTAINERS_PATH '

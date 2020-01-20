@@ -4,6 +4,7 @@ appdynamics controller.
 """
 import os
 import logging
+import sentry_sdk
 
 from kube_log_watcher.agents.base import BaseWatcher
 from kube_log_watcher.template_loader import load_template
@@ -61,6 +62,7 @@ class AppDynamicsAgent(BaseWatcher):
             logger.debug('AppDynamics watcher agent Removed container({}) job file'.format(container_id))
         except Exception:
             logger.exception('AppDynamics watcher agent Failed to remove job file: {}'.format(job_file))
+            sentry_sdk.capture_exception()
 
     def flush(self):
         for log in self.logs:
@@ -74,6 +76,7 @@ class AppDynamicsAgent(BaseWatcher):
 
                 except Exception:
                     logger.exception('AppDynamics watcher agent failed to write job file {}'.format(job_file))
+                    sentry_sdk.capture_exception()
                 else:
                     logger.debug('AppDynamics watcher agent updated job file {}'.format(job_file))
 

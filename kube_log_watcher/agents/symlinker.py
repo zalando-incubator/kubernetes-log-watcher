@@ -12,6 +12,7 @@ import os
 import pathlib
 import re
 import shutil
+import sentry_sdk
 
 from kube_log_watcher.agents.base import BaseWatcher
 
@@ -74,6 +75,7 @@ class Symlinker(BaseWatcher):
             logger.debug('Symlinker: Removed directory {}'.format(link_dir))
         except Exception:
             logger.exception('{} watcher agent failed to remove link directory {}'.format(self.name, link_dir))
+            sentry_sdk.capture_exception()
 
     def flush(self):
         for container_dir in pathlib.Path(self.symlink_dir).iterdir():

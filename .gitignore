@@ -35,6 +35,7 @@ coverage.xml
 *.iml
 .cache/
 *.swp
+venv/
 
 # STUPS
 scm-source.json

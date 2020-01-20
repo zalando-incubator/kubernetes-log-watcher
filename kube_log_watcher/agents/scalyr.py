@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import shutil
+import sentry_sdk
 
 from kube_log_watcher.agents.base import BaseWatcher
 from kube_log_watcher.template_loader import load_template
@@ -48,6 +49,7 @@ def container_annotation(annotations, container_name, pod_name, annotation_key, 
                         return candidate.get(result_key, default)
         except Exception:
             logger.error('Scalyr watcher agent failed to load annotation {}'.format(annotation_key))
+            sentry_sdk.capture_exception()
     return default
 
 
@@ -162,6 +164,7 @@ class ScalyrAgent(BaseWatcher):
                 json.loads(scalyr_sampling_rule['value'])
             except (TypeError, KeyError, ValueError) as error:
                 logger.warning('Cannot parse rule `{}`: {}'.format(scalyr_sampling_rule, repr(error)))
+                sentry_sdk.capture_exception()
             else:
                 parsed_scalyr_sampling_rules.append(scalyr_sampling_rule)
 
@@ -254,6 +257,7 @@ class ScalyrAgent(BaseWatcher):
             shutil.rmtree(container_dir)
         except Exception:
             logger.exception('Scalyr watcher agent failed to remove container directory {}'.format(container_dir))
+            sentry_sdk.capture_exception()
 
     def flush(self):
         kwargs = {
@@ -281,6 +285,7 @@ class ScalyrAgent(BaseWatcher):
                     fp.write(config)
             except Exception:
                 logger.exception('Scalyr watcher agent failed to write config file.')
+                sentry_sdk.capture_exception()
             else:
                 self._first_run = False
                 logger.info('Scalyr watcher agent updated config file {} with {} log targets.'.format(
@@ -314,6 +319,7 @@ class ScalyrAgent(BaseWatcher):
             return dst_log_path
         except Exception:
             logger.exception('Scalyr watcher agent Failed to adjust log path.')
+            sentry_sdk.capture_exception()
             return None
 
     def _get_current_log_paths(self) -> list:
@@ -330,5 +336,6 @@ class ScalyrAgent(BaseWatcher):
                 logger.warning('Scalyr watcher agent cannot find config file!')
         except Exception:
             logger.exception('Scalyr watcher agent failed to read config!')
+            sentry_sdk.capture_exception()
 
         return targets
