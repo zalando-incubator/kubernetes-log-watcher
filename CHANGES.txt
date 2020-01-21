@@ -2,6 +2,12 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.38 (2020-01-22)
+-----------------
+
+- Add Sentry integration [#109]
+- Handle target information stateful and only remove targets if container on disk is removed. [#109]
+
 0.37 (2020-01-10)
 -----------------
 

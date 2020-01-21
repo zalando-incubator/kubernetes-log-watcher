@@ -6,7 +6,7 @@ from mock import MagicMock, call
 
 from kube_log_watcher.kube import PodNotFound
 from kube_log_watcher.main import (
-    get_container_label_value, get_containers, sync_containers_log_agents, get_stale_containers, load_agents,
+    get_container_label_value, get_containers, sync_containers_log_agents, load_agents,
     get_new_containers_log_targets, get_container_image_parts, watch)
 
 from .conftest import CLUSTER_ID
@@ -122,7 +122,7 @@ def test_get_containers(monkeypatch, walk, config, res, exc):
     (
         set(),
         {'cont-5'},
-        {'cont-4'},  # stale
+        {'cont-6'},  # stale
     )
 )
 def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containers_sync):
@@ -141,10 +141,7 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
 
     get_targets = MagicMock()
     get_targets.return_value = targets
-    get_stale = MagicMock()
-    get_stale.return_value = stale_containers
     monkeypatch.setattr('kube_log_watcher.main.get_new_containers_log_targets', get_targets)
-    monkeypatch.setattr('kube_log_watcher.main.get_stale_containers', get_stale)
 
     agent1 = MagicMock()
     agent2 = MagicMock()
@@ -153,7 +150,8 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
     existing, stale = sync_containers_log_agents(agents, watched_containers, containers, CONTAINERS_PATH, CLUSTER_ID,
                                                  strict_labels=[])
 
-    get_targets.assert_called_with(containers, CONTAINERS_PATH, CLUSTER_ID, kube_url=None, strict_labels=[])
+    get_targets.assert_called_with([c for c in containers if c['id'] not in watched_containers],
+                                   CONTAINERS_PATH, CLUSTER_ID, kube_url=None, strict_labels=[])
     assert existing == result
     assert stale == stale_containers
 
@@ -173,7 +171,7 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
     (
         set(),
         {'cont-5'},
-        {'cont-4'},  # stale
+        {'cont-6'},  # stale
     )
 )
 def test_sync_containers_log_agents_failure(monkeypatch, watched_containers, fx_containers_sync):
@@ -192,10 +190,7 @@ def test_sync_containers_log_agents_failure(monkeypatch, watched_containers, fx_
 
     get_targets = MagicMock()
     get_targets.return_value = targets
-    get_stale = MagicMock()
-    get_stale.return_value = stale_containers
     monkeypatch.setattr('kube_log_watcher.main.get_new_containers_log_targets', get_targets)
-    monkeypatch.setattr('kube_log_watcher.main.get_stale_containers', get_stale)
 
     agent1 = MagicMock()
     agent2 = MagicMock()
@@ -270,18 +265,6 @@ def test_get_new_containers_log_targets_no_strict_labels(monkeypatch, fx_contain
     assert sorted(targets, key=lambda k: k['id']) == sorted(result, key=lambda k: k['id'])
 
 
-@pytest.mark.parametrize(
-    'watched,existing,result',
-    (
-        ([1, 2, 3], [1, 2, 3], set()),
-        ([1], [1, 2, 3], set()),
-        ([4], [1, 2, 3], {4}),
-    )
-)
-def test_get_stale_containers(watched, existing, result):
-    assert get_stale_containers(watched, existing) == result
-
-
 def test_load_agents(monkeypatch):
     agent1 = MagicMock()
     agent2 = MagicMock()
@@ -309,15 +292,15 @@ def test_watch(monkeypatch, strict):
         [{'id': 'cont-1'}, {'id': 'cont-2'}],
     ]
 
-    existing_ids = [
-        ('cont-1', 'cont-2', 'cont-3'),
-        ('cont-1', 'cont-2'),
-        ('cont-1', 'cont-2'),
+    new_ids = [
+        {'cont-1', 'cont-2', 'cont-3'},
+        set(),
+        set(),
     ]
 
     stale_ids = [
         set(),
-        ('cont-3',),
+        {'cont-3', },
         set(),
     ]
 
@@ -328,7 +311,7 @@ def test_watch(monkeypatch, strict):
     get_containers_mock.side_effect = containers
 
     sync_containers_log_agents_mock = MagicMock()
-    sync_containers_log_agents_mock.side_effect = list(zip(existing_ids, stale_ids))
+    sync_containers_log_agents_mock.side_effect = list(zip(new_ids, stale_ids))
 
     sleep = MagicMock()
     sleep.side_effect = (None, None, KeyboardInterrupt)  # terminate loop on third time

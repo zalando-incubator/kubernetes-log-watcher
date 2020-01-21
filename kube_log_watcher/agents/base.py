@@ -20,14 +20,10 @@ class BaseWatcher:
         return True
 
     def __enter__(self):
-        self.reset()
+        pass
 
     def __exit__(self, *exc):
         self.flush()
-        self.reset()
-
-    def reset(self):
-        return
 
     def add_log_target(self, target: dict):
         raise NotImplementedError()
