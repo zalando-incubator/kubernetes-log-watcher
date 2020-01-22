@@ -65,7 +65,7 @@ def test_add_log_target(monkeypatch, fx_appdynamics):
     assert agent.first_run is False
 
 
-@pytest.mark.parametrize('exc', (None, Exception))
+@pytest.mark.parametrize('exc', (None, OSError))
 def test_remove_log_target(monkeypatch, exc):
     patch_env(monkeypatch, ENV)
 

@@ -239,9 +239,9 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
     with agent:
         agent.add_log_target(target)
         if kwargs['logs'][0]['attributes']['parser'] == SCALYR_DEFAULT_PARSER:
-            assert 'parser' not in agent.logs[0]['attributes']
+            assert 'parser' not in agent.logs[target['id']]['attributes']
         else:
-            assert agent.logs[0]['attributes']['parser'] == kwargs['logs'][0]['attributes']['parser']
+            assert agent.logs[target['id']]['attributes']['parser'] == kwargs['logs'][0]['attributes']['parser']
 
     log_path = kwargs['logs'][0]['path']
 
@@ -273,7 +273,7 @@ def test_add_log_target_no_src(monkeypatch, env, fx_scalyr):
 
     agent.add_log_target(target)
 
-    assert agent.logs == []
+    assert agent.logs == {}
 
 
 @pytest.mark.parametrize('env', ENVS)
@@ -415,7 +415,7 @@ def test_get_current_log_paths(monkeypatch, env, config, result):
         ),
         (
             ENVS[0],
-            Exception,
+            OSError,
         )
     )
 )
@@ -1024,4 +1024,4 @@ def test_add_log_target_with_sampling(monkeypatch, env, fx_scalyr):
 
     agent.add_log_target(target)
 
-    assert agent.logs[0]['sampling_rules'] == [{'match_expression': 'INFO', 'sampling_rate': 0}]
+    assert agent.logs[target['id']]['sampling_rules'] == [{'match_expression': 'INFO', 'sampling_rate': 0}]

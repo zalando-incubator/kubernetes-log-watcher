@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import yaml
+import sentry_sdk
 
 from typing import Tuple
 
@@ -118,16 +119,16 @@ def get_container_image_parts(config: dict) -> Tuple[str]:
 
 
 def sync_containers_log_agents(
-        agents: list, watched_containers: list, containers: list, containers_path: str, cluster_id: str,
-        kube_url=None, strict_labels=None) -> list:
+        agents: list, watched_containers: set, containers: list, containers_path: str, cluster_id: str,
+        kube_url=None, strict_labels=None) -> Tuple[set, set]:
     """
     Sync containers log configs using supplied agents.
 
     :param agents: List of agents context managers.
     :type agents: list
 
-    :param watched_containers: List of currently watched containers.
-    :type watched_containers: list
+    :param watched_containers: Set of currently watched containers.
+    :type watched_containers: set
 
     :param containers: List of container configs dicts.
     :type containers: list
@@ -144,19 +145,22 @@ def sync_containers_log_agents(
     :param strict_labels: List of labels pods need to posses in order to be followed.
     :type strict_labels: List
 
-    :return: Existing container IDs and stale container IDs.
-    :rtype: tuple
+    :return: New container IDs and stale container IDs.
+    :rtype: Tuple[set, set]
     """
-    containers_log_targets = get_new_containers_log_targets(containers, containers_path, cluster_id, kube_url=kube_url,
-                                                            strict_labels=strict_labels)
 
-    existing_container_ids = {c['id'] for c in containers_log_targets}
-    stale_container_ids = get_stale_containers(watched_containers, existing_container_ids)
+    new_containers = [c for c in containers if c['id'] not in watched_containers]
+    new_containers_log_targets = get_new_containers_log_targets(new_containers, containers_path, cluster_id,
+                                                                kube_url=kube_url, strict_labels=strict_labels)
+
+    new_container_ids = {c['id'] for c in new_containers_log_targets}
+    existing_container_ids = {c['id'] for c in containers}
+    stale_container_ids = watched_containers - existing_container_ids
 
     for agent in agents:
         try:
             with agent:
-                for target in containers_log_targets:
+                for target in new_containers_log_targets:
                     agent.add_log_target(target)
 
                 for container_id in stale_container_ids:
@@ -165,7 +169,7 @@ def sync_containers_log_agents(
             logger.exception('Failed to sync log config with agent {}'.format(agent.name))
 
     # 4. return new containers, stale containers
-    return existing_container_ids, stale_container_ids
+    return new_container_ids, stale_container_ids
 
 
 def get_new_containers_log_targets(
@@ -254,10 +258,6 @@ def get_new_containers_log_targets(
     return containers_log_targets
 
 
-def get_stale_containers(watched_containers: set, existing_container_ids: list) -> int:
-    return set(watched_containers) - set(existing_container_ids)
-
-
 def load_agents(agents, configuration):
     return [BUILTIN_AGENTS[agent.strip(' ')](configuration) for agent in agents]
 
@@ -268,7 +268,7 @@ def load_watcher_config(watcher_config_file):
             with open(watcher_config_file) as f:
                 return yaml.safe_load(f)
         except Exception as error:
-            logger.warning('Cannot read `{}` watcher configuration file: {}'.format(watcher_config_file, repr(error)))
+            logger.error('Cannot read `{}` watcher configuration file: {}'.format(watcher_config_file, repr(error)))
 
     return {}
 
@@ -281,6 +281,7 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
     watcher_config = load_watcher_config(watcher_config_file)
 
     configuration = dict(watcher_config, cluster_id=cluster_id)
+
     agents = load_agents(agents_list, configuration)
 
     while True:
@@ -295,14 +296,15 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
             containers = get_containers(containers_path)
 
             # Write new job files!
-            existing_container_ids, stale_container_ids = sync_containers_log_agents(
+            new_container_ids, stale_container_ids = sync_containers_log_agents(
                 agents, watched_containers.copy(), containers, containers_path, cluster_id, kube_url=kube_url,
                 strict_labels=strict_labels)
 
-            watched_containers.update(existing_container_ids)
-            watched_containers.intersection_update(existing_container_ids)  # remove old containers!
+            watched_containers.update(new_container_ids)
+            watched_containers = watched_containers - stale_container_ids  # remove old containers!
 
             logger.info('Removed {} stale containers'.format(len(stale_container_ids)))
+            logger.info('Added {} new containers'.format(len(new_container_ids)))
             logger.info('Watching {} containers'.format(len(watched_containers)))
 
             time.sleep(interval)
@@ -314,6 +316,16 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
 
 
 def main():
+    sentry_dsn = os.environ.get('SENTRY_DSN')
+    if sentry_dsn:
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            release=os.environ.get('VERSION', 'unknown'),
+            default_integrations=True,
+            send_default_pii=False,
+            with_locals=False,
+        )
+
     argp = argparse.ArgumentParser(description='kubernetes containers log watcher.')
     argp.add_argument('-c', '--containers-path', dest='containers_path', default=CONTAINERS_PATH,
                       help='Containers directory path mounted from the host. Can be set via WATCHER_CONTAINERS_PATH '

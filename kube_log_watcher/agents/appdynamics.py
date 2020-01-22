@@ -24,7 +24,7 @@ class AppDynamicsAgent(BaseWatcher):
         self.cluster_id = configuration['cluster_id']
         self.tpl = load_template(TPL_NAME)
 
-        self.logs = []
+        self.logs = {}
         self._first_run = True
 
         logger.info('AppDynamics watcher agent initialization complete!')
@@ -51,19 +51,24 @@ class AppDynamicsAgent(BaseWatcher):
 
         log['job_file_path'] = self._get_job_file_path(container_id)
 
-        self.logs.append(log)
+        self.logs[target['id']] = log
 
     def remove_log_target(self, container_id):
         job_file = self._get_job_file_path(container_id)
 
         try:
+            del self.logs[container_id]
+        except KeyError:
+            logger.exception('Failed to remove log target: %s', container_id)
+
+        try:
             os.remove(job_file)
             logger.debug('AppDynamics watcher agent Removed container({}) job file'.format(container_id))
-        except Exception:
+        except OSError:
             logger.exception('AppDynamics watcher agent Failed to remove job file: {}'.format(job_file))
 
     def flush(self):
-        for log in self.logs:
+        for log in self.logs.values():
             job_file = log['job_file_path']
             if not os.path.exists(job_file) or self._first_run:
                 try:
@@ -78,9 +83,6 @@ class AppDynamicsAgent(BaseWatcher):
                     logger.debug('AppDynamics watcher agent updated job file {}'.format(job_file))
 
         self._first_run = False
-
-    def reset(self):
-        self.logs = []
 
     def _get_job_file_path(self, container_id):
         return os.path.join(self.dest_path, 'container-{}-jobfile.job'.format(container_id))

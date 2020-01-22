@@ -47,7 +47,8 @@ def container_annotation(annotations, container_name, pod_name, annotation_key, 
                     if candidate.get('container') == container_name:
                         return candidate.get(result_key, default)
         except Exception:
-            logger.error('Scalyr watcher agent failed to load annotation {}'.format(annotation_key))
+            logger.exception('Scalyr watcher agent failed to load annotation {}'.format(annotation_key))
+
     return default
 
 
@@ -89,7 +90,7 @@ def get_redaction_rules(annotations, kwargs):
 class ScalyrAgent(BaseWatcher):
     def __init__(self, configuration):
         cluster_id = configuration['cluster_id']
-        self.scalyr_sampling_rules = self.parse_scalyr_sampling_rules(
+        self.scalyr_sampling_rules = ScalyrAgent.parse_scalyr_sampling_rules(
             configuration.get('scalyr_sampling_rules') or [],
         )
         self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
@@ -145,13 +146,13 @@ class ScalyrAgent(BaseWatcher):
         }
 
         self.tpl = load_template(TPL_NAME)
-        self.logs = []
-        self.kwargs = {}
+        self.logs = {}
         self._first_run = True
 
         logger.info('Scalyr watcher agent initialization complete!')
 
-    def parse_scalyr_sampling_rules(self, scalyr_sampling_rules):
+    @staticmethod
+    def parse_scalyr_sampling_rules(scalyr_sampling_rules):
         parsed_scalyr_sampling_rules = []
 
         for scalyr_sampling_rule in scalyr_sampling_rules:
@@ -245,21 +246,26 @@ class ScalyrAgent(BaseWatcher):
             'attributes': attributes,
         }
 
-        self.logs.append(log)
+        self.logs[target['id']] = log
 
     def remove_log_target(self, container_id: str):
         container_dir = os.path.join(self.dest_path, container_id)
 
         try:
+            del self.logs[container_id]
+        except KeyError:
+            logger.exception('Failed to remove log target: %s', container_id)
+
+        try:
             shutil.rmtree(container_dir)
-        except Exception:
+        except OSError:
             logger.exception('Scalyr watcher agent failed to remove container directory {}'.format(container_dir))
 
     def flush(self):
         kwargs = {
             'scalyr_key': self.api_key,
             'server_attributes': self.server_attributes,
-            'logs': self.logs,
+            'logs': self.logs.values(),
             'monitor_journald': self.journald,
             'scalyr_server': self.scalyr_server,
             'parse_lines_json': self.parse_lines_json,
@@ -267,7 +273,7 @@ class ScalyrAgent(BaseWatcher):
         }
 
         current_paths = self._get_current_log_paths()
-        new_paths = {log['path'] for log in self.logs}
+        new_paths = {log['path'] for log in self.logs.values()}
 
         diff_paths = new_paths.symmetric_difference(current_paths)
 
@@ -285,10 +291,6 @@ class ScalyrAgent(BaseWatcher):
                 self._first_run = False
                 logger.info('Scalyr watcher agent updated config file {} with {} log targets.'.format(
                     self.config_path, len(diff_paths)))
-
-    def reset(self):
-        self.logs = []
-        self.kwargs = {}
 
     def _adjust_target_log_path(self, target):
         try:
