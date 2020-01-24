@@ -73,7 +73,7 @@ class Symlinker(BaseWatcher):
             shutil.rmtree(link_dir)
             logger.debug('Symlinker: Removed directory {}'.format(link_dir))
         except Exception:
-            logger.exception('{} watcher agent failed to remove link directory {}'.format(self.name, link_dir))
+            logger.warning('{} watcher agent failed to remove link directory {}'.format(self.name, link_dir))
 
     def flush(self):
         for container_dir in pathlib.Path(self.symlink_dir).iterdir():

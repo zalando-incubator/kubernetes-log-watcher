@@ -254,12 +254,12 @@ class ScalyrAgent(BaseWatcher):
         try:
             del self.logs[container_id]
         except KeyError:
-            logger.exception('Failed to remove log target: %s', container_id)
+            logger.warning('Failed to remove log target: %s', container_id)
 
         try:
             shutil.rmtree(container_dir)
         except OSError:
-            logger.exception('Scalyr watcher agent failed to remove container directory {}'.format(container_dir))
+            logger.warning('Scalyr watcher agent failed to remove container directory {}'.format(container_dir))
 
     def flush(self):
         kwargs = {
