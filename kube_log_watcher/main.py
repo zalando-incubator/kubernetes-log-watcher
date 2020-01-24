@@ -324,6 +324,11 @@ def main():
             default_integrations=True,
             send_default_pii=False,
             with_locals=False,
+            environment=os.environ.get('CLUSTER_ENVIRONMENT', 'unknown'),
+            server_name='{}:{}:{}'.format(os.environ.get('CLUSTER_ALIAS', 'unknown'),
+                                          os.environ.get('CLUSTER_NODE_NAME', 'unknown'),
+                                          os.environ.get('HOSTNAME', 'unknown'))
+
         )
 
     argp = argparse.ArgumentParser(description='kubernetes containers log watcher.')

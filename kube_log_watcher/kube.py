@@ -85,9 +85,7 @@ def get_pod(name, namespace=DEFAULT_NAMESPACE, kube_url=None) -> pykube.Pod:
         kube_client = get_client()
         return pykube.Pod.objects(api=kube_client, namespace=namespace).get_by_name(name)
     except Exception as error:
-        if isinstance(error, pykube.ObjectDoesNotExist):
-            logger.warning('Failed to get pod: {}', repr(error))
-        else:
+        if not isinstance(error, pykube.ObjectDoesNotExist):
             logger.exception('Failed to get pod')
         raise PodNotFound('Cannot find pod: {}'.format(name))
 
