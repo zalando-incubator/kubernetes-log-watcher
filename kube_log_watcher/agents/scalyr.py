@@ -39,15 +39,14 @@ def container_annotation(annotations, container_name, pod_name, annotation_key, 
             result_candidates = json.loads(annotations[annotation_key])
             if type(result_candidates) is not list:
                 logger.warning(
-                    ('Scalyr watcher agent found invalid {} annotation in pod: {}. '
-                     'Expected `list` found: `{}`').format(
-                         annotation_key, pod_name, type(result_candidates)))
+                    'Scalyr watcher agent found invalid %s annotation in pod: %s. Expected `list` found: `%s`',
+                    annotation_key, pod_name, type(result_candidates))
             else:
                 for candidate in result_candidates:
                     if candidate.get('container') == container_name:
                         return candidate.get(result_key, default)
         except Exception:
-            logger.exception('Scalyr watcher agent failed to load annotation {}'.format(annotation_key))
+            logger.exception('Scalyr watcher agent failed to load annotation %s', annotation_key)
 
     return default
 
@@ -78,10 +77,8 @@ def get_redaction_rules(annotations, kwargs):
                                  result_key='redaction-rules',
                                  default=[])
     if type(rules) is not list:
-        logger.warning(
-            ('Scalyr watcher agent found invalid redaction rule annotation in pod/container: {}/{}. '
-             'Expected `list` found: `{}`').format(
-                 kwargs['pod_name'], kwargs['container_name'], type(rules)))
+        logger.warning('Scalyr watcher agent found invalid redaction rule annotation in pod/container: %s/%s. '
+                       'Expected `list` found: `%s`', kwargs['pod_name'], kwargs['container_name'], type(rules))
         rules = []
     rules.append(JWT_REDACTION_RULE)
     return rules
@@ -118,8 +115,8 @@ class ScalyrAgent(BaseWatcher):
                     self.dest_path))
         else:
             watched_containers = os.listdir(self.dest_path)
-            logger.info('Scalyr watcher agent found {} watched containers.'.format(len(watched_containers)))
-            logger.debug('Scalyr watcher agent found the following watched containers: {}'.format(watched_containers))
+            logger.info('Scalyr watcher agent found %d watched containers.', len(watched_containers))
+            logger.debug('Scalyr watcher agent found the following watched containers: %s', watched_containers)
 
         self.journald = None
         journald_monitor = os.environ.get('WATCHER_SCALYR_JOURNALD', False)
@@ -162,7 +159,7 @@ class ScalyrAgent(BaseWatcher):
 
                 json.loads(scalyr_sampling_rule['value'])
             except (TypeError, KeyError, ValueError) as error:
-                logger.warning('Cannot parse rule `{}`: {}'.format(scalyr_sampling_rule, repr(error)))
+                logger.warning('Cannot parse rule `%s`: %s', scalyr_sampling_rule, repr(error))
             else:
                 parsed_scalyr_sampling_rules.append(scalyr_sampling_rule)
 
@@ -203,8 +200,8 @@ class ScalyrAgent(BaseWatcher):
         """
         log_path = self._adjust_target_log_path(target)
         if not log_path:
-            logger.error('Scalyr watcher agent skipped log config for container({}) in pod {}.'.format(
-                target['kwargs']['container_name'], target['kwargs']['pod_name']))
+            logger.warning('Scalyr watcher agent skipped log config for container(%s) in pod %s.',
+                           target['kwargs']['container_name'], target['kwargs']['pod_name'])
             return
 
         kwargs = target['kwargs']
@@ -232,11 +229,8 @@ class ScalyrAgent(BaseWatcher):
 
         sampling_rules = self.get_scalyr_sampling_rule(kwargs)
         if sampling_rules is not None:
-            logger.warning('Overwriting container {} ({}/{}) sampling annotation'.format(
-                kwargs['container_id'],
-                kwargs['application'],
-                kwargs['component'],
-            ))
+            logger.warning('Overwriting container %s (%s/%s) sampling annotation',
+                           kwargs['container_id'], kwargs['application'], kwargs['component'])
             annotations[SCALYR_ANNOTATION_SAMPLING_RULES] = sampling_rules
 
         log = {
@@ -259,7 +253,7 @@ class ScalyrAgent(BaseWatcher):
         try:
             shutil.rmtree(container_dir)
         except OSError:
-            logger.warning('Scalyr watcher agent failed to remove container directory {}'.format(container_dir))
+            logger.warning('Scalyr watcher agent failed to remove container directory %s', container_dir)
 
     def flush(self):
         kwargs = {
@@ -278,8 +272,8 @@ class ScalyrAgent(BaseWatcher):
         diff_paths = new_paths.symmetric_difference(current_paths)
 
         if self._first_run or diff_paths:
-            logger.debug('Scalyr watcher agent new paths: {}'.format(diff_paths))
-            logger.debug('Scalyr watcher agent current paths: {}'.format(current_paths))
+            logger.debug('Scalyr watcher agent new paths: %s', diff_paths)
+            logger.debug('Scalyr watcher agent current paths: %s', current_paths)
             try:
                 config = self.tpl.render(**kwargs)
 
@@ -289,8 +283,8 @@ class ScalyrAgent(BaseWatcher):
                 logger.exception('Scalyr watcher agent failed to write config file.')
             else:
                 self._first_run = False
-                logger.info('Scalyr watcher agent updated config file {} with {} log targets.'.format(
-                    self.config_path, len(diff_paths)))
+                logger.info('Scalyr watcher agent updated config file %s with %s log targets.',
+                            self.config_path, len(diff_paths))
 
     def _adjust_target_log_path(self, target):
         try:
@@ -326,8 +320,8 @@ class ScalyrAgent(BaseWatcher):
                 with open(self.config_path) as fp:
                     config = json.load(fp)
                     targets = {log.get('path') for log in config.get('logs', [])}
-                    logger.debug('Scalyr watcher agent loaded existing config {}: {} log targets exist!'.format(
-                        self.config_path, len(config.get('logs', []))))
+                    logger.debug('Scalyr watcher agent loaded existing config %s: %d log targets exist!',
+                                 self.config_path, len(config.get('logs', [])))
             else:
                 logger.warning('Scalyr watcher agent cannot find config file!')
         except Exception:

@@ -91,7 +91,7 @@ def get_containers(containers_path: str) -> list:
                     # Assuming same path is mounted on node *logging agent* container.
                     source_log_file = os.path.join(container_path, log_file_name)
             except Exception:
-                logger.exception('Failed while retrieving config for container({})'.format(container_id))
+                logger.exception('Failed while retrieving config for container(%s)', container_id)
                 break
 
         if source_log_file and config:
@@ -102,9 +102,9 @@ def get_containers(containers_path: str) -> list:
                 'log_file': source_log_file
             })
 
-            logger.debug('Successfully collected config for container({}): {}'.format(container_id, config))
+            logger.debug('Successfully collected config for container(%s): %s', container_id, config)
 
-    logger.info('Collected configs for {} containers'.format(len(containers)))
+    logger.info('Collected configs for %d containers', len(containers))
 
     return containers
 
@@ -166,7 +166,7 @@ def sync_containers_log_agents(
                 for container_id in stale_container_ids:
                     agent.remove_log_target(container_id)
         except Exception:
-            logger.exception('Failed to sync log config with agent {}'.format(agent.name))
+            logger.exception('Failed to sync log config with agent %s', agent.name)
 
     # 4. return new containers, stale containers
     return new_container_ids, stale_container_ids
@@ -218,7 +218,7 @@ def get_new_containers_log_targets(
             try:
                 pod = kube.get_pod(pod_name, namespace=pod_namespace, kube_url=kube_url)
             except kube.PodNotFound:
-                logger.warning('Cannot find pod "{}" ... skipping container: {}'.format(pod_name, container_name))
+                logger.warning('Cannot find pod "%s" ... skipping container: %s', pod_name, container_name)
                 continue
 
             metadata = pod.obj['metadata']
@@ -246,14 +246,13 @@ def get_new_containers_log_targets(
             kwargs['pod_annotations'] = pod_annotations
 
             if set(strict_labels) - set(pod_labels.keys()):
-                logger.warning(
-                    ('Labels "{}" are required for container({}: {}) in pod({}) '
-                     '... Skipping!').format(','.join(strict_labels), container_name, container['id'], pod_name))
+                logger.warning('Labels "%s" are required for container(%s: %s) in pod(%s) ... Skipping!',
+                               ','.join(strict_labels), container_name, container['id'], pod_name)
                 continue
 
             containers_log_targets.append({'id': container['id'], 'kwargs': kwargs, 'pod_labels': pod_labels})
         except Exception:
-            logger.exception('Failed to create log target for container({})'.format(container['id']))
+            logger.exception('Failed to create log target for container(%s)', container['id'])
 
     return containers_log_targets
 
@@ -268,7 +267,7 @@ def load_watcher_config(watcher_config_file):
             with open(watcher_config_file) as f:
                 return yaml.safe_load(f)
         except Exception as error:
-            logger.error('Cannot read `{}` watcher configuration file: {}'.format(watcher_config_file, repr(error)))
+            logger.error('Cannot read `%s` watcher configuration file: %s', watcher_config_file, repr(error))
 
     return {}
 
@@ -303,15 +302,15 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
             watched_containers.update(new_container_ids)
             watched_containers = watched_containers - stale_container_ids  # remove old containers!
 
-            logger.info('Removed {} stale containers'.format(len(stale_container_ids)))
-            logger.info('Added {} new containers'.format(len(new_container_ids)))
-            logger.info('Watching {} containers'.format(len(watched_containers)))
+            logger.info('Removed %d stale containers', len(stale_container_ids))
+            logger.info('Added %d new containers', len(new_container_ids))
+            logger.info('Watching %d containers', len(watched_containers))
 
             time.sleep(interval)
         except KeyboardInterrupt:
             return
         except Exception:
-            logger.exception('Failed in watch! Retrying in {} seconds ...'.format(interval / 2))
+            logger.exception('Failed in watch! Retrying in %f seconds ...', interval / 2)
             time.sleep(interval / 2)
 
 
@@ -385,17 +384,16 @@ def main():
         kube.update_ca_certificate()
 
     if not agents_str:
-        logger.error(('No log proccesing agents specified, please specify at least one log processing agent from {}. '
-                      'Terminating watcher!').format(list(BUILTIN_AGENTS)))
+        logger.error('No log proccesing agents specified, please specify at least one log processing agent from %s. '
+                     'Terminating watcher!', list(BUILTIN_AGENTS))
         sys.exit(1)
 
     agents = set(agents_str.lower().strip(' ').strip(',').split(','))
 
     diff = agents - set(BUILTIN_AGENTS)
     if diff:
-        logger.error(('Unsupported agent supplied: {}. '
-                      'Current supported log processing agents are {}. '
-                      'Terminating watcher!').format(diff, BUILTIN_AGENTS))
+        logger.error('Unsupported agent supplied: %s. Current supported log processing agents are %s. '
+                     'Terminating watcher!', diff, BUILTIN_AGENTS)
         sys.exit(1)
 
     kube_url = os.environ.get('WATCHER_KUBE_URL', args.kube_url)
@@ -405,12 +403,12 @@ def main():
     watcher_config_file = os.environ.get('WATCHER_CONFIG')
 
     logger.info('Loaded configuration:')
-    logger.info('\tContainers path: {}'.format(containers_path))
-    logger.info('\tAgents: {}'.format(agents))
-    logger.info('\tKube url: {}'.format(kube_url))
-    logger.info('\tInterval: {}'.format(interval))
-    logger.info('\tStrict labels: {}'.format(strict_labels_str))
-    logger.info('\tWatcher configuration file: {}'.format(watcher_config_file))
+    logger.info('\tContainers path: %s', containers_path)
+    logger.info('\tAgents: %s', agents)
+    logger.info('\tKube url: %s', kube_url)
+    logger.info('\tInterval: %s', interval)
+    logger.info('\tStrict labels: %s', strict_labels_str)
+    logger.info('\tWatcher configuration file: %s', watcher_config_file)
 
     watch(
         containers_path,
