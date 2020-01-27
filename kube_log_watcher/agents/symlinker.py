@@ -40,7 +40,7 @@ class Symlinker(BaseWatcher):
         return 'Symlinker'
 
     def add_log_target(self, target):
-        logger.debug('Symlinker: add_log_target for {} called'.format(target['id']))
+        logger.debug('Symlinker: add_log_target for %s called', target['id'])
         kw = target['kwargs']
         top_dir = self.symlink_dir / sanitize(kw['container_id'])
         link_dir = top_dir \
@@ -54,26 +54,24 @@ class Symlinker(BaseWatcher):
 
         if top_dir.exists():
             if link.is_symlink and link.samefile(kw['log_file_path']):
-                logger.debug('Symlinker: link already exists for {}. Nothing to be done.'
-                             .format(target['id']))
+                logger.debug('Symlinker: link already exists for %s. Nothing to be done.', target['id'])
                 return
-            logger.info('Symlinker: metadata has changed for {}. Creating new symlink.'
-                        .format(target['id']))
+            logger.info('Symlinker: metadata has changed for %s. Creating new symlink.', target['id'])
             shutil.rmtree(str(top_dir))
-            logger.debug('Symlinker: Removed directory {}'.format(top_dir))
+            logger.debug('Symlinker: Removed directory %s', top_dir)
 
         link_dir.mkdir(parents=True)
         link.symlink_to(kw['log_file_path'])
-        logger.debug('Symlinker: Created symlink {} -> {}'.format(link, kw['log_file_path']))
+        logger.debug('Symlinker: Created symlink %s -> %s', link, kw['log_file_path'])
 
     def remove_log_target(self, container_id):
-        logger.debug('Symlinker: remove_log_target for {} called'.format(container_id))
+        logger.debug('Symlinker: remove_log_target for %s called', container_id)
         link_dir = str(self.symlink_dir / sanitize(container_id))
         try:
             shutil.rmtree(link_dir)
-            logger.debug('Symlinker: Removed directory {}'.format(link_dir))
+            logger.debug('Symlinker: Removed directory %s', link_dir)
         except Exception:
-            logger.warning('{} watcher agent failed to remove link directory {}'.format(self.name, link_dir))
+            logger.warning('%s watcher agent failed to remove link directory %s', self.name, link_dir)
 
     def flush(self):
         for container_dir in pathlib.Path(self.symlink_dir).iterdir():
