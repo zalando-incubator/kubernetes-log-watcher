@@ -203,7 +203,7 @@ class ScalyrAgent(BaseWatcher):
         """
         log_path = self._adjust_target_log_path(target)
         if not log_path:
-            logger.error('Scalyr watcher agent skipped log config for container({}) in pod {}.'.format(
+            logger.warning('Scalyr watcher agent skipped log config for container({}) in pod {}.'.format(
                 target['kwargs']['container_name'], target['kwargs']['pod_name']))
             return
 
