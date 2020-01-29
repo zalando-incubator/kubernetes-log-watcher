@@ -480,7 +480,7 @@ SERVER_ATTRIBUTES = {
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
                 'server_attributes': SERVER_ATTRIBUTES,
-                'logs': [], 'monitors': []
+                'logs': [], 'monitors': [], 'journald_logs': [],
             },
         ),
         (
@@ -515,7 +515,8 @@ SERVER_ATTRIBUTES = {
                         'monitor_log_write_rate': 10000,
                         'monitor_log_max_write_burst': 200000,
                     }
-                ]
+                ],
+                'journald_logs': [{'journald_unit': '.*', 'parser': 'journald_monitor'}],
             },
         ),
         (
@@ -531,7 +532,7 @@ SERVER_ATTRIBUTES = {
                 ],
                 'monitor_journald': {
                     'journal_path': '/var/log/journal',
-                    'extra_fields': {'_COMM': 'command'},
+                    # 'extra_fields': {'_COMM': 'command'},
                     'write_rate': 10000,
                     'write_burst': 200000,
                 },
@@ -565,9 +566,10 @@ SERVER_ATTRIBUTES = {
                         'monitor_log_write_rate': 10000,
                         'monitor_log_max_write_burst': 200000,
                         'journal_path': '/var/log/journal',
-                        'extra_fields': {'_COMM': 'command'}
+                        # 'extra_fields': {'_COMM': 'command'}
                     }
-                ]
+                ],
+                'journald_logs': [{'journald_unit': '.*', 'parser': 'journald_monitor'}],
             },
         ),
         (
@@ -609,6 +611,7 @@ SERVER_ATTRIBUTES = {
                         'sampling_rules': {'match_expression': 'match-expression'}
                     }
                 ],
+                'journald_logs': [],
             },
         ),
         (
@@ -650,6 +653,7 @@ SERVER_ATTRIBUTES = {
                         'redaction_rules': {'match_expression': 'match-expression'}
                     }
                 ],
+                'journald_logs': [],
             },
         ),
         (
@@ -694,6 +698,7 @@ SERVER_ATTRIBUTES = {
                         'redaction_rules': {'match_expression': 'match-expression'}
                     }
                 ],
+                'journald_logs': [],
             },
         ),
         (
@@ -717,7 +722,7 @@ SERVER_ATTRIBUTES = {
                         'copy_from_start': True,
                         'redaction_rules': {'match_expression': 'match-expression'}
                     }
-                ]
+                ],
             },
             {
                 'api_key': 'scalyr-key-123',
@@ -758,6 +763,7 @@ SERVER_ATTRIBUTES = {
                         'redaction_rules': {'match_expression': 'match-expression'}
                     }
                 ],
+                'journald_logs': [],
             },
         ),
     )
