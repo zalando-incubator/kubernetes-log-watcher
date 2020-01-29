@@ -44,15 +44,8 @@
             {% if monitor_journald.journal_path %}
             "journal_path": "{{ monitor_journald.journal_path }}",
             {% endif %}
-            {% if monitor_journald.attributes %}
-            "attributes": {
-                {% for k, v in monitor_journald.attributes.items() %}
-                "{{ k }}": "{{ v }}"{% if not loop.last %},{% endif %}
-                {% endfor %}
-            },
-            {% endif %}
-            {% if monitor_journald.extra_fields %}
-            "extra_fields": {
+            {% if monitor_journald.extra_fields and not 'broken in scalyr agent' %}
+            "journal_fields": {
                 {% for k, v in monitor_journald.extra_fields.items() %}
                 "{{ k }}": "{{ v }}"{% if not loop.last %},{% endif %}
                 {% endfor %}
@@ -61,6 +54,21 @@
             "module": "scalyr_agent.builtin_monitors.journald_monitor",
             "monitor_log_write_rate": {{ monitor_journald.write_rate }},
             "monitor_log_max_write_burst": {{ monitor_journald.write_burst }}
+        }
+        {% endif %}
+    ],
+    "journald_logs": [
+        {% if monitor_journald %}
+        {
+            {% if monitor_journald.attributes %}
+            "attributes": {
+                {% for k, v in monitor_journald.attributes.items() %}
+                "{{ k }}": "{{ v }}"{% if not loop.last %},{% endif %}
+                {% endfor %}
+            },
+            {% endif %}
+            "journald_unit": ".*",
+            "parser": "journald_monitor"
         }
         {% endif %}
     ]
