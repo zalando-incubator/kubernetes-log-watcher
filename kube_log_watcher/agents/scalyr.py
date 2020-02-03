@@ -45,8 +45,10 @@ def container_annotation(annotations, container_name, pod_name, annotation_key, 
                 for candidate in result_candidates:
                     if candidate.get('container') == container_name:
                         return candidate.get(result_key, default)
-        except Exception:
-            logger.exception('Scalyr watcher agent failed to load annotation %s', annotation_key)
+        except json.JSONDecodeError:
+            logger.exception(
+                'Scalyr watcher agent failed to load annotation %s for container %s in pod %s',
+                annotation_key, container_name, pod_name)
 
     return default
 
