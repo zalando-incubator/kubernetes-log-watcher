@@ -106,12 +106,12 @@ class ScalyrAgent(BaseWatcher):
                                'WATCHER_SCALYR_DEST_PATH must be set.')
 
         self.config_path = os.environ.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
-        if not os.path.exists(os.path.dirname(self.config_path)):
+        if not os.path.isdir(os.path.dirname(self.config_path)):
             raise RuntimeError(
                 'Scalyr watcher agent initialization failed. {} config path does not exist.'.format(
                     self.config_path))
 
-        if not os.path.exists(self.dest_path):
+        if not os.path.isdir(self.dest_path):
             raise RuntimeError(
                 'Scalyr watcher agent initialization failed. {} destination path does not exist.'.format(
                     self.dest_path))
