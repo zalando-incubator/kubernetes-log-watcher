@@ -129,22 +129,37 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
                   "image": "busybox",
                   "imagePullPolicy": "IfNotPresent",
                   "command": ["sh", "-c"],
-                  "args": [
-                    "if [ ! -f /mnt/scalyr/agent.json ]; then
-                      echo {
-                        \\\"import_vars\\\": [\\\"WATCHER_SCALYR_API_KEY\\\", \\\"WATCHER_CLUSTER_ID\\\"],
-                        \\\"server_attributes\\\": {\\\"serverHost\\\": \\\"\\$WATCHER_CLUSTER_ID\\\"},
-                        \\\"implicit_agent_process_metrics_monitor\\\": false,
-                        \\\"implicit_metric_monitor\\\": false,
-                        \\\"api_key\\\": \\\"\\$WATCHER_SCALYR_API_KEY\\\",
-                        \\\"monitors\\\": [],
-                        \\\"logs\\\": []
-                        } > /mnt/scalyr/agent.json;
-                        echo Updated agent.json to inital configuration;
-                    fi
-                    && cat /mnt/scalyr/agent.json;
-                    test -f /mnt/scalyr-checkpoint/checkpoints.json && ls -lah /mnt/scalyr-checkpoint/checkpoints.json && cat /mnt/scalyr-checkpoint/checkpoints.json || true;"
-                  ],
+                  "args":
+                    - |
+                      SCALYR_CONFIG_PATH="/mnt/scalyr/agent.json"
+                      if [ -f "$SCALYR_CONFIG_PATH" ]; then
+                        echo "Has agent.json with configuration:"
+                        cat $SCALYR_CONFIG_PATH;
+                      else
+                        # Write a minimal configuration which let scalyr agent to start and wait for real configuration
+                        echo "Create agent.json with inital configuration:"
+                        tee "$SCALYR_CONFIG_PATH" <<EOF
+                      {
+                          "api_key": "$WATCHER_SCALYR_API_KEY",
+                          "scalyr_server": "${WATCHER_SCALYR_SERVER:-https://upload.eu.scalyr.com}",
+                          "implicit_agent_process_metrics_monitor": false,
+                          "implicit_metric_monitor": false,
+                          "monitors": [],
+                          "logs": []
+                      }
+                      EOF
+                      # ^^^ "EOF" must be at 0 position after YAML decode
+                      fi;
+
+                      SCALYR_CHECKPOINTS_PATH="/mnt/scalyr-agent-checkpoints/checkpoints.json"
+                      if [ -f "$SCALYR_CHECKPOINTS_PATH" ]; then
+                        echo
+                        ls -lah "$SCALYR_CHECKPOINTS_PATH"
+                        cat "$SCALYR_CHECKPOINTS_PATH"
+                      fi
+                  "env":
+                    - name: WATCHER_SCALYR_API_KEY
+                      value: "<SCALYR-KEY-HERE>"
                   "volumeMounts": [
                     {
                       "name": "scalyr-config",
@@ -174,8 +189,8 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
 
               - name: WATCHER_AGENTS
                 value: scalyr
-              - name: WATCHER_SCALYR_API_KEY
-                value: "<SCALYR-KEY-HERE>"
+              - name: WATCHER_SCALYR_API_KEY_FILE
+                value: "<PATH-TO-SCALYR-KEY-HERE>"
               - name: WATCHER_SCALYR_DEST_PATH
                 value: /mnt/scalyr-logs
               - name: WATCHER_SCALYR_CONFIG_PATH
@@ -198,13 +213,6 @@ This is an example manifest for shipping logs to Scalyr, with additional Journal
             - name: scalyr-agent
 
               image: registry.opensource.zalan.do/eagleeye/scalyr-agent:0.2
-
-              env:
-              # Note: added for scalyr-config, but not needed by the scalyr-agent itself.
-              - name: WATCHER_SCALYR_API_KEY
-                value: "<SCALYR-KEY-HERE>"
-              - name: WATCHER_CLUSTER_ID
-                value: "kubernetes-cluster-1"
 
               volumeMounts:
               - name: containerlogs
@@ -290,6 +298,9 @@ WATCHER_CONFIG
 
 WATCHER_SCALYR_API_KEY
   Scalyr API key. (Required).
+
+WATCHER_SCALYR_API_KEY_FILE
+  Path to a file with Scalyr API key. (Required).
 
 WATCHER_SCALYR_DEST_PATH
   Scalyr configuration agent will symlink containers logs in this location. This is to provide more friendly name for log files. Typical log file name for a container will be in the form ``<application>-<version>.log``. (Required).

@@ -17,10 +17,10 @@ from .conftest \
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS, SCALYR_DEFAULT_PARSER
 
 DEFAULT_ENV = {
-    'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
     'CLUSTER_ENVIRONMENT': CLUSTER_ENVIRONMENT,
     'CLUSTER_ALIAS': CLUSTER_ALIAS,
     'CLUSTER_NODE_NAME': NODE,
+    'WATCHER_SCALYR_API_KEY_FILE': '',
     'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
 }
 
@@ -102,7 +102,7 @@ def assert_fx_sanity(kwargs):
 def assert_agent(agent):
     assert agent.name
 
-    assert agent.api_key == os.environ.get('WATCHER_SCALYR_API_KEY')
+    assert agent.api_key_file == os.environ.get('WATCHER_SCALYR_API_KEY_FILE')
     assert agent.dest_path == os.environ.get('WATCHER_SCALYR_DEST_PATH')
     assert agent.config_path == os.environ.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
 
@@ -123,17 +123,20 @@ def assert_agent(agent):
     assert agent.server_attributes['parser'] == SCALYR_DEFAULT_PARSER
 
 
-def patch_env(monkeypatch, env):
+def patch_env(monkeypatch, scalyr_key_file, env):
     for k, v in env.items():
         monkeypatch.setenv(k, v)
+
+    if 'WATCHER_SCALYR_API_KEY_FILE' in env:
+        monkeypatch.setenv('WATCHER_SCALYR_API_KEY_FILE', scalyr_key_file)
 
     if 'WATCHER_SCALYR_CONFIG_PATH' not in env:
         monkeypatch.delenv('WATCHER_SCALYR_CONFIG_PATH', raising=False)
 
 
 @pytest.fixture(params=ENVS)
-def scalyr_env(monkeypatch, request):
-    patch_env(monkeypatch, request.param)
+def scalyr_env(monkeypatch, scalyr_key_file, request):
+    patch_env(monkeypatch, scalyr_key_file, request.param)
 
 
 def patch_os(monkeypatch):
@@ -176,13 +179,13 @@ def patch_open(monkeypatch, exc=None):
         (
             {
                 # No Dest path
-                'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
+                'WATCHER_SCALYR_API_KEY_FILE': '',
             },
             (True, True)
         ),
         (
             {
-                'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
+                'WATCHER_SCALYR_API_KEY_FILE': '',
                 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
                 'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'
             },
@@ -191,7 +194,7 @@ def patch_open(monkeypatch, exc=None):
         ),
         (
             {
-                'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
+                'WATCHER_SCALYR_API_KEY_FILE': '',
                 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
                 'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'
             },
@@ -200,8 +203,8 @@ def patch_open(monkeypatch, exc=None):
         ),
     )
 )
-def test_initialization_failure(monkeypatch, env, isdir):
-    patch_env(monkeypatch, env)
+def test_initialization_failure(monkeypatch, scalyr_key_file, env, isdir):
+    patch_env(monkeypatch, scalyr_key_file, env)
     patch_os(monkeypatch)
 
     isdir = MagicMock(side_effect=isdir)
@@ -233,7 +236,7 @@ def test_add_log_target(monkeypatch, scalyr_env, fx_scalyr):
     makedirs, symlink, listdir = patch_os(monkeypatch)
 
     current_targets = MagicMock()
-    current_targets.return_value = []
+    current_targets.return_value = set()
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
@@ -306,7 +309,7 @@ def test_add_log_target_no_change(monkeypatch, scalyr_env, fx_scalyr):
 
     # targets did not change
     current_targets = MagicMock()
-    current_targets.return_value = [log_path]
+    current_targets.return_value = {log_path}
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
@@ -319,6 +322,8 @@ def test_add_log_target_no_change(monkeypatch, scalyr_env, fx_scalyr):
 
     # assuming not the first run
     agent._first_run = False
+    agent.api_key = SCALYR_KEY
+    mock_fp.read.side_effect = lambda: SCALYR_KEY
 
     with agent:
         agent.add_log_target(target)
@@ -352,7 +357,7 @@ def test_flush_failure(monkeypatch, scalyr_env, fx_scalyr):
     log_path = kwargs['logs'][0]['path']
 
     current_targets = MagicMock()
-    current_targets.return_value = []
+    current_targets.return_value = set()
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
@@ -385,8 +390,8 @@ def test_flush_failure(monkeypatch, scalyr_env, fx_scalyr):
         )
     )
 )
-def test_get_current_log_paths(monkeypatch, config, result):
-    patch_env(monkeypatch, ENVS[0])
+def test_get_current_log_paths(monkeypatch, scalyr_key_file, config, result):
+    patch_env(monkeypatch, scalyr_key_file, ENVS[0])
 
     mock_open, mock_fp = patch_open(monkeypatch)
 
@@ -417,8 +422,8 @@ def test_get_current_log_paths(monkeypatch, config, result):
 
 
 @pytest.mark.parametrize('exc', (None, OSError))
-def test_remove_log_target(monkeypatch, exc):
-    patch_env(monkeypatch, ENVS[0])
+def test_remove_log_target(monkeypatch, scalyr_key_file, exc):
+    patch_env(monkeypatch, scalyr_key_file, ENVS[0])
     patch_os(monkeypatch)
 
     isdir = MagicMock(side_effect=[True, True])
