@@ -94,8 +94,7 @@ def test_get_container_label_value(monkeypatch, label, val):
 def test_get_containers(monkeypatch, walk, config, res, exc):
     mock_open = MagicMock()
 
-    mock_walk = MagicMock()
-    mock_walk.return_value = walk
+    mock_walk = MagicMock(return_value=walk)
 
     mock_load = MagicMock()
     if exc:
@@ -128,8 +127,7 @@ def test_get_containers(monkeypatch, walk, config, res, exc):
 def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containers_sync):
     containers, pods, targets, _, result = fx_containers_sync
 
-    get_pod = MagicMock()
-    get_pod.side_effect = pods
+    get_pod = MagicMock(side_effect=pods)
 
     monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
@@ -139,8 +137,7 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
         result = result - watched_containers
         targets = [t for t in targets if t['id'] not in watched_containers]
 
-    get_targets = MagicMock()
-    get_targets.return_value = targets
+    get_targets = MagicMock(return_value=targets)
     monkeypatch.setattr('kube_log_watcher.main.get_new_containers_log_targets', get_targets)
 
     agent1 = MagicMock()
@@ -177,8 +174,7 @@ def test_sync_containers_log_agents(monkeypatch, watched_containers, fx_containe
 def test_sync_containers_log_agents_failure(monkeypatch, watched_containers, fx_containers_sync):
     containers, pods, targets, _, result = fx_containers_sync
 
-    get_pod = MagicMock()
-    get_pod.side_effect = pods
+    get_pod = MagicMock(side_effect=pods)
 
     monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
@@ -188,8 +184,7 @@ def test_sync_containers_log_agents_failure(monkeypatch, watched_containers, fx_
         result = result - watched_containers
         targets = [t for t in targets if t['id'] not in watched_containers]
 
-    get_targets = MagicMock()
-    get_targets.return_value = targets
+    get_targets = MagicMock(return_value=targets)
     monkeypatch.setattr('kube_log_watcher.main.get_new_containers_log_targets', get_targets)
 
     agent1 = MagicMock()
@@ -206,8 +201,7 @@ def test_sync_containers_log_agents_failure(monkeypatch, watched_containers, fx_
 def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
     containers, pods, result, _, _ = fx_containers_sync
 
-    get_pod = MagicMock()
-    get_pod.side_effect = [pod_mock(p) for p in pods]
+    get_pod = MagicMock(side_effect=[pod_mock(p) for p in pods])
 
     monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
@@ -221,8 +215,7 @@ def test_get_new_containers_log_targets(monkeypatch, fx_containers_sync):
 def test_get_new_containers_log_targets_not_found_pods(monkeypatch, fx_containers_sync):
     containers, pods, _, _, _ = fx_containers_sync
 
-    get_pod = MagicMock()
-    get_pod.side_effect = PodNotFound
+    get_pod = MagicMock(side_effect=PodNotFound)
 
     monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
@@ -236,8 +229,7 @@ def test_get_new_containers_log_targets_not_found_pods(monkeypatch, fx_container
 def test_get_new_containers_log_targets_failuer(monkeypatch, fx_containers_sync):
     containers, pods, _, _, _ = fx_containers_sync
 
-    is_pause = MagicMock()
-    is_pause.side_effect = Exception
+    is_pause = MagicMock(side_effect=Exception)
 
     # Force exception
     monkeypatch.setattr('kube_log_watcher.kube.is_pause_container', is_pause)
@@ -254,8 +246,7 @@ def test_get_new_containers_log_targets_no_strict_labels(monkeypatch, fx_contain
 
     result = result_labels + result_no_labels
 
-    get_pod = MagicMock()
-    get_pod.side_effect = [pod_mock(p) for p in pods]
+    get_pod = MagicMock(side_effect=[pod_mock(p) for p in pods])
 
     monkeypatch.setattr('kube_log_watcher.kube.get_pod', get_pod)
     monkeypatch.setattr('kube_log_watcher.main.CLUSTER_NODE_NAME', 'node-1')
@@ -304,17 +295,13 @@ def test_watch(monkeypatch, strict):
         set(),
     ]
 
-    load_agents_mock = MagicMock()
-    load_agents_mock.return_value = ['agent-1', 'agent-2']
+    load_agents_mock = MagicMock(return_value=['agent-1', 'agent-2'])
 
-    get_containers_mock = MagicMock()
-    get_containers_mock.side_effect = containers
+    get_containers_mock = MagicMock(side_effect=containers)
 
-    sync_containers_log_agents_mock = MagicMock()
-    sync_containers_log_agents_mock.side_effect = list(zip(new_ids, stale_ids))
+    sync_containers_log_agents_mock = MagicMock(side_effect=list(zip(new_ids, stale_ids)))
 
-    sleep = MagicMock()
-    sleep.side_effect = (None, None, KeyboardInterrupt)  # terminate loop on third time
+    sleep = MagicMock(side_effect=(None, None, KeyboardInterrupt))  # terminate loop on third time
     monkeypatch.setattr('time.sleep', sleep)
 
     monkeypatch.setattr('kube_log_watcher.main.load_agents', load_agents_mock)
@@ -343,15 +330,12 @@ def test_watch(monkeypatch, strict):
 
 @pytest.mark.parametrize('strict', (['application, version'], []))
 def test_watch_failure(monkeypatch, strict):
-    sleep = MagicMock()
-    sleep.return_value = None
+    sleep = MagicMock(return_value=None)
     monkeypatch.setattr('time.sleep', sleep)
 
-    load_agents_mock = MagicMock()
-    load_agents_mock.return_value = ['agent-1', 'agent-2']
+    load_agents_mock = MagicMock(return_value=['agent-1', 'agent-2'])
 
-    get_containers_mock = MagicMock()
-    get_containers_mock.side_effect = [Exception, Exception, KeyboardInterrupt]
+    get_containers_mock = MagicMock(side_effect=[Exception, Exception, KeyboardInterrupt])
 
     monkeypatch.setattr('kube_log_watcher.main.load_agents', load_agents_mock)
     monkeypatch.setattr('kube_log_watcher.main.get_containers', get_containers_mock)
@@ -370,12 +354,10 @@ def test_watch_failure(monkeypatch, strict):
 def test_load_configuration(monkeypatch, tmp_path):
     watcher_config_file = tmp_path / 'log-watcher.yaml'
 
-    get_containers_mock = MagicMock()
-    get_containers_mock.return_value = []
+    get_containers_mock = MagicMock(return_value=[])
     monkeypatch.setattr('kube_log_watcher.main.get_containers', get_containers_mock)
 
-    load_agents_mock = MagicMock()
-    load_agents_mock.return_value = []
+    load_agents_mock = MagicMock(return_value=[])
     monkeypatch.setattr('kube_log_watcher.main.load_agents', load_agents_mock)
 
     step = 0

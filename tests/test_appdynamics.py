@@ -60,8 +60,7 @@ def test_add_log_target(monkeypatch, appdynamics_env, fx_appdynamics):
 
 @pytest.mark.parametrize('exc', (None, OSError))
 def test_remove_log_target(monkeypatch, appdynamics_env, exc):
-    exists = MagicMock()
-    exists.side_effect = (True, True, False, False)
+    exists = MagicMock(side_effect=[True, True, False, False])
     monkeypatch.setattr('os.path.exists', exists)
 
     remove = MagicMock()

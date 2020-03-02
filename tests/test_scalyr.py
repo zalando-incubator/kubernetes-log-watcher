@@ -142,8 +142,7 @@ def scalyr_env(monkeypatch, scalyr_key_file, request):
 def patch_os(monkeypatch):
     makedirs = MagicMock()
     symlink = MagicMock()
-    listdir = MagicMock()
-    listdir.return_value = []
+    listdir = MagicMock(return_value=[])
 
     monkeypatch.setattr('os.makedirs', makedirs)
     monkeypatch.setattr('os.symlink', symlink)
@@ -224,19 +223,17 @@ def test_add_log_target(monkeypatch, scalyr_env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not os.environ.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
+    kwargs['monitor_journald'] = SCALYR_MONITOR_JOURNALD if os.environ.get('WATCHER_SCALYR_JOURNALD') else {}
 
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [True, False, False, True]
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
 
-    current_targets = MagicMock()
-    current_targets.return_value = set()
+    current_targets = MagicMock(return_value=set())
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
@@ -272,8 +269,7 @@ def test_add_log_target_no_src(monkeypatch, scalyr_env, fx_scalyr):
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [False]
+    exists = MagicMock(side_effect=[False])
     monkeypatch.setattr('os.path.exists', exists)
 
     agent = ScalyrAgent({
@@ -294,13 +290,12 @@ def test_add_log_target_no_change(monkeypatch, scalyr_env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not os.environ.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
+    kwargs['monitor_journald'] = SCALYR_MONITOR_JOURNALD if os.environ.get('WATCHER_SCALYR_JOURNALD') else {}
 
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [True, False, False, True]
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
@@ -308,8 +303,7 @@ def test_add_log_target_no_change(monkeypatch, scalyr_env, fx_scalyr):
     log_path = kwargs['logs'][0]['path']
 
     # targets did not change
-    current_targets = MagicMock()
-    current_targets.return_value = {log_path}
+    current_targets = MagicMock(return_value={log_path})
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
@@ -343,21 +337,19 @@ def test_flush_failure(monkeypatch, scalyr_env, fx_scalyr):
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not os.environ.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
+    kwargs['monitor_journald'] = SCALYR_MONITOR_JOURNALD if os.environ.get('WATCHER_SCALYR_JOURNALD') else {}
 
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [True, False, False, True]
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
 
     log_path = kwargs['logs'][0]['path']
 
-    current_targets = MagicMock()
-    current_targets.return_value = set()
+    current_targets = MagicMock(return_value=set())
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
@@ -395,15 +387,13 @@ def test_get_current_log_paths(monkeypatch, scalyr_key_file, config, result):
 
     mock_open, mock_fp = patch_open(monkeypatch)
 
-    load = MagicMock()
-    load.return_value = config
+    load = MagicMock(return_value=config)
     monkeypatch.setattr('json.load', load)
 
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [True, False, False, True]
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
@@ -429,8 +419,7 @@ def test_remove_log_target(monkeypatch, scalyr_key_file, exc):
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [True, False, False, True]
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     rmtree = MagicMock()
@@ -918,8 +907,7 @@ def test_parse_scalyr_sampling_rules(monkeypatch, scalyr_env, fx_scalyr):
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [False]
+    exists = MagicMock(side_effect=[False])
     monkeypatch.setattr('os.path.exists', exists)
 
     agent = ScalyrAgent({
@@ -946,8 +934,7 @@ def test_get_scalyr_sampling_rule(monkeypatch, scalyr_env, fx_scalyr):
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [False]
+    exists = MagicMock(side_effect=[False])
     monkeypatch.setattr('os.path.exists', exists)
 
     agent = ScalyrAgent({
@@ -1010,8 +997,7 @@ def test_add_log_target_with_sampling(monkeypatch, scalyr_env, fx_scalyr):
     isdir = MagicMock(side_effect=[True, True])
     monkeypatch.setattr('os.path.isdir', isdir)
 
-    exists = MagicMock()
-    exists.side_effect = [True, False, False]
+    exists = MagicMock(side_effect=[True, False, False])
     monkeypatch.setattr('os.path.exists', exists)
 
     patch_os(monkeypatch)
