@@ -281,3 +281,10 @@ def fx_scalyr(request):
 ])
 def fx_appdynamics(request):
     return request.param
+
+
+@pytest.fixture
+def scalyr_key_file(tmp_path):
+    file = tmp_path / 'key.txt'
+    file.write_text(SCALYR_KEY)
+    return str(file)

@@ -36,8 +36,7 @@ def test_base_watcher_not_implemented(monkeypatch):
 def test_builtin_agents_sanity(monkeypatch, klass):
     attrs = ('name', 'add_log_target', 'remove_log_target', 'flush')
 
-    init = MagicMock()
-    init.return_value = None
+    init = MagicMock(return_value=None)
 
     monkeypatch.setattr(klass, '__init__', init)
 

@@ -2,6 +2,11 @@
 Kubernetes-log-watcher changelog
 ================================
 
+0.42 (2020-02-28)
+-----------------
+
+- Load Scalyr API key from file
+
 0.41 (2020-01-29)
 -----------------
 

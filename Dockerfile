@@ -6,6 +6,6 @@ COPY . /watcher
 
 WORKDIR /watcher
 
-RUN python setup.py install
+RUN pip install .
 
 CMD ["kube-log-watcher"]

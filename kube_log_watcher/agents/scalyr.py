@@ -92,7 +92,8 @@ class ScalyrAgent(BaseWatcher):
         self.scalyr_sampling_rules = ScalyrAgent.parse_scalyr_sampling_rules(
             configuration.get('scalyr_sampling_rules') or [],
         )
-        self.api_key = os.environ.get('WATCHER_SCALYR_API_KEY')
+        self.api_key_file = os.environ.get('WATCHER_SCALYR_API_KEY_FILE')
+        self.api_key = None
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
         self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER')
         self.parse_lines_json = os.environ.get('WATCHER_SCALYR_PARSE_LINES_JSON', '').lower() == 'true'
@@ -101,17 +102,23 @@ class ScalyrAgent(BaseWatcher):
         cluster_environment = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
         node_name = os.environ.get('CLUSTER_NODE_NAME', 'unknown')
 
-        if not all([self.api_key, self.dest_path]):
-            raise RuntimeError('Scalyr watcher agent initialization failed. Env variables WATCHER_SCALYR_API_KEY and '
+        if not all([self.api_key_file, self.dest_path]):
+            raise RuntimeError('Scalyr watcher agent initialization failed. '
+                               'Env variables WATCHER_SCALYR_API_KEY_FILE and '
                                'WATCHER_SCALYR_DEST_PATH must be set.')
 
         self.config_path = os.environ.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
-        if not os.path.exists(os.path.dirname(self.config_path)):
+        if not os.path.isdir(os.path.dirname(self.config_path)):
             raise RuntimeError(
                 'Scalyr watcher agent initialization failed. {} config path does not exist.'.format(
                     self.config_path))
 
-        if not os.path.exists(self.dest_path):
+        if not os.path.isfile(self.api_key_file):
+            raise RuntimeError(
+                'Scalyr watcher agent initialization failed. {} API key file does not exist.'.format(
+                    self.api_key_file))
+
+        if not os.path.isdir(self.dest_path):
             raise RuntimeError(
                 'Scalyr watcher agent initialization failed. {} destination path does not exist.'.format(
                     self.dest_path))
@@ -258,26 +265,31 @@ class ScalyrAgent(BaseWatcher):
             logger.warning('Scalyr watcher agent failed to remove container directory %s', container_dir)
 
     def flush(self):
-        kwargs = {
-            'scalyr_key': self.api_key,
-            'server_attributes': self.server_attributes,
-            'logs': self.logs.values(),
-            'monitor_journald': self.journald,
-            'scalyr_server': self.scalyr_server,
-            'parse_lines_json': self.parse_lines_json,
-            'enable_profiling': self.enable_profiling,
-        }
-
         current_paths = self._get_current_log_paths()
         new_paths = {log['path'] for log in self.logs.values()}
 
-        diff_paths = new_paths.symmetric_difference(current_paths)
+        with open(self.api_key_file) as f:
+            new_api_key = f.read()
 
-        if self._first_run or diff_paths:
-            logger.debug('Scalyr watcher agent new paths: %s', diff_paths)
+        new_key = (self.api_key != new_api_key)
+        if new_key:
+            self.api_key = new_api_key
+            if not self._first_run:
+                logger.info('Scalyr API key updated')
+
+        if self._first_run or new_key or (new_paths ^ current_paths):
+            logger.debug('Scalyr watcher agent new paths: %s', new_paths)
             logger.debug('Scalyr watcher agent current paths: %s', current_paths)
             try:
-                config = self.tpl.render(**kwargs)
+                config = self.tpl.render(
+                    scalyr_key=self.api_key,
+                    server_attributes=self.server_attributes,
+                    logs=self.logs.values(),
+                    monitor_journald=self.journald,
+                    scalyr_server=self.scalyr_server,
+                    parse_lines_json=self.parse_lines_json,
+                    enable_profiling=self.enable_profiling,
+                )
 
                 with open(self.config_path, 'w') as fp:
                     fp.write(config)
@@ -285,8 +297,11 @@ class ScalyrAgent(BaseWatcher):
                 logger.exception('Scalyr watcher agent failed to write config file.')
             else:
                 self._first_run = False
-                logger.info('Scalyr watcher agent updated config file %s with %s log targets.',
-                            self.config_path, len(diff_paths))
+                logger.info('Scalyr watcher agent updated config file %s with +%s -%s log targets.',
+                            self.config_path,
+                            len(new_paths - current_paths),
+                            len(current_paths - new_paths)
+                            )
 
     def _adjust_target_log_path(self, target):
         try:
@@ -314,14 +329,14 @@ class ScalyrAgent(BaseWatcher):
             logger.exception('Scalyr watcher agent Failed to adjust log path.')
             return None
 
-    def _get_current_log_paths(self) -> list:
+    def _get_current_log_paths(self) -> set:
         targets = set()
 
         try:
             if os.path.exists(self.config_path):
                 with open(self.config_path) as fp:
                     config = json.load(fp)
-                    targets = {log.get('path') for log in config.get('logs', [])}
+                    targets.update(log.get('path') for log in config.get('logs', []))
                     logger.debug('Scalyr watcher agent loaded existing config %s: %d log targets exist!',
                                  self.config_path, len(config.get('logs', [])))
             else:

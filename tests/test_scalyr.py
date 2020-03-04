@@ -17,10 +17,10 @@ from .conftest \
 from .conftest import SCALYR_KEY, SCALYR_DEST_PATH, SCALYR_JOURNALD_DEFAULTS, SCALYR_DEFAULT_PARSER
 
 DEFAULT_ENV = {
-    'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
     'CLUSTER_ENVIRONMENT': CLUSTER_ENVIRONMENT,
     'CLUSTER_ALIAS': CLUSTER_ALIAS,
     'CLUSTER_NODE_NAME': NODE,
+    'WATCHER_SCALYR_API_KEY_FILE': '',
     'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
 }
 
@@ -99,19 +99,19 @@ def assert_fx_sanity(kwargs):
     assert set(KWARGS_KEYS) == set(kwargs.keys())
 
 
-def assert_agent(agent, env):
+def assert_agent(agent):
     assert agent.name
 
-    assert agent.api_key == env.get('WATCHER_SCALYR_API_KEY')
-    assert agent.dest_path == env.get('WATCHER_SCALYR_DEST_PATH')
-    assert agent.config_path == env.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
+    assert agent.api_key_file == os.environ.get('WATCHER_SCALYR_API_KEY_FILE')
+    assert agent.dest_path == os.environ.get('WATCHER_SCALYR_DEST_PATH')
+    assert agent.config_path == os.environ.get('WATCHER_SCALYR_CONFIG_PATH', SCALYR_CONFIG_PATH)
 
-    journald = env.get('WATCHER_SCALYR_JOURNALD')
+    journald = os.environ.get('WATCHER_SCALYR_JOURNALD')
     journald_defaults = copy.deepcopy(SCALYR_JOURNALD_DEFAULTS)
-    if env.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE'):
-        journald_defaults['write_rate'] = int(env.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE'))
-    if env.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST'):
-        journald_defaults['write_burst'] = int(env.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST'))
+    if os.environ.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE'):
+        journald_defaults['write_rate'] = int(os.environ.get('WATCHER_SCALYR_JOURNALD_WRITE_RATE'))
+    if os.environ.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST'):
+        journald_defaults['write_burst'] = int(os.environ.get('WATCHER_SCALYR_JOURNALD_WRITE_BURST'))
     assert agent.journald == (journald_defaults if journald else None)
 
     assert agent.server_attributes['serverHost'] == CLUSTER_ID
@@ -123,19 +123,26 @@ def assert_agent(agent, env):
     assert agent.server_attributes['parser'] == SCALYR_DEFAULT_PARSER
 
 
-def patch_env(monkeypatch, env):
+def patch_env(monkeypatch, scalyr_key_file, env):
     for k, v in env.items():
         monkeypatch.setenv(k, v)
+
+    if 'WATCHER_SCALYR_API_KEY_FILE' in env:
+        monkeypatch.setenv('WATCHER_SCALYR_API_KEY_FILE', scalyr_key_file)
 
     if 'WATCHER_SCALYR_CONFIG_PATH' not in env:
         monkeypatch.delenv('WATCHER_SCALYR_CONFIG_PATH', raising=False)
 
 
+@pytest.fixture(params=ENVS)
+def scalyr_env(monkeypatch, scalyr_key_file, request):
+    patch_env(monkeypatch, scalyr_key_file, request.param)
+
+
 def patch_os(monkeypatch):
     makedirs = MagicMock()
     symlink = MagicMock()
-    listdir = MagicMock()
-    listdir.return_value = []
+    listdir = MagicMock(return_value=[])
 
     monkeypatch.setattr('os.makedirs', makedirs)
     monkeypatch.setattr('os.symlink', symlink)
@@ -158,7 +165,7 @@ def patch_open(monkeypatch, exc=None):
 
 
 @pytest.mark.parametrize(
-    'env,exists',
+    'env,isdir',
     (
         (
             {
@@ -171,13 +178,14 @@ def patch_open(monkeypatch, exc=None):
         (
             {
                 # No Dest path
-                'WATCHER_SCALYR_API_KEY': SCALYR_KEY,
+                'WATCHER_SCALYR_API_KEY_FILE': '',
             },
             (True, True)
         ),
         (
             {
-                'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
+                'WATCHER_SCALYR_API_KEY_FILE': '',
+                'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
                 'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'
             },
             # Config path does not exist
@@ -185,7 +193,8 @@ def patch_open(monkeypatch, exc=None):
         ),
         (
             {
-                'WATCHER_SCALYR_API_KEY': SCALYR_KEY, 'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
+                'WATCHER_SCALYR_API_KEY_FILE': '',
+                'WATCHER_SCALYR_DEST_PATH': SCALYR_DEST_PATH,
                 'WATCHER_SCALYR_CONFIG_PATH': '/etc/config'
             },
             # Dest path does not exist
@@ -193,12 +202,12 @@ def patch_open(monkeypatch, exc=None):
         ),
     )
 )
-def test_initialization_failure(monkeypatch, env, exists):
-    patch_env(monkeypatch, env)
+def test_initialization_failure(monkeypatch, scalyr_key_file, env, isdir):
+    patch_env(monkeypatch, scalyr_key_file, env)
     patch_os(monkeypatch)
 
-    exists = MagicMock(side_effect=exists)
-    monkeypatch.setattr('os.path.exists', exists)
+    isdir = MagicMock(side_effect=isdir)
+    monkeypatch.setattr('os.path.isdir', isdir)
 
     with pytest.raises(RuntimeError):
         ScalyrAgent({
@@ -207,32 +216,30 @@ def test_initialization_failure(monkeypatch, env, exists):
         })
 
 
-@pytest.mark.parametrize('env', ENVS)
-def test_add_log_target(monkeypatch, env, fx_scalyr):
-    patch_env(monkeypatch, env)
-
+def test_add_log_target(monkeypatch, scalyr_env, fx_scalyr):
     target = fx_scalyr['target']
     kwargs = fx_scalyr['kwargs']
 
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
+    kwargs['monitor_journald'] = SCALYR_MONITOR_JOURNALD if os.environ.get('WATCHER_SCALYR_JOURNALD') else {}
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, True, False, False, True)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
 
-    current_targets = MagicMock()
-    current_targets.return_value = []
+    current_targets = MagicMock(return_value=set())
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
         'cluster_id': CLUSTER_ID,
     })
-    assert_agent(agent, env)
+    assert_agent(agent)
 
     mock_open, mock_fp = patch_open(monkeypatch)
 
@@ -254,42 +261,41 @@ def test_add_log_target(monkeypatch, env, fx_scalyr):
     assert agent.first_run is False
 
 
-@pytest.mark.parametrize('env', ENVS)
-def test_add_log_target_no_src(monkeypatch, env, fx_scalyr):
+def test_add_log_target_no_src(monkeypatch, scalyr_env, fx_scalyr):
     patch_os(monkeypatch)
-    patch_env(monkeypatch, env)
 
     target = fx_scalyr['target']
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, False)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[False])
     monkeypatch.setattr('os.path.exists', exists)
 
     agent = ScalyrAgent({
         'cluster_id': CLUSTER_ID,
     })
 
-    assert_agent(agent, env)
+    assert_agent(agent)
 
     agent.add_log_target(target)
 
     assert agent.logs == {}
 
 
-@pytest.mark.parametrize('env', ENVS)
-def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
-    patch_env(monkeypatch, env)
-
+def test_add_log_target_no_change(monkeypatch, scalyr_env, fx_scalyr):
     target = fx_scalyr['target']
     kwargs = fx_scalyr['kwargs']
 
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
+    kwargs['monitor_journald'] = SCALYR_MONITOR_JOURNALD if os.environ.get('WATCHER_SCALYR_JOURNALD') else {}
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, True, False, False, True)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
@@ -297,20 +303,21 @@ def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
     log_path = kwargs['logs'][0]['path']
 
     # targets did not change
-    current_targets = MagicMock()
-    current_targets.return_value = [log_path]
+    current_targets = MagicMock(return_value={log_path})
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
         'cluster_id': CLUSTER_ID,
     })
 
-    assert_agent(agent, env)
+    assert_agent(agent)
 
     mock_open, mock_fp = patch_open(monkeypatch)
 
     # assuming not the first run
     agent._first_run = False
+    agent.api_key = SCALYR_KEY
+    mock_fp.read.side_effect = lambda: SCALYR_KEY
 
     with agent:
         agent.add_log_target(target)
@@ -323,35 +330,33 @@ def test_add_log_target_no_change(monkeypatch, env, fx_scalyr):
     assert agent.first_run is False
 
 
-@pytest.mark.parametrize('env', ENVS)
-def test_flush_failure(monkeypatch, env, fx_scalyr):
-    patch_env(monkeypatch, env)
-
+def test_flush_failure(monkeypatch, scalyr_env, fx_scalyr):
     target = fx_scalyr['target']
     kwargs = fx_scalyr['kwargs']
 
     assert_fx_sanity(kwargs)
 
     # adjust kwargs
-    kwargs['monitor_journald'] = {} if not env.get('WATCHER_SCALYR_JOURNALD') else SCALYR_MONITOR_JOURNALD
+    kwargs['monitor_journald'] = SCALYR_MONITOR_JOURNALD if os.environ.get('WATCHER_SCALYR_JOURNALD') else {}
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, True, False, False, True)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
 
     log_path = kwargs['logs'][0]['path']
 
-    current_targets = MagicMock()
-    current_targets.return_value = []
+    current_targets = MagicMock(return_value=set())
     monkeypatch.setattr(ScalyrAgent, '_get_current_log_paths', current_targets)
 
     agent = ScalyrAgent({
         'cluster_id': CLUSTER_ID,
     })
 
-    assert_agent(agent, env)
+    assert_agent(agent)
 
     mock_open, mock_fp = patch_open(monkeypatch, Exception)
 
@@ -365,30 +370,30 @@ def test_flush_failure(monkeypatch, env, fx_scalyr):
 
 
 @pytest.mark.parametrize(
-    'env,config,result',
+    'config,result',
     (
         (
-            ENVS[0],
             {'scalyr_api_key': '123', 'logs': [{'path': '/p1'}, {'path': '/p2'}, {'path': '/p3'}]},
             {'/p1', '/p2', '/p3'}
         ),
         (
-            ENVS[0],
             Exception,
             set()
         )
     )
 )
-def test_get_current_log_paths(monkeypatch, env, config, result):
-    patch_env(monkeypatch, env)
+def test_get_current_log_paths(monkeypatch, scalyr_key_file, config, result):
+    patch_env(monkeypatch, scalyr_key_file, ENVS[0])
+
     mock_open, mock_fp = patch_open(monkeypatch)
 
-    load = MagicMock()
-    load.return_value = config
+    load = MagicMock(return_value=config)
     monkeypatch.setattr('json.load', load)
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, True, False, False, True)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
@@ -397,7 +402,7 @@ def test_get_current_log_paths(monkeypatch, env, config, result):
         'cluster_id': CLUSTER_ID,
     })
 
-    assert_agent(agent, env)
+    assert_agent(agent)
 
     res = agent._get_current_log_paths()
 
@@ -406,25 +411,15 @@ def test_get_current_log_paths(monkeypatch, env, config, result):
     mock_open.assert_called_with(os.path.join(agent.config_path))
 
 
-@pytest.mark.parametrize(
-    'env,exc',
-    (
-        (
-            ENVS[0],
-            None,
-        ),
-        (
-            ENVS[0],
-            OSError,
-        )
-    )
-)
-def test_remove_log_target(monkeypatch, env, exc):
+@pytest.mark.parametrize('exc', (None, OSError))
+def test_remove_log_target(monkeypatch, scalyr_key_file, exc):
+    patch_env(monkeypatch, scalyr_key_file, ENVS[0])
     patch_os(monkeypatch)
-    patch_env(monkeypatch, env)
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, True, False, False, True)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
 
     rmtree = MagicMock()
@@ -436,7 +431,7 @@ def test_remove_log_target(monkeypatch, env, exc):
         'cluster_id': CLUSTER_ID,
     })
 
-    assert_agent(agent, env)
+    assert_agent(agent)
 
     container_id = 'container-1'
     agent.remove_log_target(container_id)
@@ -906,13 +901,13 @@ def test_redaction_rules_invalid_format(minimal_kwargs):
     assert get_redaction_rules(annotations, minimal_kwargs) == [JWT_REDACTION_RULE]
 
 
-@pytest.mark.parametrize('env', ENVS)
-def test_parse_scalyr_sampling_rules(monkeypatch, env, fx_scalyr):
+def test_parse_scalyr_sampling_rules(monkeypatch, scalyr_env, fx_scalyr):
     patch_os(monkeypatch)
-    patch_env(monkeypatch, env)
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, False)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[False])
     monkeypatch.setattr('os.path.exists', exists)
 
     agent = ScalyrAgent({
@@ -933,13 +928,13 @@ def test_parse_scalyr_sampling_rules(monkeypatch, env, fx_scalyr):
     ]
 
 
-@pytest.mark.parametrize('env', ENVS)
-def test_get_scalyr_sampling_rule(monkeypatch, env, fx_scalyr):
+def test_get_scalyr_sampling_rule(monkeypatch, scalyr_env, fx_scalyr):
     patch_os(monkeypatch)
-    patch_env(monkeypatch, env)
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, False)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[False])
     monkeypatch.setattr('os.path.exists', exists)
 
     agent = ScalyrAgent({
@@ -996,14 +991,13 @@ def test_get_scalyr_sampling_rule(monkeypatch, env, fx_scalyr):
     assert rule == '{"annotation": 8}'
 
 
-@pytest.mark.parametrize('env', ENVS)
-def test_add_log_target_with_sampling(monkeypatch, env, fx_scalyr):
-    patch_env(monkeypatch, env)
-
+def test_add_log_target_with_sampling(monkeypatch, scalyr_env, fx_scalyr):
     target = fx_scalyr['target']
 
-    exists = MagicMock()
-    exists.side_effect = (True, True, True, False, False)
+    isdir = MagicMock(side_effect=[True, True])
+    monkeypatch.setattr('os.path.isdir', isdir)
+
+    exists = MagicMock(side_effect=[True, False, False])
     monkeypatch.setattr('os.path.exists', exists)
 
     patch_os(monkeypatch)
@@ -1026,7 +1020,7 @@ def test_add_log_target_with_sampling(monkeypatch, env, fx_scalyr):
             },
         ],
     })
-    assert_agent(agent, env)
+    assert_agent(agent)
 
     agent.add_log_target(target)
 
