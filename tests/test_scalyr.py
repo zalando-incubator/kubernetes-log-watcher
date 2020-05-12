@@ -32,7 +32,7 @@ ENVS = (
         'WATCHER_SCALYR_JOURNALD_WRITE_BURST': '2'},
 )
 
-KWARGS_KEYS = ('scalyr_key', 'parse_lines_json', 'enable_profiling', 'cluster_id', 'logs', 'monitor_journald')
+KWARGS_KEYS = ('scalyr_key', 'enable_profiling', 'cluster_id', 'logs', 'monitor_journald')
 
 
 SCALYR_MONITOR_JOURNALD = copy.deepcopy(SCALYR_JOURNALD_DEFAULTS)
@@ -477,6 +477,7 @@ SERVER_ATTRIBUTES = {
                 "read_page_size": 131072,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
+                "include_raw_timestamp_field": False,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [], 'monitors': [], 'journald_logs': [],
             },
@@ -505,6 +506,7 @@ SERVER_ATTRIBUTES = {
                 "read_page_size": 131072,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
+                "include_raw_timestamp_field": False,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [],
                 'monitors': [
@@ -549,6 +551,7 @@ SERVER_ATTRIBUTES = {
                 "read_page_size": 131072,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
+                "include_raw_timestamp_field": False,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'logs': [
                     {
@@ -598,6 +601,7 @@ SERVER_ATTRIBUTES = {
                 "read_page_size": 131072,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
+                "include_raw_timestamp_field": False,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
@@ -640,6 +644,7 @@ SERVER_ATTRIBUTES = {
                 "read_page_size": 131072,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
+                "include_raw_timestamp_field": False,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
@@ -658,7 +663,6 @@ SERVER_ATTRIBUTES = {
             {
                 'scalyr_key': SCALYR_KEY,
                 'server_attributes': SERVER_ATTRIBUTES,
-                'parse_lines_json': True,
                 'enable_profiling': False,
                 'monitor_journald': None,
                 'logs': [
@@ -666,7 +670,8 @@ SERVER_ATTRIBUTES = {
                         'path': '/p1',
                         'attributes': {'a1': 'v1', 'parser': 'c-parser'},
                         'copy_from_start': True,
-                        'redaction_rules': {'match_expression': 'match-expression'}
+                        'redaction_rules': {'match_expression': 'match-expression'},
+                        'parse_lines_as_json': True,
                     }
                 ]
             },
@@ -684,6 +689,7 @@ SERVER_ATTRIBUTES = {
                 "read_page_size": 131072,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
+                "include_raw_timestamp_field": False,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
@@ -703,7 +709,6 @@ SERVER_ATTRIBUTES = {
             {
                 'scalyr_key': SCALYR_KEY,
                 'server_attributes': SERVER_ATTRIBUTES,
-                'parse_lines_json': True,
                 'enable_profiling': True,
                 'monitor_journald': None,
                 'logs': [
@@ -718,7 +723,8 @@ SERVER_ATTRIBUTES = {
                             'container_id': CONTAINER_ID,
                         },
                         'copy_from_start': True,
-                        'redaction_rules': {'match_expression': 'match-expression'}
+                        'redaction_rules': {'match_expression': 'match-expression'},
+                        'parse_lines_as_json': True,
                     }
                 ],
             },
@@ -737,6 +743,7 @@ SERVER_ATTRIBUTES = {
                 "read_page_size": 131072,
                 'implicit_metric_monitor': False,
                 'implicit_agent_process_metrics_monitor': False,
+                "include_raw_timestamp_field": False,
                 'server_attributes': SERVER_ATTRIBUTES,
                 'monitors': [],
                 'logs': [
