@@ -312,7 +312,7 @@ WATCHER_SCALYR_ENABLE_PROFILING
   If true, the agent will log performance profiling data about itself into a log file.
 
 WATCHER_SCALYR_PARSE_LINES_JSON
-  Parse lines lines on the client as JSON. Useful for raw docker logs. (Default: ``False``)
+  Comma-separated list of parsers expecting decoded JSON. Each item could also be defined as ``foo=bar`` to override defined parser ``foo`` with ``bar``. Useful for raw docker logs. (Default: ``""``)
 
 WATCHER_SCALYR_JOURNALD
   Scalyr should follow Journald logs. This is for node system processes log shipping (e.g. docker, kube) (Default: ``False``)

@@ -218,7 +218,6 @@ KWARGS = {
     'scalyr_key': SCALYR_KEY,
     'cluster_id': CLUSTER_ID,
     'monitor_journald': None,
-    'parse_lines_json': False,
     'enable_profiling': False,
     'logs': [
         {

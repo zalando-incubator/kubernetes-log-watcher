@@ -15,6 +15,7 @@
     {% endif %}
     "implicit_metric_monitor": false,
     "implicit_agent_process_metrics_monitor": false,
+    "include_raw_timestamp_field": false,
     "server_attributes": {{ server_attributes | tojson }},
     {% if scalyr_server %}
     "scalyr_server": "{{ scalyr_server }}",
@@ -30,7 +31,7 @@
                 {% if log.redaction_rules %}
                 "redaction_rules": {{ log.redaction_rules | tojson }},
                 {% endif %}
-                {% if parse_lines_json %}
+                {% if log.parse_lines_as_json %}
                 "parse_lines_as_json": true,
                 {% endif %}
                 "copy_from_start": true,

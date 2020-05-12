@@ -96,7 +96,9 @@ class ScalyrAgent(BaseWatcher):
         self.api_key = None
         self.dest_path = os.environ.get('WATCHER_SCALYR_DEST_PATH')
         self.scalyr_server = os.environ.get('WATCHER_SCALYR_SERVER')
-        self.parse_lines_json = os.environ.get('WATCHER_SCALYR_PARSE_LINES_JSON', '').lower() == 'true'
+        self.json_parsers_mapping = self.make_json_parsers_mapping(
+            os.environ.get('WATCHER_SCALYR_PARSE_LINES_JSON', ''),
+        )
         self.enable_profiling = os.environ.get('WATCHER_SCALYR_ENABLE_PROFILING', '').lower() == 'true'
         cluster_alias = os.environ.get('CLUSTER_ALIAS', 'none')
         cluster_environment = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
@@ -174,6 +176,21 @@ class ScalyrAgent(BaseWatcher):
 
         return parsed_scalyr_sampling_rules
 
+    def make_json_parsers_mapping(self, parameter):
+        parsers_mapping = {}
+        for parser in parameter.split(','):
+            if '=' in parser:
+                k, v = parser.split('=')
+            else:
+                k = v = parser
+
+            k = k.strip()
+            v = v.strip()
+
+            if k and v:
+                parsers_mapping[k] = v
+        return parsers_mapping
+
     @property
     def name(self):
         return 'Scalyr'
@@ -216,6 +233,13 @@ class ScalyrAgent(BaseWatcher):
         kwargs = target['kwargs']
         annotations = kwargs.get('pod_annotations', {})
 
+        parser = get_parser(annotations, kwargs)
+        if parser in self.json_parsers_mapping:
+            parse_lines_as_json = True
+            parser = self.json_parsers_mapping[parser]
+        else:
+            parse_lines_as_json = False
+
         attributes = {
             'application': kwargs['application'],
             'component': kwargs['component'],
@@ -226,7 +250,7 @@ class ScalyrAgent(BaseWatcher):
             'namespace': kwargs['namespace'],
             'container': kwargs['container_name'],
             'container_id': kwargs['container_id'],
-            'parser': get_parser(annotations, kwargs)
+            'parser': parser,
         }
 
         # Keep only attributes that has value not duplicated in server_attributes
@@ -247,6 +271,7 @@ class ScalyrAgent(BaseWatcher):
             'sampling_rules': get_sampling_rules(annotations, kwargs),
             'redaction_rules': get_redaction_rules(annotations, kwargs),
             'attributes': attributes,
+            'parse_lines_as_json': parse_lines_as_json,
         }
 
         self.logs[target['id']] = log
@@ -287,7 +312,6 @@ class ScalyrAgent(BaseWatcher):
                     logs=self.logs.values(),
                     monitor_journald=self.journald,
                     scalyr_server=self.scalyr_server,
-                    parse_lines_json=self.parse_lines_json,
                     enable_profiling=self.enable_profiling,
                 )
 
