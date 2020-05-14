@@ -10,7 +10,7 @@ from kube_log_watcher.template_loader import load_template
 
 TPL_NAME = 'appdynamics.job.jinja2'
 
-logger = logging.getLogger('kube_log_watcher')
+logger = logging.getLogger(__name__)
 
 
 class AppDynamicsAgent(BaseWatcher):

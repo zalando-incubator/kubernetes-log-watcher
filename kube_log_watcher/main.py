@@ -35,9 +35,11 @@ BUILTIN_AGENTS = {
 CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
 CLUSTER_ENVIRONMENT = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
 
-logger = logging.getLogger('kube_log_watcher')
-logger.addHandler(logging.StreamHandler(stream=sys.stdout))
-logger.setLevel(os.environ.get('LOGLEVEL', 'INFO').upper())
+logging.basicConfig(
+    level=os.environ.get('LOGLEVEL', 'INFO').upper(),
+    format='%(asctime)s %(levelname)s %(message)s',
+)
+logger = logging.getLogger(__name__)
 
 
 def get_container_label_value(config, label) -> str:
@@ -47,8 +49,8 @@ def get_container_label_value(config, label) -> str:
         io.kubernetes.pod.name
     """
     labels = config['Config']['Labels']
-    for l, val in labels.items():
-        if l.endswith(label):
+    for i, val in labels.items():
+        if i.endswith(label):
             return val
 
     return None

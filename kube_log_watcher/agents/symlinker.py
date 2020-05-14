@@ -15,7 +15,7 @@ import shutil
 
 from kube_log_watcher.agents.base import BaseWatcher
 
-logger = logging.getLogger('kube_log_watcher')
+logger = logging.getLogger(__name__)
 
 
 def sanitize(s):
