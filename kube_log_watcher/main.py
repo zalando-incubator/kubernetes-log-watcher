@@ -289,6 +289,7 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
                 watcher_config = new_watcher_config
                 configuration = dict(watcher_config, cluster_id=cluster_id)
                 agents = load_agents(agents_list, configuration)
+                watched_containers = set()
 
             containers = get_containers(containers_path)
 
@@ -305,6 +306,8 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
             logger.info('Watching %d containers', len(watched_containers))
 
             time.sleep(interval)
+        except AssertionError:
+            raise
         except KeyboardInterrupt:
             return
         except Exception:
