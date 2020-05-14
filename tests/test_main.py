@@ -362,22 +362,40 @@ def test_load_configuration(monkeypatch, tmp_path):
 
     step = 0
 
-    def sync_containers_log_agents(*args, **kwargs):
+    def sync_containers_log_agents(
+        agents, watched_containers, containers, containers_path, cluster_id,
+        kube_url=None, strict_labels=None,
+    ):
         nonlocal step
 
-        if step in [0, 1]:
+        if step == 0:
+            assert watched_containers == set()
             watcher_config_file.write_text('')
-        elif step in [2, 3]:
+        elif step == 1:
+            assert watched_containers == {'new0'}
+        elif step == 2:
+            assert watched_containers == {'new0', 'new1'}
             watcher_config_file.write_text('{"foo":')
-        elif step in [4, 5]:
+        elif step == 3:
+            assert watched_containers == {'new0', 'new1', 'new2'}
+        elif step == 4:
+            assert watched_containers == {'new0', 'new1', 'new2', 'new3'}
             watcher_config_file.write_text('{"foo": "bar"}')
-        elif step in [6, 7]:
+        elif step == 5:
+            assert watched_containers == set()
+        elif step == 6:
+            assert watched_containers == {'new5'}
             watcher_config_file.write_text('{"foo": "baz"}')
+        elif step == 7:
+            assert watched_containers == set()
         else:
             raise KeyboardInterrupt
 
+        new_container_ids = {'new' + str(step)}
+        stale_container_ids = {'stale' + str(step)}
+
         step += 1
-        return set(), set()
+        return new_container_ids, stale_container_ids
 
     monkeypatch.setattr('kube_log_watcher.main.sync_containers_log_agents', sync_containers_log_agents)
     watch(CONTAINERS_PATH, [], CLUSTER_ID, interval=0.001, watcher_config_file=str(watcher_config_file))
