@@ -915,7 +915,6 @@ def test_parse_scalyr_sampling_rules(monkeypatch, scalyr_env, fx_scalyr):
         'scalyr_sampling_rules': SCALYR_SAMPLING_RULES,
     })
 
-    print(agent.scalyr_sampling_rules)
     assert agent.scalyr_sampling_rules == [
         {'application': 'app-1', 'component': 'comp-1', 'probability': 0, 'value': '{"annotation": 1}'},
         {'application': 'app-1', 'component': 'comp-1', 'probability': 0.5, 'value': '{"annotation": 2}'},

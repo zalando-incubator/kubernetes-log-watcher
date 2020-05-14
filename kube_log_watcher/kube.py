@@ -17,7 +17,7 @@ PODS_URL = 'api/v1/namespaces/{}/pods/{}'
 
 PAUSE_CONTAINER_PREFIX = 'gcr.io/google_containers/pause-'
 
-logger = logging.getLogger('kube_log_watcher')
+logger = logging.getLogger(__name__)
 
 
 class PodNotFound(Exception):

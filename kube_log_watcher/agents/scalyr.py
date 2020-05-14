@@ -30,7 +30,7 @@ SCALYR_DEFAULT_PARSER = 'json'
 SCALYR_DEFAULT_WRITE_RATE = 10000
 SCALYR_DEFAULT_WRITE_BURST = 200000
 
-logger = logging.getLogger('kube_log_watcher')
+logger = logging.getLogger(__name__)
 
 
 def container_annotation(annotations, container_name, pod_name, annotation_key, result_key, default=None):
