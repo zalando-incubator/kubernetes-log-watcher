@@ -7,7 +7,7 @@ import pytest
 from mock import MagicMock
 from urllib.parse import quote_plus
 
-from kube_log_watcher.template_loader import load_template
+from kube_log_watcher.template_loader import load_template, env
 from kube_log_watcher.agents.scalyr \
     import ScalyrAgent, SCALYR_CONFIG_PATH, TPL_NAME, JWT_REDACTION_RULE,\
     get_parser, get_sampling_rules, get_redaction_rules, container_annotation
@@ -377,7 +377,7 @@ def test_flush_failure(monkeypatch, scalyr_env, fx_scalyr):
             {'/p1', '/p2', '/p3'}
         ),
         (
-            Exception,
+            OSError,
             set()
         )
     )
@@ -387,7 +387,7 @@ def test_get_current_log_paths(monkeypatch, scalyr_key_file, config, result):
 
     mock_open, mock_fp = patch_open(monkeypatch)
 
-    load = MagicMock(return_value=config)
+    load = MagicMock(side_effect=[config])
     monkeypatch.setattr('json.load', load)
 
     isdir = MagicMock(side_effect=[True, True])
@@ -395,6 +395,9 @@ def test_get_current_log_paths(monkeypatch, scalyr_key_file, config, result):
 
     exists = MagicMock(side_effect=[True, False, False, True])
     monkeypatch.setattr('os.path.exists', exists)
+
+    get_template = MagicMock()
+    monkeypatch.setattr(env, 'get_template', get_template)
 
     makedirs, symlink, listdir = patch_os(monkeypatch)
 

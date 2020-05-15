@@ -87,7 +87,7 @@ def test_get_container_label_value(monkeypatch, label, val):
             [('/mnt/containers/cont-1', '', ['config.v2.json', 'cont-1-json.log'])],
             {'Config': ''},
             [],
-            Exception,
+            OSError,
         ),
     )
 )
@@ -226,7 +226,7 @@ def test_get_new_containers_log_targets_not_found_pods(monkeypatch, fx_container
     assert targets == []
 
 
-def test_get_new_containers_log_targets_failuer(monkeypatch, fx_containers_sync):
+def test_get_new_containers_log_targets_failure(monkeypatch, fx_containers_sync):
     containers, pods, _, _, _ = fx_containers_sync
 
     is_pause = MagicMock(side_effect=Exception)
@@ -377,16 +377,14 @@ def test_load_configuration(monkeypatch, tmp_path):
             raise KeyboardInterrupt
 
         step += 1
-        return [], []
+        return set(), set()
 
     monkeypatch.setattr('kube_log_watcher.main.sync_containers_log_agents', sync_containers_log_agents)
-
     watch(CONTAINERS_PATH, [], CLUSTER_ID, interval=0.001, watcher_config_file=str(watcher_config_file))
 
-    assert load_agents_mock.call_count == 4
+    assert load_agents_mock.call_count == 3
 
     load_agents_mock.assert_has_calls([
-        call([], {'cluster_id': 'kube-cluster'}),
         call([], {'cluster_id': 'kube-cluster'}),
         call([], {'foo': 'bar', 'cluster_id': 'kube-cluster'}),
         call([], {'foo': 'baz', 'cluster_id': 'kube-cluster'}),
