@@ -263,7 +263,7 @@ def load_watcher_config(watcher_config_file):
     if watcher_config_file:
         try:
             with open(watcher_config_file) as f:
-                return yaml.safe_load(f)
+                return yaml.safe_load(f) or {}
         except Exception as error:
             logger.error('Cannot read `%s` watcher configuration file: %s', watcher_config_file, repr(error))
 
