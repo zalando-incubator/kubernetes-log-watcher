@@ -35,10 +35,6 @@ BUILTIN_AGENTS = {
 CLUSTER_NODE_NAME = os.environ.get('CLUSTER_NODE_NAME')
 CLUSTER_ENVIRONMENT = os.environ.get('CLUSTER_ENVIRONMENT', 'production')
 
-logging.basicConfig(
-    level=os.environ.get('LOGLEVEL', 'INFO').upper(),
-    format='%(asctime)s %(levelname)s %(message)s',
-)
 logger = logging.getLogger(__name__)
 
 
@@ -317,6 +313,10 @@ def watch(containers_path, agents_list, cluster_id, interval=60, kube_url=None,
 
 
 def main():
+    logging.basicConfig(
+        level=os.environ.get('LOGLEVEL', 'INFO').upper(),
+        format='%(asctime)s %(levelname)s %(message)s',
+    )
     sentry_dsn = os.environ.get('SENTRY_DSN')
     if sentry_dsn:
         sentry_sdk.init(
