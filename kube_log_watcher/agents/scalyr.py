@@ -237,6 +237,8 @@ class ScalyrAgent(BaseWatcher):
         if parser in self.json_parsers_mapping:
             parse_lines_as_json = True
             parser = self.json_parsers_mapping[parser]
+        elif '*' in self.json_parsers_mapping:
+            parse_lines_as_json = True
         else:
             parse_lines_as_json = False
 
