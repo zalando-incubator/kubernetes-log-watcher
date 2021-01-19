@@ -397,7 +397,7 @@ WATCHER_SYMLINK_DIR
 Development
 ===========
 
-Preferably create a Python 3.5 ``virtualenv``.
+Preferably create a Python 3.8 ``virtualenv``.
 
 .. code-block:: bash
 
