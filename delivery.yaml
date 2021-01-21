@@ -2,16 +2,14 @@ version: "2017-09-20"
 pipeline:
   - id: "build"
     type: script
+    vm: small
+    timeout: 10m
+    overlay: guild-python/latest
     commands:
       - desc: "Install dependencies"
         cmd: |
           apt-get update
           apt-get install -q -y --no-install-recommends \
-            python3.5 \
-            python3.5-dev \
-            python3-pip \
-            python3-setuptools \
-            python3-wheel \
             gcc \
             libffi-dev \
             libssl-dev \
