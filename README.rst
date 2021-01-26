@@ -43,7 +43,7 @@ Features & Constraints
 Usage
 =====
 
-Kubernetes log watcher is intended to run in a ``DaemonSet`` along with one or more log configuration agent (e.g. Scalyr, AppDynamics ...). The DaemonSet will ensure that the watcher is running on every cluster node.
+Kubernetes Log Watcher is intended to run in a ``DaemonSet`` along with one or more log configuration agent (e.g. Scalyr, AppDynamics ...). The DaemonSet will ensure that the watcher is running on every cluster node.
 
 
 Diagram
