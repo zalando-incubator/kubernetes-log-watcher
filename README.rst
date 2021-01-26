@@ -24,7 +24,7 @@ Components
 Watcher
 -------
 
-Log watcher is responsible for detecting running containers on a cluster node, extract information from container labels, and supply sufficient information to configuration agents in order to facilitate log shipping. The log watcher could run with one or more configuration agents.
+Log Watcher is responsible for detecting running containers on a cluster node, extract information from container labels, and supply sufficient information to configuration agents in order to facilitate log shipping. The log watcher could run with one or more configuration agents.
 
 Configuration Agent
 -------------------
