@@ -5,6 +5,8 @@ pipeline:
     vm: small
     timeout: 10m
     overlay: guild-python/latest
+    env:
+        PYENV_VERSION: "3.8"
     commands:
       - desc: "Install dependencies"
         cmd: |
