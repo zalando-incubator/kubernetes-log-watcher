@@ -5,9 +5,6 @@ Kubernetes Log Watcher
 .. image:: https://api.travis-ci.org/zalando-incubator/kubernetes-log-watcher.svg?branch=master
   :target: https://travis-ci.org/zalando-incubator/kubernetes-log-watcher
 
-.. image:: https://codecov.io/gh/zalando-incubator/kubernetes-log-watcher/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/zalando-incubator/kubernetes-log-watcher
-
 Kubernetes Log Watcher is used to facilitate log shipping on a Kubernetes cluster. The watcher will detect containers running on a cluster node, and adjust configurations for number of log configuration agents. ``kubernetes-log-watcher`` is intended to run in a Kubernetes ``DaemonSet`` along with one or more log shippers.
 
 ``kubernetes-log-watcher`` comes with builtin configuration agents, however it could be extended to support external agents. Current builtin configuration agents are:
@@ -412,7 +409,7 @@ You can use ``pytest``
 .. code-block:: bash
 
     # test requirements
-    $ pip install -U flake8 mock pytest pytest_cov codecov>=1.4.0
+    $ pip install -U flake8 mock pytest pytest_cov
 
     $ py.test -v tests/
     $ flake8 .
