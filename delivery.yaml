@@ -20,6 +20,9 @@ pipeline:
       - desc: "Run tox"
         cmd: tox
 
+      - desc: "Run env"
+        cmd: env
+
       - desc: "Push Docker Image"
         cmd: |
           IS_PR_BUILD=${CDP_PULL_REQUEST_NUMBER+"true"}
